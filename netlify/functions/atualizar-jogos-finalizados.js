@@ -86,10 +86,12 @@ export const handler = async function () {
   const supaServiceKey = process.env.SUPABASE_SERVICE_KEY;
 
   if (!apiKey || !supaUrl || !supaServiceKey) {
+    console.log('ERRO: faltam variáveis de ambiente', { temApiKey: !!apiKey, temSupaUrl: !!supaUrl, temSupaKey: !!supaServiceKey });
     return { statusCode: 500, body: JSON.stringify({ erro: 'Faltam variáveis de ambiente (API_FOOTBALL_KEY / SUPABASE_URL / SUPABASE_SERVICE_KEY)' }) };
   }
 
   const hoje = dataHojeSaoPaulo();
+  console.log('Buscando jogos finalizados para a data:', hoje);
 
   // 1 única chamada: todos os jogos finalizados hoje, no mundo inteiro —
   // depois filtramos só os campeonatos que interessam.
@@ -97,7 +99,10 @@ export const handler = async function () {
     headers: { 'x-apisports-key': apiKey },
   });
   const jsonFixtures = await respFixtures.json();
+  console.log('Resposta API-Football (fixtures):', { httpStatus: respFixtures.status, totalRecebido: (jsonFixtures.response || []).length, erros: jsonFixtures.errors });
+
   const fixtures = (jsonFixtures.response || []).filter((f) => LIGAS_PERMITIDAS.has(f.league?.id));
+  console.log('Jogos após filtro de ligas permitidas:', fixtures.length, fixtures.map(f => `${f.league?.name} - ${f.teams?.home?.name} x ${f.teams?.away?.name}`));
 
   if (fixtures.length === 0) {
     return { statusCode: 200, body: JSON.stringify({ ok: true, mensagem: 'Nenhum jogo finalizado hoje nos campeonatos escolhidos.' }) };
@@ -109,8 +114,16 @@ export const handler = async function () {
     `${supaUrl}/rest/v1/jogos?select=fixture_id&fixture_id=in.(${idsHoje.join(',')})`,
     { headers: { apikey: supaServiceKey, Authorization: `Bearer ${supaServiceKey}` } }
   );
-  const existentes = new Set((await respExistentes.json()).map((r) => r.fixture_id));
+  const textoExistentes = await respExistentes.text();
+  console.log('Resposta Supabase (verificação de existentes):', { httpStatus: respExistentes.status, corpo: textoExistentes });
+
+  if (!respExistentes.ok) {
+    return { statusCode: 500, body: JSON.stringify({ erro: 'Falha ao consultar jogos existentes no Supabase', detalhe: textoExistentes }) };
+  }
+
+  const existentes = new Set(JSON.parse(textoExistentes).map((r) => r.fixture_id));
   const novos = fixtures.filter((f) => !existentes.has(f.fixture.id));
+  console.log('Jogos novos a salvar:', novos.length);
 
   if (novos.length === 0) {
     return { statusCode: 200, body: JSON.stringify({ ok: true, mensagem: 'Jogos de hoje já estavam todos salvos.' }) };
@@ -170,8 +183,11 @@ export const handler = async function () {
     body: JSON.stringify(linhas),
   });
 
+  console.log('Resposta Supabase (salvar):', { httpStatus: respSalvar.status });
+
   if (!respSalvar.ok) {
     const erro = await respSalvar.text();
+    console.log('ERRO ao salvar no Supabase:', erro);
     return { statusCode: 500, body: JSON.stringify({ erro: 'Falha ao salvar no Supabase', detalhe: erro }) };
   }
 
