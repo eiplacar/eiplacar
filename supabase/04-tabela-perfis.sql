@@ -35,3 +35,16 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
+
+-- ── Colunas extras usadas por Conta → Perfil e Administração → Usuários ──
+-- (opcionais — se faltarem, as telas simplesmente não mostram/editam esses campos)
+alter table perfis
+  add column if not exists telefone text,
+  add column if not exists data_nascimento date,
+  add column if not exists foto_url text,
+  add column if not exists email text,
+  add column if not exists bloqueado boolean default false,
+  add column if not exists plano text,
+  add column if not exists assinatura_status text default 'trial',
+  add column if not exists assinatura_inicio date,
+  add column if not exists assinatura_vencimento date;

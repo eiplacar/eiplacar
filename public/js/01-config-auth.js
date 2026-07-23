@@ -7,8 +7,8 @@
 const CFG_KEY = 'eiPlacar_supabase_cfg';
 let jogosCache = [];
 
-const SUPA_URL = 'https://ljkeoshmmykrrrzcjedu.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxqa2Vvc2htbXlrcnJyemNqZWR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1NzYyNDAsImV4cCI6MjA5NzE1MjI0MH0.dXL_-hLvIGTaZnD6NiEE0vDyHGsk_5UeetmD_c6FNNA';
+const SUPA_URL = 'https://bwddsdggadlhusntbbrb.supabase.co';
+const SUPA_KEY = 'sb_publishable_miuYWMkIhrsqAb63ihpJIQ_uz9ko3gx';
 
 function getConfig() {
   return { url: SUPA_URL, key: SUPA_KEY };

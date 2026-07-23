@@ -7,11 +7,13 @@ ou todos colados juntos — a ordem numerada já garante que funciona):
 1. 01-tabela-jogos.sql     → cria a tabela de jogos
 2. 02-tabela-banca.sql     → cria a tabela da banca
 3. 03-tabela-escudos.sql   → cria a tabela de escudos dos times
-4. 04-tabela-perfis.sql    → cria a tabela de login/perfis + gatilho automático
+4. 04-tabela-perfis.sql    → cria a tabela de login/perfis + gatilho automático + colunas extras
 5. 05-seguranca-rls.sql    → ativa a segurança (só quem logar acessa os dados)
+6. 06-tabela-config-app.sql → cria a tabela de configuração do sistema (preços/planos)
 
 IMPORTANTE: o arquivo 05 depende das tabelas dos arquivos 01 a 04 já
-existirem — por isso ele tem que ser o ÚLTIMO a rodar.
+existirem — por isso ele tem que rodar depois delas. O 06 pode rodar a
+qualquer momento depois do 04 (ele cuida da própria segurança sozinho).
 
 Depois de rodar tudo:
 - Vá em Settings → API no Supabase
