@@ -24,7 +24,7 @@ const LIGAS_PERMITIDAS = new Set([
   61,  // Ligue 1 (França)
 ]);
 
-exports.handler = async function (event) {
+export const handler = async function (event) {
   const apiKey = process.env.API_FOOTBALL_KEY;
 
   if (!apiKey) {

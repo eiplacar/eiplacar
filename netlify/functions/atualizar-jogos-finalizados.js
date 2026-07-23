@@ -80,7 +80,7 @@ async function buscarGolsDoJogo(apiKey, fixtureId, nomeCasa, nomeVis) {
     .sort((a, b) => a.min - b.min);
 }
 
-exports.handler = async function () {
+export const handler = async function () {
   const apiKey = process.env.API_FOOTBALL_KEY;
   const supaUrl = process.env.SUPABASE_URL;
   const supaServiceKey = process.env.SUPABASE_SERVICE_KEY;
