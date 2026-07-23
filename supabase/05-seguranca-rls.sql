@@ -35,3 +35,11 @@ drop policy if exists "organizador edita perfis" on perfis;
 create policy "organizador edita perfis" on perfis for update to authenticated using (
   exists (select 1 from perfis p where p.id = auth.uid() and p.papel = 'organizador')
 );
+
+-- Qualquer pessoa logada pode editar o PRÓPRIO perfil (nome, telefone, foto etc.)
+drop policy if exists "cada um edita o proprio perfil" on perfis;
+create policy "cada um edita o proprio perfil" on perfis for update to authenticated using (
+  id = auth.uid()
+) with check (
+  id = auth.uid()
+);

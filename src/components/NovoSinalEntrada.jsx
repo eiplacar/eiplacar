@@ -59,18 +59,57 @@ export default function NovoSinalEntrada() {
   const [mostrarSugestoes, setMostrarSugestoes] = useState(false);
   const [mercadoSugeridoIdx, setMercadoSugeridoIdx] = useState('');
 
+  // ── API-Football: busca os jogos de hoje e deixa preencher com 1 clique ──
+  const [buscandoApi, setBuscandoApi] = useState(false);
+  const [jogosApi, setJogosApi] = useState(null); // null = ainda não buscou
+  const [extra, setExtra] = useState({ camp: '', casa: '', vis: '' }); // times/campeonato vindos da API que ainda não existem no histórico
+
+  async function buscarJogosDeHoje() {
+    setBuscandoApi(true);
+    setJogosApi(null);
+    try {
+      const hoje = new Date();
+      const dataStr = hoje.getFullYear() + '-' + String(hoje.getMonth() + 1).padStart(2, '0') + '-' + String(hoje.getDate()).padStart(2, '0');
+      const resp = await fetch(`/.netlify/functions/jogos-do-dia?data=${dataStr}`);
+      const json = await resp.json();
+      if (json.erro) { window.toast?.('⚠️ ' + json.erro); setJogosApi([]); return; }
+      setJogosApi(json.jogos || []);
+      if (!json.jogos?.length) window.toast?.('Nenhum jogo encontrado pra hoje nas ligas configuradas');
+    } catch (e) {
+      window.toast?.('⚠️ Erro ao buscar jogos da API');
+      setJogosApi([]);
+    } finally {
+      setBuscandoApi(false);
+    }
+  }
+
+  function preencherDaApi(jogo) {
+    setExtra({ camp: jogo.campeonato, casa: jogo.casa, vis: jogo.vis });
+    setCamp(jogo.campeonato);
+    setCasa(jogo.casa);
+    setVis(jogo.vis);
+    if (jogo.rodada) setRodada(String(jogo.rodada).replace(/^Regular Season - /i, 'Rodada '));
+    if (jogo.horario) {
+      const [h, m] = jogo.horario.split(':');
+      setHora(h); setMin(m);
+    }
+    setJogosApi(null);
+    window.toast?.('⚽ Jogo preenchido a partir da API-Football!');
+  }
+
   const jogosCache = window.jogosCache || [];
   const sortNatural = window.sortNatural || ((arr) => [...arr].sort());
   const gruposCampeonato = window.gruposCampeonato || ((camps) => camps.map((c) => ({ base: c, itens: [c] })));
   const ultimaAnalise = window.ultimaAnalise;
 
-  const allCamps = sortNatural([...new Set(jogosCache.map((j) => j.camp))]);
+  const allCamps = sortNatural([...new Set([...jogosCache.map((j) => j.camp), ...(extra.camp ? [extra.camp] : [])])]);
   const grupos = gruposCampeonato(allCamps);
   const comVariante = grupos.filter((g) => g.itens.length >= 2);
   const soltas = sortNatural(grupos.filter((g) => g.itens.length < 2).flatMap((g) => g.itens));
 
   const jogosDoCamp = camp ? jogosCache.filter((j) => j.camp === camp) : jogosCache;
-  const times = [...new Set([...jogosDoCamp.map((j) => j.casa), ...jogosDoCamp.map((j) => j.vis)])].sort();
+  const timesExtra = [camp && camp === extra.camp ? extra.casa : null, camp && camp === extra.camp ? extra.vis : null].filter(Boolean);
+  const times = [...new Set([...jogosDoCamp.map((j) => j.casa), ...jogosDoCamp.map((j) => j.vis), ...timesExtra])].sort();
 
   const mercadoLower = mercado.toLowerCase();
   const placarLabel = mercadoLower.includes('canto') ? 'Total de Cantos' : mercadoLower.includes('cart') ? 'Total de Cartões' : 'Placar Final';
@@ -167,6 +206,37 @@ export default function NovoSinalEntrada() {
   return (
     <div className="card">
       {/* O título "Oportunidade" já aparece na sub-aba logo acima — não precisa repetir aqui dentro */}
+
+      <div style={{ marginBottom: 14 }}>
+        <button
+          type="button"
+          onClick={buscarJogosDeHoje}
+          disabled={buscandoApi}
+          className="btn"
+          style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+        >
+          <Swords size={13} />
+          {buscandoApi ? 'Buscando jogos de hoje…' : 'Buscar jogos de hoje (API-Football)'}
+        </button>
+
+        {jogosApi && jogosApi.length > 0 && (
+          <div style={{ marginTop: 8, maxHeight: 240, overflowY: 'auto', border: '1px solid var(--c3)', borderRadius: 10 }}>
+            {jogosApi.map((j) => (
+              <div
+                key={j.id}
+                onClick={() => preencherDaApi(j)}
+                style={{ padding: '8px 10px', cursor: 'pointer', borderBottom: '1px solid var(--c3)' }}
+              >
+                <div style={{ fontSize: 11, opacity: 0.7 }}>{j.campeonato} · {j.horario}</div>
+                <div style={{ fontWeight: 600 }}>{j.casa} × {j.vis}</div>
+              </div>
+            ))}
+          </div>
+        )}
+        {jogosApi && jogosApi.length === 0 && (
+          <div style={{ marginTop: 8, fontSize: 12, opacity: 0.7 }}>Nenhum jogo encontrado pra hoje nas ligas configuradas.</div>
+        )}
+      </div>
 
       <div style={{ marginBottom: 10 }}>
         <SectionLabel icon={Trophy}>Campeonato</SectionLabel>

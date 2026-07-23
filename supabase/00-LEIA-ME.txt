@@ -10,6 +10,7 @@ ou todos colados juntos — a ordem numerada já garante que funciona):
 4. 04-tabela-perfis.sql    → cria a tabela de login/perfis + gatilho automático + colunas extras
 5. 05-seguranca-rls.sql    → ativa a segurança (só quem logar acessa os dados)
 6. 06-tabela-config-app.sql → cria a tabela de configuração do sistema (preços/planos)
+7. 07-jogos-fixture-id.sql → adiciona a coluna que evita duplicar jogos importados da API-Football
 
 IMPORTANTE: o arquivo 05 depende das tabelas dos arquivos 01 a 04 já
 existirem — por isso ele tem que rodar depois delas. O 06 pode rodar a

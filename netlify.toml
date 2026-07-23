@@ -2,6 +2,13 @@
   command = "npm run build"
   publish = "dist"
 
+[functions]
+  directory = "netlify/functions"
+
+# Roda a cada 1 hora, buscando jogos finalizados hoje e salvando no Supabase.
+[functions."atualizar-jogos-finalizados"]
+  schedule = "0 * * * *"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

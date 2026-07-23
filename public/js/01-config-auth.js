@@ -245,8 +245,11 @@ async function salvarNovaSenha(){
 
 // Busca o perfil (papel/status) da pessoa logada na tabela "perfis"
 async function authBuscarPerfil(){
+  const sessao = authGetSessao();
+  const uid = sessao?.user?.id;
+  if(!uid) return null;
   try {
-    const res = await fetch(sbUrlPerfis('?select=id,nome,papel,status,membro_id'), { headers: sbHeaders() });
+    const res = await fetch(sbUrlPerfis('?id=eq.'+uid+'&select=id,nome,papel,status,membro_id'), { headers: sbHeaders() });
     if(!res.ok) return null;
     const data = await res.json();
     return (data && data[0]) || null;
@@ -265,8 +268,9 @@ function sbUrlPerfis(filtros){
 // pro resto — assim a tela nunca quebra, só mostra os campos como vazios/"Teste Grátis".
 const CAMPOS_PERFIL_EXTRA = 'nome,telefone,data_nascimento,foto_url,plano,assinatura_status,assinatura_inicio,assinatura_vencimento';
 async function buscarPerfilCompleto(){
+  if(!perfilAtual?.id) return { ok:false, dados:{} };
   try {
-    const res = await fetch(sbUrlPerfis('?select='+CAMPOS_PERFIL_EXTRA), { headers: sbHeaders() });
+    const res = await fetch(sbUrlPerfis('?id=eq.'+perfilAtual.id+'&select='+CAMPOS_PERFIL_EXTRA), { headers: sbHeaders() });
     if(res.ok){
       const data = await res.json();
       return { ok:true, dados:(data && data[0]) || {} };
@@ -277,8 +281,9 @@ async function buscarPerfilCompleto(){
 }
 
 async function salvarPerfil(campos){
+  if(!perfilAtual?.id) return { ok:false, msg:'Sessão não encontrada — faça login novamente.' };
   try {
-    const res = await fetch(sbUrlPerfis(''), {
+    const res = await fetch(sbUrlPerfis('?id=eq.'+perfilAtual.id), {
       method:'PATCH', headers: { ...sbHeaders(), 'Prefer':'return=representation' },
       body: JSON.stringify(campos)
     });
