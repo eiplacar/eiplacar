@@ -1,0 +1,21 @@
+{
+  "name": "ei-placar",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Ei Placar — análise de jogos, calculadora de entradas e gestão de banca (Supabase + Netlify)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "lucide-react": "^0.469.0"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0",
+    "@vitejs/plugin-react": "^4.3.1"
+  }
+}

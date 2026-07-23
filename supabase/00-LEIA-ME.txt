@@ -1,0 +1,25 @@
+SETUP DO BANCO DE DADOS — EI PLACAR
+======================================
+
+Rode os arquivos NESSA ORDEM no SQL Editor do Supabase (um de cada vez,
+ou todos colados juntos — a ordem numerada já garante que funciona):
+
+1. 01-tabela-jogos.sql     → cria a tabela de jogos
+2. 02-tabela-banca.sql     → cria a tabela da banca
+3. 03-tabela-escudos.sql   → cria a tabela de escudos dos times
+4. 04-tabela-perfis.sql    → cria a tabela de login/perfis + gatilho automático
+5. 05-seguranca-rls.sql    → ativa a segurança (só quem logar acessa os dados)
+
+IMPORTANTE: o arquivo 05 depende das tabelas dos arquivos 01 a 04 já
+existirem — por isso ele tem que ser o ÚLTIMO a rodar.
+
+Depois de rodar tudo:
+- Vá em Settings → API no Supabase
+- Copie a URL do projeto e a chave "anon public"
+- Cole essas duas informações na tela ⚙️ Configurar do app
+
+Se você já tinha essas tabelas criadas antes (de uma versão anterior),
+pode rodar tudo de novo sem medo — os comandos usam "if not exists" e
+"drop ... if exists", então não duplicam nem dão erro. Não precisa
+apagar nada manualmente antes: pode simplesmente rodar os 5 arquivos
+de novo, na ordem, por cima do que já existir.

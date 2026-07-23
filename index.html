@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>EI PLACAR — Dados. Análises. Futebol.</title>
+<meta name="description" content="EI PLACAR é uma plataforma de inteligência esportiva: transforma dados do futebol profissional em análises e estatísticas claras. Não é uma plataforma de apostas.">
+<script>try{if(localStorage.getItem('eiPlacar_tema')==='light')document.documentElement.dataset.theme='light';}catch(e){}</script>
+
+<!-- PWA / Ícone tela inicial -->
+<meta name="theme-color" content="#101114">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="EI PLACAR">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-512.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+
+<!-- Sem SDK externo: usa fetch direto na API REST do Supabase -->
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ══ TELA DE LOGIN / CADASTRO ══ -->
+<div id="authScreen">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <img src="logo-wordmark.png" alt="EI PLACAR" style="height:38px;width:auto;display:block;margin:0 auto 10px" />
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="atab-login"    onclick="authGoTab('login')">Entrar</button>
+      <button class="auth-tab"        id="atab-cadastro" onclick="authGoTab('cadastro')">Criar Conta</button>
+    </div>
+
+    <div id="authMsg" class="auth-msg"></div>
+
+    <!-- LOGIN -->
+    <div class="auth-form active" id="aform-login">
+      <label>E-mail</label>
+      <input type="email" id="loginEmail" placeholder="seu@email.com" style="margin-bottom:12px">
+      <label>Senha</label>
+      <div class="pwd-wrap" style="margin-bottom:4px">
+        <input type="password" id="loginSenha" placeholder="••••••••">
+        <button type="button" class="pwd-eye" onclick="togglePwd('loginSenha', this)">👁️</button>
+      </div>
+      <span class="auth-link" onclick="authGoTab('recuperar')">Esqueci minha senha</span>
+      <button class="btn-primary" onclick="fazerLogin()">Entrar</button>
+    </div>
+
+    <!-- CADASTRO -->
+    <div class="auth-form" id="aform-cadastro">
+      <label>Nome</label>
+      <input type="text" id="cadNome" placeholder="Seu nome" style="margin-bottom:12px">
+      <label>E-mail</label>
+      <input type="email" id="cadEmail" placeholder="seu@email.com" style="margin-bottom:12px">
+      <label>Senha</label>
+      <div class="pwd-wrap" style="margin-bottom:18px">
+        <input type="password" id="cadSenha" placeholder="mínimo 6 caracteres">
+        <button type="button" class="pwd-eye" onclick="togglePwd('cadSenha', this)">👁️</button>
+      </div>
+      <button class="btn-primary" onclick="fazerCadastro()">Criar Conta</button>
+    </div>
+
+    <!-- RECUPERAR SENHA (pede e-mail e envia link) -->
+    <div class="auth-form" id="aform-recuperar">
+      <label>E-mail cadastrado</label>
+      <input type="email" id="recEmail" placeholder="seu@email.com" style="margin-bottom:18px">
+      <button class="btn-primary" onclick="enviarRecuperacaoSenha()">📧 Enviar link de recuperação</button>
+      <span class="auth-voltar" onclick="authGoTab('login')">← Voltar para o login</span>
+    </div>
+
+    <!-- DEFINIR NOVA SENHA (aberto a partir do link recebido por e-mail) -->
+    <div class="auth-form" id="aform-novasenha">
+      <p style="font-size:12px;color:var(--texto2);margin-bottom:14px">Digite sua nova senha de acesso.</p>
+      <label>Nova senha</label>
+      <div class="pwd-wrap" style="margin-bottom:18px">
+        <input type="password" id="novaSenha" placeholder="mínimo 6 caracteres">
+        <button type="button" class="pwd-eye" onclick="togglePwd('novaSenha', this)">👁️</button>
+      </div>
+      <button class="btn-primary" onclick="salvarNovaSenha()">💾 Salvar nova senha</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TELA DE ESPERA DE APROVAÇÃO ══ -->
+<div id="waitScreen">
+  <div class="wait-box">
+    <div class="icon">⏳</div>
+    <h2>Cadastro em análise</h2>
+    <p>Sua conta foi criada! O organizador precisa aprovar seu acesso antes de você ver os dados da banca. Volte a tentar em breve.</p>
+    <button class="btn-fechar-cfg" onclick="fazerLogout()">Sair</button>
+  </div>
+</div>
+
+<!-- ══ TELA DE ACESSO RESTRITO (sem saldo) ══ -->
+<div id="blockScreen">
+  <div class="wait-box">
+    <div class="icon">🔒</div>
+    <h2>Acesso restrito</h2>
+    <p>Seu acesso foi bloqueado pelo administrador. Fale com o organizador se achar que isso é um engano.</p>
+    <button class="btn-fechar-cfg" onclick="fazerLogout()">Sair</button>
+  </div>
+</div>
+
+<!-- ══ MODAL EDITAR MOVIMENTAÇÃO ══ -->
+<div class="modal-overlay" id="modalEditMov">
+  <div class="modal" style="max-width:360px">
+    <h2 id="editMovTitulo" style="font-size:15px;margin-bottom:16px">✏️ Editar</h2>
+    <div id="editMovTipoRow" style="margin-bottom:12px">
+      <label>Tipo</label>
+      <select id="editMovTipo" style="width:100%;margin-top:4px">
+        <option value="transferir">🔄 Transferência</option>
+        <option value="despesa">💸 Saque</option>
+        <option value="reforco">➕ Reforço</option>
+      </select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div><label>Valor (R$)</label><input type="number" id="editMovValor" min="0.01" step="0.01" placeholder="0.00" style="margin-top:4px"></div>
+      <div><label>Data</label><input type="date" id="editMovData" style="margin-top:4px"></div>
+    </div>
+    <div style="margin-bottom:16px"><label>Descrição</label><input type="text" id="editMovDesc" placeholder="Ex: Servidor" style="margin-top:4px"></div>
+    <div class="modal-btns">
+      <button class="btn-fechar-cfg" id="editMovCancelar">Cancelar</button>
+      <button class="btn-salvar-cfg" id="editMovSalvar">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL INFO ORGANIZADOR ══ -->
+<div class="modal-overlay" id="modalInfoOrg">
+  <div class="modal">
+    <h2>👔 Organizador</h2>
+    <div class="modal-steps" style="line-height:1.9">
+      <strong style="color:var(--ouro)">Como funciona</strong><br>
+      A cada green registrado, <strong>10% do lucro bruto</strong> vai automaticamente para o Organizador.<br><br>
+      <strong style="color:var(--ouro)">Para que serve</strong><br>
+      Remunera quem mantém o sistema, paga custas (servidor, ferramentas) e garante continuidade do projeto.<br><br>
+      <strong style="color:var(--ouro)">Saques</strong><br>
+      Na aba <strong>Cadastro → Saque do Organizador</strong> é possível retirar parte ou todo o saldo acumulado. O histórico fica registrado aqui.
+    </div>
+    <div class="modal-btns">
+      <button class="btn-fechar-cfg" style="flex:1" onclick="document.getElementById('modalInfoOrg').classList.remove('open')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL INFO TESOURARIA ══ -->
+<div class="modal-overlay" id="modalInfoTes">
+  <div class="modal">
+    <h2>🏦 Tesouraria</h2>
+    <div class="modal-steps" style="line-height:1.9">
+      <strong style="color:var(--ouro)">Como funciona</strong><br>
+      A cada green, <strong>10% do lucro bruto</strong> vai automaticamente para a Tesouraria. É a reserva coletiva da comunidade.<br><br>
+      <strong style="color:var(--ouro)">Para que serve</strong><br>
+      Protege a banca em períodos ruins, pode cobrir um red grande sem impactar o saldo dos membros, ou ser reinvestida quando a reserva estiver forte.<br><br>
+      <strong style="color:var(--ouro)">Operações disponíveis</strong><br>
+      🔄 <strong>Transferir para Caixa</strong> — o organizador move parte da reserva de volta ao saldo dos membros, distribuído proporcional às cotas.<br>
+      💸 <strong>Despesa externa</strong> — paga um custo da comunidade (servidor, ferramenta) sem ir para nenhum membro.<br>
+      ➕ <strong>Reforço</strong> — a comunidade decide contribuir com parte do caixa dos membros para fortalecer a reserva.<br><br>
+      Todas as movimentações ficam registradas no histórico.
+    </div>
+    <div class="modal-btns">
+      <button class="btn-fechar-cfg" style="flex:1" onclick="document.getElementById('modalInfoTes').classList.remove('open')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL CONFIRMAR ENTRADA ══ -->
+<div class="modal-overlay" id="modalConfirmarEntrada">
+  <div class="modal" style="max-width:360px">
+    <h2 style="font-size:15px;margin-bottom:12px">✅ Confirmar Entrada</h2>
+    <div id="modalConfirmarTexto" style="background:var(--c1);border:1px solid var(--c3);border-radius:10px;padding:14px;font-size:13px;line-height:2;margin-bottom:16px"></div>
+    <div class="modal-btns">
+      <button class="btn-fechar-cfg" id="modalConfirmarCancelar">Cancelar</button>
+      <button class="btn-salvar-cfg" id="modalConfirmarOk">Registrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL CONFIRMAR EXCLUSÃO ENTRADA ══ -->
+<div class="modal-overlay" id="modalConfirmarExclusao">
+  <div class="modal" style="max-width:340px">
+    <h2 style="font-size:15px;margin-bottom:12px">🗑️ Remover Entrada</h2>
+    <p style="font-size:13px;color:var(--texto2);margin-bottom:16px">O saldo dos membros será recalculado. Confirma a remoção?</p>
+    <div class="modal-btns">
+      <button class="btn-fechar-cfg" id="modalExclusaoCancelar">Cancelar</button>
+      <button class="btn-salvar-cfg" style="background:var(--perigo)" id="modalExclusaoOk">Remover</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL EDITAR ENTRADA ══ -->
+<div class="modal-overlay" id="modalEditarEntrada">
+  <div class="modal" style="max-width:400px">
+    <h2 style="font-size:15px;margin-bottom:12px">✏️ Editar Entrada</h2>
+    <div style="margin-bottom:10px"><label>Mercado</label><input type="text" id="editEMercado"></div>
+    <div style="margin-bottom:10px"><label>Liga</label><input type="text" id="editELiga"></div>
+    <div style="margin-bottom:10px"><label>Confronto (Casa × Visitante)</label><input type="text" id="editETimes" placeholder="Opcional"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div>
+        <label>Tipo de Entrada</label>
+        <select id="editETipo" onchange="document.getElementById('editEMinutoWrap').style.display=this.value==='live'?'block':'none'">
+          <option value="prelive">📋 Pré-live</option>
+          <option value="live">🔴 Live</option>
+        </select>
+      </div>
+      <div>
+        <label>Tipo de Aposta</label>
+        <select id="editETipoAposta">
+          <option value="simples">Simples</option>
+          <option value="dupla">Dupla</option>
+          <option value="multipla">Múltipla</option>
+          <option value="outros">Outros</option>
+        </select>
+      </div>
+    </div>
+    <div id="editEMinutoWrap" style="margin-bottom:10px">
+      <label>Minuto</label>
+      <input type="number" id="editEMinuto" min="0" max="120">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div><label>Odd</label><input type="number" id="editEOdd" min="1.01" step="0.01"></div>
+      <div><label>Valor Apostado (R$)</label><input type="number" id="editEStake" min="0" step="0.01"></div>
+    </div>
+    <div style="margin-bottom:10px">
+      <label>Resultado</label>
+      <select id="editEResultado">
+        <option value="green">✅ Green</option>
+        <option value="red">❌ Red</option>
+        <option value="void">↩️ Void</option>
+      </select>
+    </div>
+    <div style="margin-bottom:16px"><label>Data</label><input type="date" id="editEData"></div>
+    <div class="modal-btns">
+      <button class="btn-fechar-cfg" onclick="fecharModalEditarEntrada()">Cancelar</button>
+      <button class="btn-salvar-cfg" onclick="salvarEdicaoEntrada()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL MENU EXPLICAÇÃO BANCA ══ -->
+<div class="modal-overlay" id="modalMenuBanca">
+  <div class="modal">
+    <h2>ℹ️ Como funciona</h2>
+    <p>Resumo rápido do que cada card da Visão Geral mostra.</p>
+    <div class="modal-steps" style="line-height:1.9">
+      <strong style="color:var(--ouro)">💰 Total em Caixa</strong><br>
+      Saldo Disponível (dos membros) + Tesouraria + Organizador.<br>
+      A cada <strong>green</strong>, o lucro é dividido assim:<br>
+      🟢 80% para os membros (proporcional à cota de cada um)<br>
+      🏦 10% Tesouraria — proteção e crescimento da banca<br>
+      👔 10% Organizador — manutenção e melhorias do sistema<br><br>
+      <strong style="color:var(--ouro)">👥 Membros</strong><br>
+      Depósitos: total que entrou. Retiradas: total que saiu. Saldo Disponível: o que sobrou (depósitos − retiradas + resultado das entradas).<br><br>
+      <strong style="color:var(--ouro)">📈 Performance</strong><br>
+      <em>P&L</em>: lucro ou prejuízo em R$ desde o início.<br>
+      <em>ROI</em>: P&L ÷ saldo inicial investido, em %.<br>
+      <em>APR</em>: ROI projetado para 1 ano, com base nos dias desde a 1ª movimentação.<br><br>
+      <strong style="color:var(--ouro)">🎯 Atividade</strong><br>
+      Quantidade de entradas feitas e % de acerto (greens ÷ total).<br><br>
+      <strong style="color:var(--ouro)">💡 Sugestão de Stake</strong><br>
+      Quanto apostar (1%, 2% ou 3%) com base no saldo disponível dos membros.
+    </div>
+    <div class="modal-btns">
+      <button class="btn-fechar-cfg" style="flex:1" onclick="fecharMenuBanca()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+
+  </div>
+</div>
+
+<!-- ══ MODAL DATA/HORÁRIO DO JOGO (antes de compartilhar) ══ -->
+<div class="modal-overlay" id="modalDataJogo">
+  <div class="modal" style="max-width:380px">
+    <h2>🗓️ Data/Horário do Jogo</h2>
+    <p style="font-size:12px;color:var(--texto2);margin-bottom:14px">Opcional — só pra dar contexto a quem receber a análise.</p>
+    <input type="text" id="inputDataJogo" placeholder="Ex: 28/06 às 16h" style="margin-bottom:18px">
+    <div class="modal-btns">
+      <button class="btn-fechar-cfg" onclick="fecharModalDataJogo()">Pular</button>
+      <button class="btn-salvar-cfg" onclick="confirmarCompartilhar()">✅ Continuar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL DETALHE DO JOGO ══ -->
+<div class="modal-overlay" id="modalDetalheJogo">
+  <div class="modal" style="max-width:380px">
+    <h2 id="detJogoTitulo" style="font-size:14px;text-align:center">🏆</h2>
+    <div id="detJogoPlacar"></div>
+    <div id="detJogoGols"></div>
+    <div id="detJogoExtra"></div>
+    <div class="modal-btns">
+      <button class="btn-fechar-cfg" onclick="fecharDetalheJogo()" style="width:100%">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL EDITAR JOGO ══ -->
+<div class="modal-overlay" id="modalEditarJogo">
+  <div class="modal">
+    <h2>✏️ Editar Jogo</h2>
+    <div class="fg fg2">
+      <div><label>Campeonato</label><input type="text" id="eCamp"></div>
+      <div><label>Data</label><input type="date" id="eData"></div>
+    </div>
+    <div class="fg fg2">
+      <div><label>Rodada / Fase</label><input type="text" id="eRodada"></div>
+      <div><label>Local / Estádio</label><input type="text" id="eLocal"></div>
+    </div>
+    <div class="fg fg2">
+      <div><label>Time Mandante</label><input type="text" id="eCasa" oninput="syncNomesEdicao()"></div>
+      <div><label>Time Visitante</label><input type="text" id="eVis" oninput="syncNomesEdicao()"></div>
+    </div>
+    <div class="card-title" style="margin-bottom:8px">Placar Final</div>
+    <div class="placar-area" style="margin-bottom:16px">
+      <div style="flex:1;text-align:center">
+        <div class="escudo-upload" id="eEscudoCasa" onclick="escudoInput('eCasa')" title="Toque para adicionar o escudo">🛡️</div>
+      </div>
+      <input type="number" id="eGC" min="0">
+      <div class="vs-label">×</div>
+      <input type="number" id="eGV" min="0">
+      <div style="flex:1;text-align:center">
+        <div class="escudo-upload" id="eEscudoVis" onclick="escudoInput('eVis')" title="Toque para adicionar o escudo">🛡️</div>
+      </div>
+    </div>
+    <div class="fg fg2">
+      <div><label>Ranking Mandante</label><input type="number" id="eRC" min="1"></div>
+      <div><label>Ranking Visitante</label><input type="number" id="eRV" min="1"></div>
+    </div>
+    <details class="adv-details" style="margin-bottom:16px">
+      <summary class="adv-summary">▼ Dados Avançados</summary>
+      <div class="adv-content">
+        <div class="adv-group-title">⏱️ Gols 1º Tempo</div>
+        <div class="fg fg2">
+          <div><label>Mandante</label><input type="number" id="eHTC" min="0"></div>
+          <div><label>Visitante</label><input type="number" id="eHTV" min="0"></div>
+        </div>
+        <div class="adv-group-title">🎯 Chutes</div>
+        <div class="fg fg2">
+          <div><label>Totais — Mandante</label><input type="number" id="eChutesC" min="0"></div>
+          <div><label>Totais — Visitante</label><input type="number" id="eChutesV" min="0"></div>
+        </div>
+        <div class="fg fg2">
+          <div><label>No gol — Mandante</label><input type="number" id="eChutesGolC" min="0"></div>
+          <div><label>No gol — Visitante</label><input type="number" id="eChutesGolV" min="0"></div>
+        </div>
+        <div class="adv-group-title">🚩 Escanteios</div>
+        <div class="fg fg2">
+          <div><label>Mandante</label><input type="number" id="eEscanteiosC" min="0"></div>
+          <div><label>Visitante</label><input type="number" id="eEscanteiosV" min="0"></div>
+        </div>
+        <div class="adv-group-title">🟨 Cartões</div>
+        <div class="fg fg2">
+          <div><label>Amarelos — Mandante</label><input type="number" id="eAmarelosC" min="0"></div>
+          <div><label>Amarelos — Visitante</label><input type="number" id="eAmarelosV" min="0"></div>
+        </div>
+        <div class="fg fg2">
+          <div><label>Vermelhos — Mandante</label><input type="number" id="eVermelhosC" min="0"></div>
+          <div><label>Vermelhos — Visitante</label><input type="number" id="eVermelhosV" min="0"></div>
+        </div>
+      </div>
+    </details>
+    <div class="modal-btns">
+      <button class="btn-fechar-cfg" onclick="fecharModalEditar()">Cancelar</button>
+      <button class="btn-salvar-cfg" onclick="confirmarEdicaoJogo()">💾 Salvar Alterações</button>
+    </div>
+  </div>
+</div>
+
+<header>
+  <button class="btn-hamb" onclick="toggleSidebar()" aria-label="Abrir menu" style="justify-self:start">☰</button>
+  <div class="logo" style="justify-self:center">
+    <img src="logo-wordmark.png" alt="EI PLACAR" style="height:26px;width:auto;display:block" />
+  </div>
+  <div style="position:relative;justify-self:end">
+    <div id="userAvatar" onclick="toggleMenuUsuario()" style="display:none;width:36px;height:36px;background:var(--ouro);border-radius:50%;align-items:center;justify-content:center;cursor:pointer;font-size:16px;font-weight:800;color:#1a1a1a;flex-shrink:0" title="Minha conta">?</div>
+    <div id="menuUsuario" style="display:none;position:absolute;right:0;top:46px;background:var(--c2);border:1px solid var(--c3);border-radius:12px;padding:14px 16px;min-width:200px;z-index:300;box-shadow:0 8px 24px rgba(0,0,0,.4)">
+      <div id="menuNome" style="font-weight:700;font-size:14px;margin-bottom:2px"></div>
+      <div id="menuEmail" style="font-size:11px;color:var(--texto2);margin-bottom:14px;word-break:break-all"></div>
+      <div style="border-top:1px solid var(--c3);padding-top:10px">
+        <button onclick="sairConta()" style="width:100%;background:var(--perigo);border:none;border-radius:8px;padding:9px;color:#fff;font-size:13px;font-weight:700;cursor:pointer">🚪 Sair</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar(false)"></div>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-head">
+    <img src="logo-wordmark.png" alt="EI PLACAR" style="height:24px;width:auto;display:block" />
+  </div>
+  <nav class="sidebar-nav">
+    <button class="nav-tab active" onclick="goTo('geral')"      id="tab-geral"><span class="nav-ic" data-ic="home"></span><span>Dashboard</span></button>
+    <button class="nav-tab so-organizador" onclick="goTo('confrontos')" id="tab-confrontos"><span class="nav-ic" data-ic="calendarPlus"></span><span>Partidas</span></button>
+    <button class="nav-tab"        onclick="goTo('dados')"      id="tab-dados"><span class="nav-ic" data-ic="database"></span><span>Dados</span></button>
+    <button class="nav-tab"        onclick="goTo('analise')"    id="tab-analise"><span class="nav-ic" data-ic="search"></span><span>Análise</span></button>
+    <button class="nav-tab"        onclick="goTo('calculadora')" id="tab-calculadora"><span class="nav-ic" data-ic="calculator"></span><span>Calculadora</span></button>
+    <button class="nav-tab so-organizador" onclick="goTo('apostas')" id="tab-apostas"><span class="nav-ic" data-ic="target"></span><span>Apostas</span></button>
+    <button class="nav-tab"        onclick="goTo('futebol')"    id="tab-futebol"><span class="nav-ic" data-ic="trendingUp"></span><span>Estatística</span></button>
+    <button class="nav-tab"        onclick="goTo('classificacao')" id="tab-classificacao"><span class="nav-ic" data-ic="medal"></span><span>Classificação</span></button>
+    <button class="nav-tab"        onclick="goTo('banca')"     id="tab-banca"><span class="nav-ic" data-ic="wallet"></span><span>Banca</span></button>
+    <button class="nav-tab"        onclick="goTo('minhaconta')" id="tab-minhaconta"><span class="nav-ic" data-ic="user"></span><span>Conta</span></button>
+    <button class="nav-tab so-organizador" onclick="goTo('administracao')" id="tab-administracao"><span class="nav-ic" data-ic="shieldCheck"></span><span>Administração</span></button>
+  </nav>
+</aside>
+
+<div class="sync-bar so-organizador">
+  <div class="sync-dot config" id="syncDot"></div>
+  <span class="sync-msg" id="syncMsg">Carregando...</span>
+</div>
+
+
+<main>
+
+<!-- ══ GERAL ══ -->
+<div class="page active" id="page-geral">
+  <!-- Dashboard — componente React (src/components/Dashboard.jsx) -->
+  <div id="dashboard-root"></div>
+</div>
+
+<!-- ══ H2H ══ -->
+<div class="page so-organizador" id="page-confrontos">
+  <div class="sub-nav" style="margin-bottom:14px">
+    <button class="sub-tab active" id="stab-add-partida" onclick="goSubConfrontos('add-partida')"><span data-ic="fileEdit"></span> Adicionar Partida</button>
+    <button class="sub-tab"        id="stab-sinal"       onclick="goSubConfrontos('sinal')"><span data-ic="zap"></span> Oportunidade</button>
+  </div>
+
+  <!-- ADICIONAR PARTIDA -->
+  <div class="sub-page active" id="sp-add-partida">
+    <!-- Adicionar Partida — componente React (src/components/AdicionarPartida.jsx) -->
+    <div id="confrontos-root"></div>
+  </div>
+
+  <!-- NOVO SINAL DE ENTRADA -->
+  <div class="sub-page" id="sp-sinal">
+    <!-- Novo Sinal de Entrada — componente React (src/components/NovoSinalEntrada.jsx) -->
+    <div id="sinal-root"></div>
+  </div>
+</div>
+
+<!-- ══ BANCA ══ -->
+<div class="page" id="page-banca">
+  <!-- Banca (Carteira individual) — componente React (src/components/Banca.jsx) -->
+  <div id="banca-root"></div>
+</div>
+
+<!-- ══ DADOS ══ -->
+<div class="page" id="page-dados">
+  <!-- Lista de Partidas — componente React (src/components/ListaPartidas.jsx) -->
+  <div id="dados-root"></div>
+</div>
+
+<!-- ══ ANÁLISE ══ -->
+<div class="page" id="page-analise">
+
+  <!-- Campeonato + Confronto — componente React (src/components/SeletorAnalise.jsx) -->
+  <div id="analise-root"></div>
+
+  <!-- Resultado da análise — componente React (src/components/AnaliseResultado.jsx) -->
+  <div id="analise-resultado-root"></div>
+</div>
+
+<!-- ══ CALCULADORA ══ -->
+<div class="page" id="page-calculadora">
+
+  <!-- Card 1: Calculadora de EV — componente React (src/components/CalculadoraEV.jsx) -->
+  <div id="calc-root"></div>
+
+</div>
+
+<!-- ══ APOSTAS ══ -->
+<div class="page so-organizador" id="page-apostas">
+  <div class="sub-nav" style="margin-bottom:14px">
+    <button class="sub-tab active" id="stab-nova-entrada" onclick="goSubApostas('nova-entrada')">🎯 Entrada</button>
+    <button class="sub-tab"        id="stab-resolvidas"   onclick="goSubApostas('resolvidas')">✅ Resolvidas</button>
+  </div>
+
+  <!-- NOVA ENTRADA -->
+  <div class="sub-page active" id="sp-nova-entrada">
+    <!-- Nova Entrada — componente React (src/components/NovaEntrada.jsx) -->
+    <div id="nova-entrada-root"></div>
+  </div>
+
+  <!-- RESOLVIDAS -->
+  <div class="sub-page" id="sp-resolvidas">
+    <!-- Apostas Resolvidas — componente React (src/components/Resolvidas.jsx) -->
+    <div id="resolvidas-root"></div>
+  </div>
+</div>
+
+<!-- ══ MODAL INFO LIGAS ══ -->
+<div class="modal-overlay" id="modalInfoLigas">
+  <div class="modal">
+    <h2>ℹ️ Sobre as tabelas</h2>
+    <div class="modal-steps" style="line-height:1.9">
+      <strong style="color:var(--ouro)">📈 Estatística por Liga</strong><br>
+      Agrupa suas entradas (Calculadora) por Liga, Mercado e Tipo (Pré-live/Live). Mostra minuto médio de entrada, odd média e % de acerto.<br>
+      Use para descobrir a melhor faixa de minuto/odd para cada liga.<br><br>
+      <strong style="color:var(--ouro)">📐 Minuto Médio do Gol que Bate o Over</strong><br>
+      Busca nos jogos de <strong>Dados</strong> (com minutos preenchidos) os que bateram cada Over. Separa em 1ºT/2ºT pelo minuto do <strong>1º gol</strong> — seu sinal de entrada ao vivo.<br>
+      Mostra: média do 1º gol e média do gol que confirmou o Over.<br>
+      A coluna <strong>% Jogos</strong> = quantos % dos jogos da liga caem nessa categoria.<br>
+      Compare com a tabela de cima para saber se você está entrando antes ou depois da média histórica.
+    </div>
+    <div class="modal-btns">
+      <button class="btn-fechar-cfg" style="flex:1" onclick="document.getElementById('modalInfoLigas').classList.remove('open')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<div class="page" id="page-futebol">
+  <!-- Estatística (Ligas / Times) — componente React (src/components/Estatistica.jsx) -->
+  <div id="estatistica-root"></div>
+</div>
+
+<!-- ══ CLASSIFICAÇÃO ══ -->
+<div class="page" id="page-classificacao">
+  <!-- Classificação — componente React (src/components/Classificacao.jsx) -->
+  <div id="classificacao-root"></div>
+</div>
+<div class="page" id="page-minhaconta">
+  <!-- Minha Conta — componente React (src/components/MinhaConta.jsx) -->
+  <div id="minhaconta-root"></div>
+</div>
+<div class="page so-organizador" id="page-administracao">
+  <!-- Administração — componente React (src/components/Administracao.jsx) -->
+  <div id="administracao-root"></div>
+</div>
+</main>
+
+<!-- ══ NAVEGAÇÃO RÁPIDA (barra fixa embaixo) ══ -->
+<nav class="quicknav">
+  <button class="quicknav-btn active" id="qnav-geral"  onclick="irParaInicio()"><span data-ic="home" data-ic-size="18"></span><span>Início</span></button>
+  <button class="quicknav-btn"        id="qnav-analise" onclick="goTo('analise')"><span data-ic="search" data-ic-size="18"></span><span>Análise</span></button>
+  <button class="quicknav-btn"        id="qnav-futebol" onclick="goTo('futebol')"><span data-ic="trendingUp" data-ic-size="18"></span><span>Estatística</span></button>
+  <button class="quicknav-btn so-organizador" id="qnav-apostas" onclick="goTo('apostas')"><span data-ic="target" data-ic-size="18"></span><span>Apostas</span></button>
+</nav>
+
+<div id="toast"></div>
+<footer>Ei Placar · Dados salvos na nuvem via Supabase ☁️</footer>
+
+<script src="js/00-icons.js"></script>
+<script src="js/01-config-auth.js"></script>
+<script src="js/02-dados-crud.js"></script>
+<script src="js/03-nav.js"></script>
+<script src="js/04-utils.js"></script>
+<script src="js/05-escudos.js"></script>
+<script src="js/06-confrontos.js"></script>
+<script src="js/07-geral.js"></script>
+<script src="js/08-dados-render.js"></script>
+<script src="js/09-analise.js"></script>
+<script src="js/10-compartilhar.js"></script>
+<script src="js/11-jogosdodia.js"></script>
+<script src="js/12-banca-futebol.js"></script>
+<script src="js/13-calculadora.js"></script>
+<script src="js/14-banca-gestao.js"></script>
+<script src="js/16-admin.js"></script>
+<script src="js/15-init.js"></script>
+<!-- Componentes React (migração aos poucos, por módulo) -->
+<script type="module" src="/src/main.jsx"></script>
+<script>
+// Registra o service worker pra habilitar "Instalar app" de verdade (com ícone próprio) e uso offline.
+// Só funciona quando o site estiver hospedado com HTTPS — não funciona abrindo o arquivo direto (file://).
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
