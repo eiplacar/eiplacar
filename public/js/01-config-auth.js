@@ -81,16 +81,26 @@ function authGoTab(t){
 async function fazerCadastro(){
   const nome  = document.getElementById('cadNome').value.trim();
   const email = document.getElementById('cadEmail').value.trim();
+  const telefone = document.getElementById('cadTelefone').value.trim();
+  const dataNascimento = document.getElementById('cadDataNascimento').value;
   const senha = document.getElementById('cadSenha').value;
   authLimparMsg();
   if(!nome)  { authMostrarMsg('⚠️ Informe seu nome', 'erro'); return; }
   if(!email) { authMostrarMsg('⚠️ Informe seu e-mail', 'erro'); return; }
+  if(!telefone) { authMostrarMsg('⚠️ Informe seu telefone', 'erro'); return; }
+  if(!dataNascimento) { authMostrarMsg('⚠️ Informe sua data de nascimento', 'erro'); return; }
   if(!senha||senha.length<6){ authMostrarMsg('⚠️ A senha precisa ter no mínimo 6 caracteres', 'erro'); return; }
+
+  // Limpa qualquer sessão que já estivesse salva neste navegador (ex: admin testando
+  // o cadastro) ANTES de criar a conta nova — evita continuar "logado" na conta antiga
+  // caso essa conta nova precise confirmar e-mail antes de poder entrar.
+  authClearSessao();
+  perfilAtual = null;
 
   try {
     const res = await fetch(authUrl('/signup'), {
       method:'POST', headers: authHeadersBase(),
-      body: JSON.stringify({ email, password: senha, data: { nome } })
+      body: JSON.stringify({ email, password: senha, data: { nome, telefone, data_nascimento: dataNascimento } })
     });
     const data = await res.json();
     if(!res.ok){
@@ -110,14 +120,17 @@ async function fazerCadastro(){
       const dias = (cfgAppLoad().diasTeste) || 60;
       const hoje = new Date().toISOString().split('T')[0];
       salvarPerfil({ assinatura_status:'trial', assinatura_inicio:hoje, assinatura_vencimento: (()=>{ const d=new Date(); d.setDate(d.getDate()+dias); return d.toISOString().split('T')[0]; })() }).catch(()=>{});
+      salvarPerfil({ telefone, data_nascimento: dataNascimento }).catch(()=>{});
     } else if(data.user && Array.isArray(data.user.identities) && data.user.identities.length===0){
       // O Supabase, por segurança, não revela se o e-mail já existe: quando a confirmação por
       // e-mail está ativada, um cadastro repetido volta como "sucesso" mas com identities:[] —
       // esse é o sinal de que já existe conta com esse e-mail.
       authMostrarMsg('⚠️ Este e-mail já possui conta. Tente entrar ou recupere sua senha.', 'erro');
+      authAplicarTela();
     } else {
       // projeto com confirmação por e-mail ativada
       authMostrarMsg('✅ Conta criada! Verifique seu e-mail para confirmar, depois faça login.', 'ok');
+      authAplicarTela();
       authGoTab('login');
     }
   } catch(e){

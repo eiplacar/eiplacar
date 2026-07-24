@@ -15,10 +15,12 @@
 //                            service_role pra poder escrever sem estar logado.
 // ═══════════════════════════════════════════════════
 
-const LIGAS_PERMITIDAS = new Set([
-  71,  // Brasileirão Série A
-  72,  // Brasileirão Série B
-  78,  // Bundesliga 1 (Alemanha)
+const NOMES_CAMP_POR_LIGA = new Map([
+  [71, 'Brasileirão Série A'],
+  [72, 'Brasileirão Série B'],
+  [78, 'Bundesliga'],
+  [79, 'Bundesliga 2'],
+  [39, 'Premier League'],
 ]);
 
 function dataHojeSaoPaulo() {
@@ -27,10 +29,25 @@ function dataHojeSaoPaulo() {
   return fmt.format(agora); // AAAA-MM-DD
 }
 
+function horaAtualSaoPaulo() {
+  const agora = new Date();
+  const fmt = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Sao_Paulo', hour: '2-digit', hour12: false });
+  return parseInt(fmt.format(agora), 10);
+}
+
+function dataOntemSaoPaulo() {
+  // Pega "agora" já subtraindo 1 dia, e formata do jeito de São Paulo —
+  // assim evita bug de fuso horário na virada do dia.
+  const agora = new Date();
+  agora.setUTCDate(agora.getUTCDate() - 1);
+  const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' });
+  return fmt.format(agora);
+}
+
 function dataBrParaTexto(isoDate) {
   const d = new Date(isoDate);
-  const fmt = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric' });
-  return fmt.format(d);
+  const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric' });
+  return fmt.format(d); // 'en-CA' produz AAAA-MM-DD, formato que o resto do site usa
 }
 
 function pegarEstatistica(statsTime, tipo) {
@@ -38,6 +55,40 @@ function pegarEstatistica(statsTime, tipo) {
   const v = item?.value;
   if (v === null || v === undefined) return null;
   return typeof v === 'string' ? parseInt(v, 10) || null : v;
+}
+
+// ═══════════════════════════════════════════════════
+// CORREÇÃO DE NOMES DE TIMES
+// A API-Football manda os nomes sem acento e às vezes com grafia
+// diferente da que já está cadastrada no sistema (ex: "Nautico Recife"
+// → "Náutico"). Aqui a gente traduz pro nome que já é usado no site,
+// pra não duplicar time por causa de acento/grafia diferente.
+//
+// Lista inicial baseada nos times já cadastrados no banco. Se aparecer
+// mais algum time errado, é só me avisar (o log da função mostra o
+// nome exato que a API mandou) que eu adiciono aqui.
+// ═══════════════════════════════════════════════════
+const NOME_TIME_FIXO = new Map([
+  ['Nautico Recife', 'Náutico'],
+  ['Nautico', 'Náutico'],
+  ['Sao Paulo', 'São Paulo'],
+  ['Sao Bernardo', 'São Bernardo'],
+  ['Atletico Mineiro', 'Atletico-MG'],
+  ['Atletico-MG', 'Atletico-MG'],
+  ['Athletico Paranaense', 'Athletico-PR'],
+  ['Athletico-PR', 'Athletico-PR'],
+  ['Atletico Goianiense', 'Atlético-GO'],
+  ['Atletico GO', 'Atlético-GO'],
+  ['Ceara', 'Ceará'],
+  ['Cuiaba', 'Cuiabá'],
+  ['Criciuma', 'Criciúma'],
+  ['Chapecoense-sc', 'Chapecoense-SC'],
+  ['Chapecoense SC', 'Chapecoense-SC'],
+  ['Botafogo SP', 'Botafogo-SP'],
+]);
+
+function corrigirNomeTime(nome) {
+  return NOME_TIME_FIXO.get(nome) || nome;
 }
 
 // Brasileirão = temporada é o ano civil. Bundesliga = temporada europeia (ago-mai),
@@ -91,18 +142,26 @@ export const handler = async function () {
   }
 
   const hoje = dataHojeSaoPaulo();
-  console.log('Buscando jogos finalizados para a data:', hoje);
+  const horaAgora = horaAtualSaoPaulo();
 
-  // 1 única chamada: todos os jogos finalizados hoje, no mundo inteiro —
-  // depois filtramos só os campeonatos que interessam.
-  const respFixtures = await fetch(`https://v3.football.api-sports.io/fixtures?date=${hoje}&status=FT`, {
-    headers: { 'x-apisports-key': apiKey },
-  });
-  const jsonFixtures = await respFixtures.json();
-  console.log('Resposta API-Football (fixtures):', { httpStatus: respFixtures.status, totalRecebido: (jsonFixtures.response || []).length, erros: jsonFixtures.errors });
+  // Só na(s) execução(ões) de madrugada (0h-2h) a gente também confere ontem —
+  // pega jogos que terminaram tarde da noite e escaparam da checagem anterior,
+  // sem gastar essa chamada extra o dia inteiro à toa.
+  const datas = horaAgora < 2 ? [hoje, dataOntemSaoPaulo()] : [hoje];
+  console.log('Buscando jogos finalizados para as datas:', datas);
 
-  const fixtures = (jsonFixtures.response || []).filter((f) => LIGAS_PERMITIDAS.has(f.league?.id));
-  console.log('Jogos após filtro de ligas permitidas:', fixtures.length, fixtures.map(f => `${f.league?.name} - ${f.teams?.home?.name} x ${f.teams?.away?.name}`));
+  let todosFixtures = [];
+  for (const data of datas) {
+    const respFixtures = await fetch(`https://v3.football.api-sports.io/fixtures?date=${data}&status=FT`, {
+      headers: { 'x-apisports-key': apiKey },
+    });
+    const jsonFixtures = await respFixtures.json();
+    console.log(`Resposta API-Football (fixtures ${data}):`, { httpStatus: respFixtures.status, totalRecebido: (jsonFixtures.response || []).length, erros: jsonFixtures.errors });
+    todosFixtures = todosFixtures.concat(jsonFixtures.response || []);
+  }
+
+  const fixtures = todosFixtures.filter((f) => NOMES_CAMP_POR_LIGA.has(f.league?.id));
+  console.log('Jogos após filtro de ligas permitidas:', fixtures.length, fixtures.map(f => `${NOMES_CAMP_POR_LIGA.get(f.league?.id)} - ${f.teams?.home?.name} x ${f.teams?.away?.name}`));
 
   if (fixtures.length === 0) {
     return { statusCode: 200, body: JSON.stringify({ ok: true, mensagem: 'Nenhum jogo finalizado hoje nos campeonatos escolhidos.' }) };
@@ -140,18 +199,21 @@ export const handler = async function () {
     const statsCasa = (jsonStats.response || [])[0];
     const statsVis = (jsonStats.response || [])[1];
 
+    const casaCorrigido = corrigirNomeTime(f.teams.home.name);
+    const visCorrigido = corrigirNomeTime(f.teams.away.name);
+
     const ranks = await buscarRanksDaLiga(apiKey, f.league.id, cacheStandings);
     const gols = await buscarGolsDoJogo(apiKey, f.fixture.id, f.teams.home.name, f.teams.away.name);
 
     linhas.push({
       fixture_id: f.fixture.id,
       origem: 'api-football',
-      camp: f.league.name,
+      camp: NOMES_CAMP_POR_LIGA.get(f.league.id),
       data: dataBrParaTexto(f.fixture.date),
-      rodada: f.league.round || '',
+      rodada: (f.league.round || '').replace(/^Regular Season - /i, 'Rodada '),
       local: f.fixture.venue?.name || '',
-      casa: f.teams.home.name,
-      vis: f.teams.away.name,
+      casa: casaCorrigido,
+      vis: visCorrigido,
       gC: f.goals.home,
       gV: f.goals.away,
       rankC: ranks.get(f.teams.home.name) ?? null,

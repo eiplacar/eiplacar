@@ -7,9 +7,10 @@
 
 # Roda a cada 1 hora, buscando jogos finalizados hoje e salvando no Supabase.
 [functions."atualizar-jogos-finalizados"]
-  schedule = "0 * * * *"
+  schedule = "0 */2 * * *"
 
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+
