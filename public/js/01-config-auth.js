@@ -176,6 +176,7 @@ async function fazerLogout(){
   authClearSessao();
   perfilAtual = null;
   jogosCache = [];
+  if (typeof bancaCache !== 'undefined') bancaCache = null;
   // Limpa campos de login
   const el = document.getElementById('loginEmail'); if(el) el.value='';
   const es = document.getElementById('loginSenha'); if(es) es.value='';

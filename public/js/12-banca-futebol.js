@@ -5,7 +5,11 @@
 // Antes disso a Banca era um "pool" compartilhado entre vários membros + organizador
 // (com cota, distribuição proporcional de lucro etc). Agora é uma carteira só, do
 // usuário que lança as entradas — bem mais simples de entender e usar.
-const BP_KEY = 'bancaParticipantes_v2'; // usado só como cache offline de emergência
+const BP_KEY_BASE = 'bancaParticipantes_v2'; // usado só como cache offline de emergência
+function bpLocalKey(){
+  const uid = bpUserId();
+  return BP_KEY_BASE + (uid ? '_' + uid : '_anon');
+}
 const BP_VAZIO = { saldo:0, reserva:0, entradas:[], movimentos:[], protecaoAtiva:true, protecaoPct:10 };
 let bancaCache = null; // estado em memória, já carregado da nuvem
 
@@ -25,18 +29,25 @@ function bpUrl(filtros){
   return cfg.url.replace(/\/$/, '') + '/rest/v1/banca' + (filtros || '');
 }
 
+// A carteira agora é filtrada pelo usuário logado (antes usava sempre "id=eq.1",
+// uma linha ÚNICA pro app inteiro — por isso todo mundo via a mesma banca,
+// "espelhada" com a do organizador). Sem usuário logado, não tem carteira pra buscar.
+function bpUserId(){
+  return (typeof perfilAtual !== 'undefined' && perfilAtual && perfilAtual.id) || null;
+}
+
 // Carrega do cache em memória (síncrono, para não travar toda a UI existente)
 function bpLoad(){
   if(bancaCache) return bancaCache;
   try {
-    return migrarBanca({ ...BP_VAZIO, ...(JSON.parse(localStorage.getItem(BP_KEY)) || {}) });
+    return migrarBanca({ ...BP_VAZIO, ...(JSON.parse(localStorage.getItem(bpLocalKey())) || {}) });
   } catch { return { ...BP_VAZIO }; }
 }
 
 // Salva: atualiza cache local imediatamente (UI fica rápida) e envia para a nuvem em segundo plano
 function bpSave(d){
   bancaCache = d;
-  localStorage.setItem(BP_KEY, JSON.stringify(d)); // backup local, caso fique offline
+  localStorage.setItem(bpLocalKey(), JSON.stringify(d)); // backup local, caso fique offline
   bpSyncNuvem();
 }
 
@@ -48,15 +59,17 @@ let bpSyncEmAndamento = false;
 let bpSyncPendente = false;
 async function bpSyncNuvem(){
   if (!temConfig()) { setBancaSyncStatus('config'); return; }
+  const uid = bpUserId();
+  if (!uid) { setBancaSyncStatus('config'); return; } // ninguém logado ainda, nada pra sincronizar
   if (bpSyncEmAndamento) { bpSyncPendente = true; return; }
   bpSyncEmAndamento = true;
   setBancaSyncStatus('sync');
   const d = bancaCache; // sempre o estado mais atual no momento do envio
   try {
-    const res = await fetch(bpUrl('?id=eq.1'), {
+    const res = await fetch(bpUrl('?on_conflict=user_id'), {
       method: 'POST',
       headers: { ...sbHeaders(), 'Prefer': 'resolution=merge-duplicates,return=representation' },
-      body: JSON.stringify({ id:1, dados:d, updated_at:new Date().toISOString() })
+      body: JSON.stringify({ user_id:uid, dados:d, updated_at:new Date().toISOString() })
     });
     if (!res.ok) {
       const t = await res.text();
@@ -78,27 +91,28 @@ async function bpSyncNuvem(){
 
 // Busca o estado mais recente da nuvem (chamado ao entrar na aba Banca / abrir o app)
 async function bpCarregarNuvem(){
-  if (!temConfig()) { bancaCache = bpLoad(); return; }
+  const uid = bpUserId();
+  if (!uid || !temConfig()) { bancaCache = bpLoad(); return; }
   // Se ainda tem um envio local pendente/em andamento, NÃO sobrescreve o cache com o que
   // tem na nuvem agora (que ainda está desatualizado) — senão a entrada que acabou de ser
   // salva localmente "some" ao navegar rápido demais pra outra aba. Deixa o envio em
   // andamento terminar sozinho, ele já vai deixar a nuvem igual ao local.
   if (bpSyncEmAndamento || bpSyncPendente) return;
   try {
-    const res = await fetch(bpUrl('?id=eq.1&select=dados'), { headers: sbHeaders() });
+    const res = await fetch(bpUrl('?user_id=eq.'+uid+'&select=dados'), { headers: sbHeaders() });
     if (!res.ok) { const t = await res.text(); throw new Error(t); }
     const data = await res.json();
     if (data && data[0] && data[0].dados) {
       bancaCache = migrarBanca({ ...BP_VAZIO, ...data[0].dados });
-      localStorage.setItem(BP_KEY, JSON.stringify(bancaCache));
+      localStorage.setItem(bpLocalKey(), JSON.stringify(bancaCache));
     } else if (!bancaCache) {
       // nenhuma linha ainda na nuvem: usa o que tiver local (se houver) e cria a linha
-      bancaCache = (()=>{ try{ return migrarBanca({ ...BP_VAZIO, ...(JSON.parse(localStorage.getItem(BP_KEY))||{}) }); }catch{ return { ...BP_VAZIO }; } })();
+      bancaCache = (()=>{ try{ return migrarBanca({ ...BP_VAZIO, ...(JSON.parse(localStorage.getItem(bpLocalKey()))||{}) }); }catch{ return { ...BP_VAZIO }; } })();
     }
   } catch(e) {
     // sem internet ou tabela "banca" ainda não criada: segue com o cache local
     if (!bancaCache) {
-      try { bancaCache = migrarBanca({ ...BP_VAZIO, ...(JSON.parse(localStorage.getItem(BP_KEY))||{}) }); }
+      try { bancaCache = migrarBanca({ ...BP_VAZIO, ...(JSON.parse(localStorage.getItem(bpLocalKey()))||{}) }); }
       catch { bancaCache = { ...BP_VAZIO }; }
     }
   }

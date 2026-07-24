@@ -95,7 +95,7 @@ function computeEvolucao(){
   ].sort((a,b)=> (a.data||'').localeCompare(b.data||'') || a.ts-b.ts);
 
   let saldo=0, reserva=0;
-  const pontosSaldo=[0], pontosReserva=[0], datas=[null];
+  const pontosSaldo=[], pontosReserva=[], datas=[];
   const protecaoAtiva = d.protecaoAtiva!==false, protecaoPct = d.protecaoPct??10;
 
   let seqAtual=0, melhorSeq=0;
