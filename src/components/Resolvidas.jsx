@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, XCircle, Undo2, Pencil, Trash2, Calendar, Target } from 'lucide-react';
+import { CheckCircle2, XCircle, Undo2, Circle, Pencil, Trash2, Calendar, Target } from 'lucide-react';
 
 // ══ Apostas Resolvidas — 11º módulo migrado para React ══
 // Lista o histórico de entradas lançadas na Calculadora, com filtro por data.
@@ -66,9 +66,9 @@ export default function Resolvidas() {
         {entradas.length === 0 ? (
           <div className="empty"><div className="icon"><Target size={22} /></div><p>{resumo ? 'Nenhuma entrada nesse filtro.' : 'Nenhuma entrada ainda.'}</p></div>
         ) : entradas.map((e) => {
-          const Icone = e.resultado === 'green' ? CheckCircle2 : e.resultado === 'red' ? XCircle : Undo2;
+          const Icone = e.resultado === 'green' ? CheckCircle2 : e.resultado === 'red' ? XCircle : e.resultado === 'void' ? Undo2 : Circle;
           const cor = e.resultado === 'green' ? '#4dd87a' : e.resultado === 'red' ? '#f08060' : 'var(--texto2)';
-          const val = e.resultado === 'green' ? `+R$ ${(e.ganhoCarteira || 0).toFixed(2)}` : e.resultado === 'red' ? `-R$ ${(e.stake || 0).toFixed(2)}` : 'Void';
+          const val = e.resultado === 'green' ? `+R$ ${(e.ganhoCarteira || 0).toFixed(2)}` : e.resultado === 'red' ? `-R$ ${(e.stake || 0).toFixed(2)}` : e.resultado === 'void' ? 'Void' : 'Encerrado';
           const rotuloAposta = ROTULO_APOSTA[e.tipoAposta] || 'Simples';
           const corAposta = COR_APOSTA[e.tipoAposta] || 'var(--texto2)';
           return (

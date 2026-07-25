@@ -51,8 +51,23 @@ function atualizarResumoEntrada(){
 
 function setPct(pct, ev){
   document.getElementById('ePct').value=pct;
+  const valorEl = document.getElementById('eValorStake'); if(valorEl) valorEl.value=''; // limpa o campo de R$, já que agora é % fixa
   document.querySelectorAll('.btn-pct').forEach(b=>b.classList.remove('ativo'));
   (ev || window.event)?.target.classList.add('ativo');
+  calcEntrada();
+}
+
+// Pessoa digita o valor em R$ que quer apostar (em vez de calcular a % de cabeça) —
+// aqui a gente traduz esse valor pra % da banca, que é o que o resto do sistema
+// (cálculo de lucro, histórico, etc) já usa por baixo dos panos.
+function setValorStake(valorStr){
+  const d = bpLoad();
+  const tot = d.saldo||0;
+  const valor = parseFloat(valorStr);
+  document.querySelectorAll('.btn-pct').forEach(b=>b.classList.remove('ativo')); // valor digitado não é nenhum dos fixos
+  if(!tot || !valor){ document.getElementById('ePct').value=''; calcEntrada(); return; }
+  const pct = Math.round((valor/tot*100)*100)/100; // 2 casas decimais
+  document.getElementById('ePct').value = pct;
   calcEntrada();
 }
 
@@ -64,7 +79,7 @@ function calcEntrada(){
   const el  = document.getElementById('entradaPreview');
   if(!el) return;
   if(!tot){ el.innerHTML='<span style="color:var(--perigo)">⚠️ Saldo da carteira zerado — faça um depósito na aba Banca</span>'; return; }
-  if(!pct){ el.innerHTML='Selecione % da banca'; return; }
+  if(!pct){ el.innerHTML='Selecione % da banca ou digite o valor em R$'; return; }
   const stake = Math.round(tot*pct/100*100)/100;
   const lucro = odd ? Math.round(stake*(odd-1)*100)/100 : null;
   el.innerHTML=`<div style="display:flex;flex-direction:column;gap:9px">
@@ -243,20 +258,20 @@ async function lancarEntrada(){
   });
   bpSave(d);
 
-  ['ePct','eOdd','eLiga','eMercado','eMinuto','eTimes','eTimesCombo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['ePct','eValorStake','eOdd','eLiga','eMercado','eMinuto','eTimes','eTimesCombo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   const mjEl=document.getElementById('mesmoJogoCheck'); if(mjEl) mjEl.checked=false;
   const erEl=document.getElementById('eResultado'); if(erEl) erEl.value='cancelado';
   setTipoEntrada('prelive');
   pernas = [];
   setTipoAposta('simples');
   const eDataEl=document.getElementById('eDataEntrada'); if(eDataEl) eDataEl.value=new Date().toISOString().split('T')[0];
-  const epEl=document.getElementById('entradaPreview'); if(epEl) epEl.innerHTML='Selecione % da banca para ver o valor';
+  const epEl=document.getElementById('entradaPreview'); if(epEl) epEl.innerHTML='Selecione % da banca ou digite o valor em R$';
   document.querySelectorAll('.btn-pct').forEach(b=>b.classList.remove('ativo'));
   atualizarResumoEntrada();
 
   window.resolvidasRefresh?.();
   window.bancaRefresh?.();
-  toast(res==='green'?'✅ Green!':res==='red'?'❌ Red!':res==='void'?'↩️ Void!':'⬜ Registrado como cancelado');
+  toast(res==='green'?'✅ Green!':res==='red'?'❌ Red!':res==='void'?'↩️ Void!':'⬜ Registrado como encerrado');
 }
 
 function excluirEntrada(id){

@@ -127,13 +127,17 @@ export default function NovaEntrada() {
         <button className="btn-pct" onClick={(e) => window.setPct?.(1, e)} style={{ flex: 1, padding: 10, borderRadius: 8, fontSize: 15, fontWeight: 900 }}>1%</button>
         <button className="btn-pct" onClick={(e) => window.setPct?.(2, e)} style={{ flex: 1, padding: 10, borderRadius: 8, fontSize: 15, fontWeight: 900 }}>2%</button>
         <button className="btn-pct" onClick={(e) => window.setPct?.(3, e)} style={{ flex: 1, padding: 10, borderRadius: 8, fontSize: 15, fontWeight: 900 }}>3%</button>
-        <input type="number" id="ePct" min="1" max="10" placeholder="%" style={{ width: 64, textAlign: 'center', fontSize: 15, fontWeight: 800 }} onInput={() => window.calcEntrada?.()} />
+        {/* Em vez de digitar a % na mão, a pessoa digita o valor em R$ que quer apostar —
+            o sistema calcula a % da banca correspondente sozinho (guardado por baixo dos
+            panos em #ePct, que é o que o resto do código já usa pra tudo). */}
+        <input type="number" id="eValorStake" min="0" step="0.01" placeholder="R$" title="Digite o valor em reais que você quer apostar" style={{ width: 64, textAlign: 'center', fontSize: 15, fontWeight: 800 }} onInput={(e) => window.setValorStake?.(e.target.value)} />
+        <input type="hidden" id="ePct" defaultValue="" />
       </div>
 
       {/* Gestão da Entrada (card único: banca / stake / lucro potencial) */}
       <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}><Wallet size={13} /> Gestão da Entrada</label>
       <div id="entradaPreview" style={{ background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 9, padding: 12, marginBottom: 14, fontSize: 12, color: 'var(--texto2)' }}>
-        Selecione % da banca para ver o valor
+        Selecione % da banca ou digite o valor em R$ para ver o resultado
       </div>
 
       {/* Odd + Resultado */}
@@ -145,7 +149,7 @@ export default function NovaEntrada() {
         <div>
           <label>Resultado</label>
           <select id="eResultado" defaultValue="cancelado">
-            <option value="cancelado">⬜ Cancelado</option>
+            <option value="cancelado">⬜ Encerrado</option>
             <option value="green">✅ Green</option>
             <option value="red">❌ Red</option>
             <option value="void">↩️ Void</option>

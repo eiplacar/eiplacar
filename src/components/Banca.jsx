@@ -36,16 +36,16 @@ const ROTULOS_MOV = {
 
 function StatBox({ val, lbl, cor }) {
   return (
-    <div style={{ flex: 1, minWidth: 90, background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 8, padding: '8px 10px', textAlign: 'center' }}>
-      <div style={{ fontSize: 14, fontWeight: 800, color: cor || 'var(--texto)' }}>{val}</div>
-      <div style={{ fontSize: 9, color: 'var(--texto2)', textTransform: 'uppercase', marginTop: 2 }}>{lbl}</div>
+    <div style={{ flex: 1, minWidth: 90, background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 8, padding: '14px 10px', textAlign: 'center' }}>
+      <div style={{ fontSize: 16, fontWeight: 800, color: cor || 'var(--texto)' }}>{val}</div>
+      <div style={{ fontSize: 9, color: 'var(--texto2)', textTransform: 'uppercase', marginTop: 4 }}>{lbl}</div>
     </div>
   );
 }
 function Grupo({ titulo, children }) {
   return (
-    <div style={{ marginBottom: 14 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, color: 'var(--texto2)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '.5px', marginBottom: 6 }}>{titulo}</div>
+    <div style={{ marginBottom: 18 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, color: 'var(--texto2)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '.5px', marginBottom: 8 }}>{titulo}</div>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>{children}</div>
     </div>
   );
@@ -62,11 +62,11 @@ function AbaCarteira() {
 
   return (
     <>
-      <div style={{ background: 'rgba(37,163,82,.15)', border: '2px solid var(--verde2)', borderRadius: 12, padding: 16, textAlign: 'center', marginBottom: 10 }}>
+      <div style={{ background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 12, padding: 16, textAlign: 'center', marginBottom: 10 }}>
         <div style={{ fontSize: 10, color: 'var(--texto2)', textTransform: 'uppercase', letterSpacing: '.8px', marginBottom: 4 }}><Wallet size={12} style={{ verticalAlign: -2, marginRight: 4 }} />Saldo da Banca</div>
         <div style={{ fontSize: 30, fontWeight: 900, color: '#4dd87a' }}>R$ {c.saldo.toFixed(2)}</div>
       </div>
-      <div style={{ background: 'var(--c2)', border: '1.5px solid var(--ouro)', borderRadius: 12, padding: 14, textAlign: 'center', marginBottom: 14 }}>
+      <div style={{ background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 12, padding: 14, textAlign: 'center', marginBottom: 14 }}>
         <div style={{ fontSize: 10, color: 'var(--texto2)', textTransform: 'uppercase', letterSpacing: '.8px', marginBottom: 4 }}><ShieldHalf size={12} style={{ verticalAlign: -2, marginRight: 4 }} />Reserva da Banca</div>
         <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--ouro)' }}>R$ {c.reserva.toFixed(2)}</div>
       </div>

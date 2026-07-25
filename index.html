@@ -15,7 +15,7 @@
 <meta name="apple-mobile-web-app-title" content="EI PLACAR">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png" type="image/png">
-<link rel="apple-touch-icon" href="icon-512.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 
@@ -381,16 +381,7 @@
   <div class="logo" style="justify-self:center">
     <img src="logo-wordmark.png" alt="EI PLACAR" style="height:26px;width:auto;display:block" />
   </div>
-  <div style="position:relative;justify-self:end">
-    <div id="userAvatar" onclick="toggleMenuUsuario()" style="display:none;width:36px;height:36px;background:var(--ouro);border-radius:50%;align-items:center;justify-content:center;cursor:pointer;font-size:16px;font-weight:800;color:#1a1a1a;flex-shrink:0" title="Minha conta">?</div>
-    <div id="menuUsuario" style="display:none;position:absolute;right:0;top:46px;background:var(--c2);border:1px solid var(--c3);border-radius:12px;padding:14px 16px;min-width:200px;z-index:300;box-shadow:0 8px 24px rgba(0,0,0,.4)">
-      <div id="menuNome" style="font-weight:700;font-size:14px;margin-bottom:2px"></div>
-      <div id="menuEmail" style="font-size:11px;color:var(--texto2);margin-bottom:14px;word-break:break-all"></div>
-      <div style="border-top:1px solid var(--c3);padding-top:10px">
-        <button onclick="sairConta()" style="width:100%;background:var(--perigo);border:none;border-radius:8px;padding:9px;color:#fff;font-size:13px;font-weight:700;cursor:pointer">🚪 Sair</button>
-      </div>
-    </div>
-  </div>
+  <div style="justify-self:end"></div>
 </header>
 
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar(false)"></div>
@@ -480,8 +471,8 @@
 <!-- ══ APOSTAS ══ -->
 <div class="page" id="page-apostas">
   <div class="sub-nav" style="margin-bottom:14px">
-    <button class="sub-tab active" id="stab-nova-entrada" onclick="goSubApostas('nova-entrada')">🎯 Entrada</button>
-    <button class="sub-tab"        id="stab-resolvidas"   onclick="goSubApostas('resolvidas')">✅ Resolvidas</button>
+    <button class="sub-tab active" id="stab-nova-entrada" onclick="goSubApostas('nova-entrada')"><span data-ic="fileEdit" data-ic-size="14"></span> Entrada</button>
+    <button class="sub-tab"        id="stab-resolvidas"   onclick="goSubApostas('resolvidas')"><span data-ic="history" data-ic-size="14"></span> Histórico</button>
   </div>
 
   <!-- NOVA ENTRADA -->
@@ -546,7 +537,7 @@
 </nav>
 
 <div id="toast"></div>
-<footer>Ei Placar · Dados salvos na nuvem via Supabase ☁️</footer>
+<footer>Ei Placar · Dados. Análises. Futebol.</footer>
 
 <script src="js/00-icons.js"></script>
 <script src="js/01-config-auth.js"></script>
