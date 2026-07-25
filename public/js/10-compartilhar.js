@@ -129,6 +129,7 @@ function copiarTexto(txt){
 // Compartilha direto: usa o menu nativo do celular (WhatsApp, Telegram, o que tiver
 // instalado) quando disponível. Sem isso (ex: computador), copia o texto e avisa.
 function abrirCompartilhamento(txt, titulo){
+  toastEsconder();
   if(navigator.share){
     navigator.share({ title: titulo||'Ei Placar', text: txt }).catch(()=>{});
   } else {

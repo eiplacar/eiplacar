@@ -49,6 +49,7 @@ export default function Estatistica() {
   const [tab, setTab] = useState('fligas');
   const [filtroLigaGlobal, setFiltroLigaGlobal] = useState('');
   const [filtroLigaTipo, setFiltroLigaTipo] = useState('');
+  const [filtroLigaMercado, setFiltroLigaMercado] = useState('');
   const [fTimeBusca, setFTimeBusca] = useState('');
   const [fTimeFiltroLiga, setFTimeFiltroLiga] = useState('');
   const [fTimeFiltroLocal, setFTimeFiltroLocal] = useState('');
@@ -63,14 +64,14 @@ export default function Estatistica() {
   const camps = useMemo(() => sortNatural([...new Set(jogosCache.map((j) => j.camp))]), [jogosCache]);
 
   const linhasLigas = useMemo(
-    () => (window.computeLigas ? window.computeLigas(filtroLigaTipo, filtroLigaGlobal) : []),
+    () => (window.computeLigas ? window.computeLigas(filtroLigaTipo, filtroLigaGlobal, filtroLigaMercado) : []),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [filtroLigaTipo, filtroLigaGlobal, jogosCache.length]
+    [filtroLigaTipo, filtroLigaGlobal, filtroLigaMercado, jogosCache.length]
   );
   const linhasTempoGol = useMemo(
-    () => (window.computeTempoGolTabela ? window.computeTempoGolTabela(filtroLigaGlobal) : []),
+    () => (window.computeTempoGolTabela ? window.computeTempoGolTabela(filtroLigaGlobal, filtroLigaMercado) : []),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [filtroLigaGlobal, jogosCache.length]
+    [filtroLigaGlobal, filtroLigaMercado, jogosCache.length]
   );
   const times = useMemo(
     () => (window.computeFutebolTimes ? window.computeFutebolTimes(fTimeBusca, fTimeFiltroLiga, fTimeFiltroLocal) : { temJogosCadastrados: false, linhas: [] }),
@@ -110,6 +111,11 @@ export default function Estatistica() {
               <option value="prelive">📋 Só Pré-live</option>
               <option value="live">🔴 Só Live</option>
             </select>
+            <select value={filtroLigaMercado} onChange={(e) => setFiltroLigaMercado(e.target.value)}>
+              <option value="">⚽🚩 Gols + Escanteios</option>
+              <option value="gols">⚽ Só Gols</option>
+              <option value="escanteios">🚩 Só Escanteios</option>
+            </select>
           </div>
           <div className="table-wrap">
             <table>
@@ -146,7 +152,7 @@ export default function Estatistica() {
                 ) : linhasTempoGol.map((r, i) => (
                   <tr key={i}>
                     <td style={{ color: 'var(--verde2)', fontWeight: 600 }}>{r.liga}</td>
-                    <td>Over {r.linha}</td>
+                    <td>{r.mercado}</td>
                     <td>{r.rotuloTempo}</td>
                     <td className="td-c">{r.mediaPrimeiro}'</td>
                     <td className="td-c">{r.mediaBateu}'</td>

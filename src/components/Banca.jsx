@@ -113,7 +113,7 @@ function AbaMovimentacoes() {
   const d = window.bpLoad ? window.bpLoad() : { movimentos: [] };
   const movimentos = d.movimentos || [];
 
-  function abrir(tipo) { setAcao(tipo); setValor(''); setObs(''); setData(hoje()); }
+  function abrir(tipo) { window.toastEsconder?.(); setAcao(tipo); setValor(''); setObs(''); setData(hoje()); }
   function fechar() { setAcao(null); }
 
   function confirmar() {

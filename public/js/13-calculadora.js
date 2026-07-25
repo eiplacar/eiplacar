@@ -141,7 +141,8 @@ function setTipoAposta(tipo){
   document.getElementById('blocoConfrontoCombo').style.display = 'none';
   atualizarResumoEntrada();
 
-  if(pernas.length<2) pernas = [{id:Date.now(), mercado:'', odd:''}, {id:Date.now()+1, mercado:'', odd:''}];
+  const minPernas = tipo==='outros' ? 1 : 2;
+  if(pernas.length<minPernas) pernas = tipo==='outros' ? [{id:Date.now(), mercado:'', odd:''}] : [{id:Date.now(), mercado:'', odd:''}, {id:Date.now()+1, mercado:'', odd:''}];
   if(tipo==='dupla' && pernas.length>2) pernas = pernas.slice(0,2);
   renderPernas();
   atualizarCombinada();
@@ -164,7 +165,8 @@ function adicionarPerna(){
   atualizarCombinada();
 }
 function removerPerna(id){
-  if(pernas.length<=2){ toast('⚠️ Mínimo 2 mercados numa combinada'); return; }
+  const minimo = tipoAposta==='outros' ? 1 : 2;
+  if(pernas.length<=minimo){ toast(tipoAposta==='outros' ? '⚠️ Mínimo 1 mercado' : '⚠️ Mínimo 2 mercados numa combinada'); return; }
   pernas = pernas.filter(p=>p.id!==id);
   renderPernas();
   atualizarCombinada();
@@ -177,14 +179,15 @@ function renderPernas(){
   const wrap = document.getElementById('pernasLista');
   if(!wrap) return;
   wrap.innerHTML = pernas.map((p,i)=>`<div style="display:flex;gap:8px;align-items:center">
-    <input type="text" placeholder="Mercado ${i+1} (ex: Over 1.5)" value="${p.mercado}" list="mercadoDatalist" oninput="atualizarPerna(${p.id},'mercado',this.value)" style="flex:2">
+    <input type="text" placeholder="${tipoAposta==='outros' ? 'Ex: Jogador a marcar' : 'Mercado '+(i+1)+' (ex: Over 1.5)'}" value="${p.mercado}" list="mercadoDatalist" oninput="atualizarPerna(${p.id},'mercado',this.value)" style="flex:2">
     <input type="number" min="1.01" step="0.01" placeholder="Odd" value="${p.odd}" oninput="atualizarPerna(${p.id},'odd',this.value)" style="flex:1;min-width:0">
-    ${(tipoAposta==='multipla'||tipoAposta==='outros') ? `<button type="button" onclick="removerPerna(${p.id})" style="background:none;border:1px solid var(--perigo);border-radius:6px;padding:8px 10px;color:var(--perigo);cursor:pointer;flex-shrink:0">✕</button>` : ''}
+    ${((tipoAposta==='multipla'||tipoAposta==='outros') && pernas.length>(tipoAposta==='outros'?1:2)) ? `<button type="button" onclick="removerPerna(${p.id})" style="background:none;border:1px solid var(--perigo);border-radius:6px;padding:8px 10px;color:var(--perigo);cursor:pointer;flex-shrink:0">✕</button>` : ''}
   </div>`).join('');
 }
 function atualizarCombinada(){
   const validas = pernas.filter(p=>p.mercado.trim() && parseFloat(p.odd)>0);
-  const todasValidas = validas.length===pernas.length && pernas.length>=2;
+  const minPernasValidas = tipoAposta==='outros' ? 1 : 2;
+  const todasValidas = validas.length===pernas.length && pernas.length>=minPernasValidas;
   const oddCombinada = pernas.reduce((acc,p)=>acc*(parseFloat(p.odd)||1), 1);
   document.getElementById('oddCombinadaDisplay').textContent = todasValidas ? oddCombinada.toFixed(2) : '—';
   document.getElementById('eMercado').value = pernas.map(p=>p.mercado.trim()).filter(Boolean).join(' + ');
@@ -210,7 +213,7 @@ async function lancarEntrada(){
 
   // Confirmação final — modal customizado (evita bug de path no Android)
   const rotuloTipo = tipo==='live' ? `LIVE — minuto ${document.getElementById('eMinuto').value||'?'}'` : 'PRÉ-LIVE';
-  const rotuloAposta = { simples:'Simples', dupla:'Dupla (2 mercados)', multipla:`Múltipla (${pernas.length} mercados)`, outros:`Outros (${pernas.length} mercados)` }[tipoAposta];
+  const rotuloAposta = { simples:'Simples', dupla:'Dupla (2 mercados)', multipla:`Múltipla (${pernas.length} mercados)`, outros:`Outros (${pernas.length} ${pernas.length===1?'mercado':'mercados'})` }[tipoAposta];
   const linhas = [
     `<strong>Aposta:</strong> ${rotuloAposta}`,
     `<strong>Mercado:</strong> ${mercado}${times?' ('+times+')':''}`,
@@ -302,6 +305,7 @@ function excluirEntrada(id){
 // ══ EDITAR ENTRADA (corrige mercado, odd, resultado, data etc. de um lançamento já feito) ══
 let idEntradaEmEdicao = null;
 function editarEntrada(id){
+  toastEsconder();
   const d = bpLoad();
   const e = d.entradas.find(x=>x.id===id);
   if(!e) return;
@@ -504,28 +508,75 @@ function renderLigas(){
 // React da aba Estatística: src/components/Estatistica.jsx. As funções renderTempoGol()/
 // renderLigas() de cima continuam existindo mas não são mais chamadas de lugar nenhum
 // (os ids que elas escreviam não existem mais no HTML) — deixadas aí só de histórico.
-function computeTempoGolTabela(camp){
+// "Ambas Marcam": o "gol que bate" é o gol que COMPLETA o BTTS — ou seja, o gol do time
+// que demorou mais pra abrir o placar (o 1º gol de quem marcou por último entre os dois).
+function calcularTempoGolBTTS(camp){
+  const jogos = camp ? jogosCache.filter(j=>j.camp===camp) : jogosCache;
+  const totalComDados = jogos.filter(j=>(j.gols||[]).some(g=>g.min!=null)).length;
+  const reg1T = [], reg2T = [];
+  jogos.forEach(j=>{
+    if(!(j.gC>0 && j.gV>0)) return; // só jogos com ambas equipes marcando
+    const golsCasa = (j.gols||[]).filter(g=>g.time==='casa' && g.min!=null).map(g=>g.min);
+    const golsVis  = (j.gols||[]).filter(g=>g.time==='vis'  && g.min!=null).map(g=>g.min);
+    if(!golsCasa.length || !golsVis.length) return; // sem dados de minuto suficientes
+    const primeiroCasa = Math.min(...golsCasa);
+    const primeiroVis  = Math.min(...golsVis);
+    const primeiro = Math.min(primeiroCasa, primeiroVis);
+    const bateu = Math.max(primeiroCasa, primeiroVis); // gol que fechou o BTTS
+    (primeiro<=45 ? reg1T : reg2T).push({primeiro, bateu});
+  });
+  function resumo(reg){
+    if(!reg.length) return null;
+    return {
+      qtd: reg.length,
+      pct: totalComDados ? Math.round((reg.length/totalComDados)*100) : null,
+      mediaPrimeiro: Math.round(reg.reduce((a,r)=>a+r.primeiro,0)/reg.length),
+      mediaBateu:    Math.round(reg.reduce((a,r)=>a+r.bateu,0)/reg.length),
+    };
+  }
+  return { t1: resumo(reg1T), t2: resumo(reg2T), totalComDados };
+}
+
+function computeTempoGolTabela(camp, filtroMercado){
   const ligas = camp ? [camp] : sortNatural([...new Set(jogosCache.map(j=>j.camp))]);
   const linhasDef = [1.5, 2.5, 3.5, 4.5];
   const linhas = [];
+  const mostrarGols = !filtroMercado || filtroMercado==='gols';
+  const mostrarBtts = !filtroMercado || filtroMercado==='gols'; // Ambas Marcam também é mercado de gol
   ligas.forEach(liga=>{
-    linhasDef.forEach(linha=>{
+    if(mostrarGols) linhasDef.forEach(linha=>{
       const r = calcularTempoGolLiga(liga, linha);
       [['1ºT (1º gol até o 45\')', r.t1], ['2ºT (1º gol depois do 45\')', r.t2]].forEach(([rotuloTempo, res])=>{
         if(!res) return;
-        linhas.push({ liga, linha, rotuloTempo, mediaPrimeiro: res.mediaPrimeiro, mediaBateu: res.mediaBateu, qtd: res.qtd, pct: res.pct });
+        linhas.push({ liga, linha, mercado: `Over ${linha}`, rotuloTempo, mediaPrimeiro: res.mediaPrimeiro, mediaBateu: res.mediaBateu, qtd: res.qtd, pct: res.pct });
       });
     });
+    if(mostrarBtts){
+      const rb = calcularTempoGolBTTS(liga);
+      [['1ºT (1º gol até o 45\')', rb.t1], ['2ºT (1º gol depois do 45\')', rb.t2]].forEach(([rotuloTempo, res])=>{
+        if(!res) return;
+        linhas.push({ liga, linha: 'btts', mercado: 'Ambas Marcam', rotuloTempo, mediaPrimeiro: res.mediaPrimeiro, mediaBateu: res.mediaBateu, qtd: res.qtd, pct: res.pct });
+      });
+    }
   });
   return linhas;
 }
 window.computeTempoGolTabela = computeTempoGolTabela;
 
-function computeLigas(filtroTipo, filtroCamp){
+// Categoriza o texto livre do mercado como "Gols" ou "Escanteios" (cantos),
+// pra dar pra filtrar a tabela por um ou por outro.
+function categoriaMercado(mercado){
+  const m = (mercado||'').toLowerCase();
+  return (m.includes('canto') || m.includes('escanteio')) ? 'escanteios' : 'gols';
+}
+window.categoriaMercado = categoriaMercado;
+
+function computeLigas(filtroTipo, filtroCamp, filtroMercado){
   const d = bpLoad();
   let entradas = (d.entradas||[]).filter(e=>e.liga && e.mercado && (e.tipoAposta||'simples')==='simples');
   if(filtroTipo) entradas = entradas.filter(e=>(e.tipo||'prelive')===filtroTipo);
   if(filtroCamp) entradas = entradas.filter(e=>e.liga===filtroCamp);
+  if(filtroMercado) entradas = entradas.filter(e=>categoriaMercado(e.mercado)===filtroMercado);
   if(!entradas.length) return [];
 
   const grupos = {};

@@ -4,7 +4,7 @@
 // em 01-config-auth.js; setup documentado em SUPABASE_SETUP.md)
 // ═══════════════════════════════════════════════════
 // ══ MODAL MENU EXPLICAÇÃO BANCA ══
-function abrirMenuBanca() { document.getElementById('modalMenuBanca').classList.add('open'); }
+function abrirMenuBanca() { toastEsconder(); document.getElementById('modalMenuBanca').classList.add('open'); }
 function fecharMenuBanca() { document.getElementById('modalMenuBanca').classList.remove('open'); }
 
 // ══ CRUD via fetch REST ══
@@ -100,6 +100,7 @@ async function atualizarJogoNuvem(id, dados) {
 let jogoEditandoId = null;
 
 function abrirEditarJogo(id){
+  toastEsconder();
   const j = jogosCache.find(x=>x.id===id);
   if(!j){ toast('⚠️ Jogo não encontrado'); return; }
   jogoEditandoId = id;

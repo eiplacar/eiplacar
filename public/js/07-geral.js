@@ -117,6 +117,7 @@ function filtrarTime(nome){
 }
 
 function abrirDetalheJogo(id){
+  toastEsconder();
   const j = jogosCache.find(x=>x.id===id);
   if(!j) return;
   const gC2=(j.gols||[]).filter(g=>g.time==='casa').sort((a,b)=>a.min-b.min);
