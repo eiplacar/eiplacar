@@ -74,9 +74,9 @@ function renderGeral(){
 
   document.getElementById('statsExtras').innerHTML=`
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px">
-      <div class="stat-extra-box" style="text-align:center"><div class="seb-label">🏠 Mandante</div><div class="seb-val">${vit}</div><div class="seb-sub">${total?Math.round(vit/total*100):0}%</div></div>
-      <div class="stat-extra-box" style="text-align:center"><div class="seb-label">🤝 Empate</div><div class="seb-val">${emp}</div><div class="seb-sub">${total?Math.round(emp/total*100):0}%</div></div>
-      <div class="stat-extra-box" style="text-align:center"><div class="seb-label">✈️ Visitante</div><div class="seb-val">${der}</div><div class="seb-sub">${total?Math.round(der/total*100):0}%</div></div>
+      <div class="stat-extra-box" style="text-align:center"><div class="seb-label">Mandante</div><div class="seb-val">${vit}</div><div class="seb-sub">${total?Math.round(vit/total*100):0}%</div></div>
+      <div class="stat-extra-box" style="text-align:center"><div class="seb-label">Empate</div><div class="seb-val">${emp}</div><div class="seb-sub">${total?Math.round(emp/total*100):0}%</div></div>
+      <div class="stat-extra-box" style="text-align:center"><div class="seb-label">Visitante</div><div class="seb-val">${der}</div><div class="seb-sub">${total?Math.round(der/total*100):0}%</div></div>
     </div>
     <div style="font-size:10px;color:var(--texto2);text-transform:uppercase;letter-spacing:.8px;margin:4px 0 6px">Nos últimos ${n10} jogos</div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
@@ -85,7 +85,7 @@ function renderGeral(){
       <div class="stat-extra-box" style="text-align:center"><div class="seb-label">Ambas Marcam</div><div class="seb-val">${btts10}</div><div class="seb-sub">${n10?Math.round(btts10/n10*100):0}%</div></div>
     </div>
     ${topTimes.length?`<div class="card" style="margin-bottom:14px">
-      <div class="card-title">🥇 Top Marcadores</div>
+      <div class="card-title">Top Marcadores</div>
       <div class="top-times">
         ${topTimes.map(([nome,g],i)=>`<div class="tt-row">
           <div class="tt-rank">${i+1}º</div>

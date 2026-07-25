@@ -55,14 +55,12 @@ function AbaPerfil() {
   const [perfil, setPerfil] = useState({ nome: '', telefone: '', data_nascimento: '', foto_url: '', plano: '', assinatura_status: '', assinatura_inicio: '', assinatura_vencimento: '' });
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
-  const [colunasFaltando, setColunasFaltando] = useState(false);
   const [verPlanos, setVerPlanos] = useState(false);
   const fileRef = useRef(null);
 
   async function carregar() {
     setCarregando(true);
     const r = await window.buscarPerfilCompleto();
-    setColunasFaltando(!r.ok);
     setPerfil((p) => ({ ...p, ...r.dados }));
     setCarregando(false);
   }
@@ -107,20 +105,15 @@ function AbaPerfil() {
       </div>
 
       <div className="card">
-        {colunasFaltando && (
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, fontSize: 10.5, color: 'var(--texto2)', background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 8, padding: 8, marginBottom: 10 }}>
-            <Info size={13} style={{ flexShrink: 0, marginTop: 1 }} /> Telefone, data de nascimento e foto ainda não têm onde ser salvos nesta base (faltam colunas na tabela "perfis" do Supabase). O nome já funciona normalmente.
-          </div>
-        )}
-        <div className="fg">
-          <div><label>Nome</label><input type="text" value={perfil.nome || ''} onChange={(e) => setPerfil((p) => ({ ...p, nome: e.target.value }))} disabled={carregando} /></div>
-        </div>
         <div className="fg fg2">
           <div><label>Data de Nascimento</label><input type="date" value={perfil.data_nascimento || ''} onChange={(e) => setPerfil((p) => ({ ...p, data_nascimento: e.target.value }))} disabled={carregando} /></div>
           <div><label>Telefone</label><input type="tel" placeholder="(00) 00000-0000" value={perfil.telefone || ''} onChange={(e) => setPerfil((p) => ({ ...p, telefone: e.target.value }))} disabled={carregando} /></div>
         </div>
         <div className="fg">
           <div><label>E-mail</label><input type="email" value={window.authGetSessao?.()?.email || ''} disabled style={{ opacity: .6 }} /></div>
+        </div>
+        <div className="fg">
+          <div><label>Nome</label><input type="text" value={perfil.nome || ''} onChange={(e) => setPerfil((p) => ({ ...p, nome: e.target.value }))} disabled={carregando} /></div>
         </div>
         <button className="btn-primary" onClick={salvar} disabled={salvando || carregando} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>{salvando ? 'Salvando...' : <><Save size={13} /> Salvar</>}</button>
       </div>
