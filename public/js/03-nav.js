@@ -11,6 +11,7 @@ function toggleSidebar(force){
 }
 
 function goTo(p) {
+  toastEsconder(); // troca de aba sempre limpa qualquer aviso preso na tela
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(x=>x.classList.remove('active'));
   document.getElementById('page-'+p).classList.add('active');
@@ -41,6 +42,7 @@ function irParaInicio() {
   goTo('geral');
 }
 function goSubConfrontos(t) {
+  toastEsconder();
   document.querySelectorAll('#page-confrontos .sub-tab').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('#page-confrontos .sub-page').forEach(x=>x.classList.remove('active'));
   document.getElementById('stab-'+t).classList.add('active');
@@ -49,6 +51,7 @@ function goSubConfrontos(t) {
   /* t==='sinal' — Novo Sinal de Entrada agora é componente React (src/main.jsx), auto-inicializa */
 }
 function goSubApostas(t) {
+  toastEsconder();
   document.querySelectorAll('#page-apostas .sub-tab').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('#page-apostas .sub-page').forEach(x=>x.classList.remove('active'));
   document.getElementById('stab-'+t).classList.add('active');
@@ -63,6 +66,7 @@ function goSubApostas(t) {
   if(t==='resolvidas') window.resolvidasRefresh?.();
 }
 function goSubTab(t) {
+  toastEsconder();
   document.querySelectorAll('.sub-tab').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.sub-page').forEach(x=>x.classList.remove('active'));
   document.getElementById('stab-'+t).classList.add('active');

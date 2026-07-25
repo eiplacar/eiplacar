@@ -17,7 +17,7 @@ import { Target, Zap, Dice5, Plus, Circle, TrendingUp, Wallet, BarChart3, CheckC
 
 export default function NovaEntrada() {
   return (
-    <div className="card so-organizador" style={{ borderRadius: 14 }}>
+    <div className="card" style={{ borderRadius: 14 }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, paddingBottom: 12, borderBottom: '1px solid var(--c3)' }}>
         <div style={{ background: 'rgba(37,163,82,.15)', border: '1px solid var(--verde2)', borderRadius: 8, width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

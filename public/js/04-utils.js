@@ -47,11 +47,18 @@ function optionsCampeonato(camps, selecionado){
   return html;
 }
 
+let _toastTimeoutId = null;
 function toast(msg, erro=false) {
   const t=document.getElementById('toast');
+  if (_toastTimeoutId) { clearTimeout(_toastTimeoutId); _toastTimeoutId = null; } // cancela o timeout anterior, evita um toast antigo escondendo um novo (ou vice-versa)
   t.textContent=msg;
   t.className = erro ? 'show erro' : 'show';
-  setTimeout(()=>t.className='',2400);
+  _toastTimeoutId = setTimeout(()=>{ t.className=''; _toastTimeoutId=null; }, 2400);
+}
+function toastEsconder() {
+  if (_toastTimeoutId) { clearTimeout(_toastTimeoutId); _toastTimeoutId = null; }
+  const t=document.getElementById('toast');
+  if (t) t.className = '';
 }
 function poisson(lambda,k) {
   if(lambda<=0) return k===0?1:0;

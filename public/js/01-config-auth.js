@@ -238,6 +238,32 @@ async function salvarNovaSenha(){
   }
 }
 
+// Ao abrir a página: se vier de um link de confirmação de CADASTRO do Supabase
+// (URL com #access_token=...&type=signup), loga a pessoa direto — sem isso, o token
+// era simplesmente ignorado e a pessoa caía na tela de login mesmo já com um token
+// válido na mão (e ainda podia aparecer toast de erro tentando carregar dados sem
+// sessão nenhuma, antes de decidir isso).
+(function detectarLinkConfirmacaoSignup(){
+  const hash = location.hash || '';
+  if(hash.includes('access_token') && (hash.includes('type=signup') || hash.includes('type=email_confirmation') || hash.includes('type=invite'))){
+    const params = new URLSearchParams(hash.replace(/^#/, ''));
+    const access_token = params.get('access_token');
+    const refresh_token = params.get('refresh_token');
+    if(!access_token) return;
+    document.addEventListener('DOMContentLoaded', async ()=>{
+      try {
+        const res = await fetch(authUrl('/user'), { headers: { ...authHeadersBase(), 'Authorization': 'Bearer ' + access_token } });
+        const user = await res.json();
+        if(res.ok && user && user.id){
+          authSaveSessao({ access_token, refresh_token, user });
+          history.replaceState(null, '', location.pathname); // limpa o token da URL, não fica exposto/reaproveitável
+          await authIniciarSessao();
+        }
+      } catch(e) { /* se der erro, cai no fluxo normal (tela de login) sem travar nada */ }
+    });
+  }
+})();
+
 // Ao abrir a página: se vier de um link de recuperação de senha do Supabase
 // (URL com #access_token=...&type=recovery), mostra direto a tela de nova senha.
 (function detectarLinkRecuperacao(){

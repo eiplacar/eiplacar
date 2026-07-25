@@ -83,8 +83,8 @@ export default function Resolvidas() {
                   <div style={{ fontSize: 10, color: 'var(--texto2)' }}>{e.data} · Odd {e.odd} · {e.pct}% · Stake R$ {(e.stake || 0).toFixed(2)}</div>
                 </div>
                 <div style={{ fontWeight: 800, fontSize: 14, color: cor }}>{val}</div>
-                <button onClick={() => window.editarEntrada(e.id)} className="so-organizador" style={{ background: 'none', border: '1px solid var(--c3)', borderRadius: 5, padding: '3px 7px', color: 'var(--texto2)', cursor: 'pointer' }}><Pencil size={12} /></button>
-                <button onClick={() => window.excluirEntrada(e.id)} className="btn-danger so-organizador" style={{ padding: '3px 7px' }}><Trash2 size={12} /></button>
+                <button onClick={() => window.editarEntrada(e.id)} style={{ background: 'none', border: '1px solid var(--c3)', borderRadius: 5, padding: '3px 7px', color: 'var(--texto2)', cursor: 'pointer' }}><Pencil size={12} /></button>
+                <button onClick={() => window.excluirEntrada(e.id)} className="btn-danger" style={{ padding: '3px 7px' }}><Trash2 size={12} /></button>
               </div>
               {e.resultado === 'green' && (
                 <div style={{ fontSize: 10, color: 'var(--texto2)', paddingLeft: 26 }}>Reserva: R$ {(e.reservaCorte || 0).toFixed(2)} · Carteira: R$ {(e.ganhoCarteira || 0).toFixed(2)}</div>

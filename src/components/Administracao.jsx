@@ -323,7 +323,7 @@ function AbaSistema() {
       <button className="btn-primary" onClick={salvar} disabled={salvando}><Save size={14} style={{ verticalAlign: -2, marginRight: 4 }} />{salvando ? 'Salvando...' : 'Salvar'}</button>
 
       <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid var(--c3)', display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--texto2)' }}>
-        <span>Versão do aplicativo</span><strong style={{ color: 'var(--texto)' }}>Ei Placar v1.0</strong>
+        <span>Versão do aplicativo</span><strong style={{ color: 'var(--texto)' }}>Ei Placar v2.1</strong>
       </div>
     </div>
   );

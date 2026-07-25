@@ -14,13 +14,18 @@
   if(sessao && sessao.access_token){
     perfilAtual = await authBuscarPerfil();
     if(!perfilAtual){
-      // token inválido/expirado: volta pra tela de login
+      // token inválido/expirado: volta pra tela de login, sem tentar carregar nada
+      // (evita o erro "Erro ao carregar" aparecendo em cima da tela de login)
       authClearSessao();
+    } else {
+      // sessão válida: agora sim pode buscar os dados (RLS libera pra quem está logado)
+      await carregarJogos();
+      await bpCarregarNuvem();
+      await cfgAppCarregarNuvem();
     }
   }
-
-  await carregarJogos();
-  await bpCarregarNuvem();
-  await cfgAppCarregarNuvem();
+  // Sem sessão nenhuma (visita nova, ou acabou de confirmar e-mail e voltou pro
+  // login): não tenta carregar jogos/banca — vai direto pra tela de login, limpa,
+  // sem toast de erro. Os dados são carregados no login, via authIniciarSessao().
   authAplicarTela();
 })();

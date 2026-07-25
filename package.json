@@ -1,7 +1,7 @@
 {
   "name": "ei-placar",
   "private": true,
-  "version": "0.1.0",
+  "version": "2.1.0",
   "description": "Ei Placar — análise de jogos, calculadora de entradas e gestão de banca (Supabase + Netlify)",
   "type": "module",
   "scripts": {
