@@ -334,9 +334,9 @@ export default function Administracao() {
   return (
     <>
       <div className="sub-nav" style={{ marginBottom: 14 }}>
-        <button className={`sub-tab ${tab === 'usuarios' ? 'active' : ''}`} onClick={() => setTab('usuarios')}><Users size={13} style={{ verticalAlign: -2, marginRight: 4 }} />Usuários</button>
-        <button className={`sub-tab ${tab === 'assinaturas' ? 'active' : ''}`} onClick={() => setTab('assinaturas')}><CreditCard size={13} style={{ verticalAlign: -2, marginRight: 4 }} />Assinaturas</button>
-        <button className={`sub-tab ${tab === 'sistema' ? 'active' : ''}`} onClick={() => setTab('sistema')}><Settings size={13} style={{ verticalAlign: -2, marginRight: 4 }} />Sistema</button>
+        <button className={`sub-tab ${tab === 'usuarios' ? 'active' : ''}`} onClick={() => { window.toastEsconder?.(); setTab('usuarios'); }}><Users size={13} style={{ verticalAlign: -2, marginRight: 4 }} />Usuários</button>
+        <button className={`sub-tab ${tab === 'assinaturas' ? 'active' : ''}`} onClick={() => { window.toastEsconder?.(); setTab('assinaturas'); }}><CreditCard size={13} style={{ verticalAlign: -2, marginRight: 4 }} />Assinaturas</button>
+        <button className={`sub-tab ${tab === 'sistema' ? 'active' : ''}`} onClick={() => { window.toastEsconder?.(); setTab('sistema'); }}><Settings size={13} style={{ verticalAlign: -2, marginRight: 4 }} />Sistema</button>
       </div>
       {tab === 'usuarios' && <AbaUsuarios />}
       {tab === 'assinaturas' && <AbaAssinaturas />}

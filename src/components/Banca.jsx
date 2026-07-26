@@ -273,9 +273,9 @@ export default function Banca() {
   return (
     <>
       <div className="sub-nav" style={{ marginBottom: 14 }}>
-        <button className={`sub-tab ${tab === 'carteira' ? 'active' : ''}`} onClick={() => setTab('carteira')}><Wallet size={13} style={{ verticalAlign: -2, marginRight: 4 }} />Carteira</button>
-        <button className={`sub-tab ${tab === 'movimentacoes' ? 'active' : ''}`} onClick={() => setTab('movimentacoes')}><ArrowLeftRight size={13} style={{ verticalAlign: -2, marginRight: 4 }} />Movimentações</button>
-        <button className={`sub-tab ${tab === 'evolucao' ? 'active' : ''}`} onClick={() => setTab('evolucao')}><TrendingUp size={13} style={{ verticalAlign: -2, marginRight: 4 }} />Evolução</button>
+        <button className={`sub-tab ${tab === 'carteira' ? 'active' : ''}`} onClick={() => { window.toastEsconder?.(); setTab('carteira'); }}><Wallet size={13} style={{ verticalAlign: -2, marginRight: 4 }} />Carteira</button>
+        <button className={`sub-tab ${tab === 'movimentacoes' ? 'active' : ''}`} onClick={() => { window.toastEsconder?.(); setTab('movimentacoes'); }}><ArrowLeftRight size={13} style={{ verticalAlign: -2, marginRight: 4 }} />Movimentações</button>
+        <button className={`sub-tab ${tab === 'evolucao' ? 'active' : ''}`} onClick={() => { window.toastEsconder?.(); setTab('evolucao'); }}><TrendingUp size={13} style={{ verticalAlign: -2, marginRight: 4 }} />Evolução</button>
       </div>
 
       <div className={`sub-page ${tab === 'carteira' ? 'active' : ''}`}><AbaCarteira /></div>

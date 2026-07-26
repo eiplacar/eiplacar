@@ -82,8 +82,8 @@ export default function AnaliseResultado() {
   return (
     <>
       <div className="sub-nav">
-        <button className={`sub-tab ${tab === 'prob' ? 'active' : ''}`} onClick={() => setTab('prob')}><Target size={14} style={{ verticalAlign: -2, marginRight: 4 }} />Probabilidade</button>
-        <button className={`sub-tab ${tab === 'estat' ? 'active' : ''}`} onClick={() => setTab('estat')}><BarChart3 size={14} style={{ verticalAlign: -2, marginRight: 4 }} />Estatísticas</button>
+        <button className={`sub-tab ${tab === 'prob' ? 'active' : ''}`} onClick={() => { window.toastEsconder?.(); setTab('prob'); }}><Target size={14} style={{ verticalAlign: -2, marginRight: 4 }} />Probabilidade</button>
+        <button className={`sub-tab ${tab === 'estat' ? 'active' : ''}`} onClick={() => { window.toastEsconder?.(); setTab('estat'); }}><BarChart3 size={14} style={{ verticalAlign: -2, marginRight: 4 }} />Estatísticas</button>
       </div>
 
       <div className={`sub-page ${tab === 'prob' ? 'active' : ''}`}>

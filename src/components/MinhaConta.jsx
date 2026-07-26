@@ -105,15 +105,15 @@ function AbaPerfil() {
       </div>
 
       <div className="card">
+        <div className="fg">
+          <div><label>Nome</label><input type="text" value={perfil.nome || ''} onChange={(e) => setPerfil((p) => ({ ...p, nome: e.target.value }))} disabled={carregando} /></div>
+        </div>
         <div className="fg fg2">
           <div><label>Data de Nascimento</label><input type="date" value={perfil.data_nascimento || ''} onChange={(e) => setPerfil((p) => ({ ...p, data_nascimento: e.target.value }))} disabled={carregando} /></div>
           <div><label>Telefone</label><input type="tel" placeholder="(00) 00000-0000" value={perfil.telefone || ''} onChange={(e) => setPerfil((p) => ({ ...p, telefone: e.target.value }))} disabled={carregando} /></div>
         </div>
         <div className="fg">
           <div><label>E-mail</label><input type="email" value={window.authGetSessao?.()?.email || ''} disabled style={{ opacity: .6 }} /></div>
-        </div>
-        <div className="fg">
-          <div><label>Nome</label><input type="text" value={perfil.nome || ''} onChange={(e) => setPerfil((p) => ({ ...p, nome: e.target.value }))} disabled={carregando} /></div>
         </div>
         <button className="btn-primary" onClick={salvar} disabled={salvando || carregando} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>{salvando ? 'Salvando...' : <><Save size={13} /> Salvar</>}</button>
       </div>
@@ -166,6 +166,8 @@ function AbaConfiguracoes() {
   const [senha2, setSenha2] = useState('');
   const [salvandoSenha, setSalvandoSenha] = useState(false);
   const [sobreAberto, setSobreAberto] = useState(false);
+  const [privacidadeAberta, setPrivacidadeAberta] = useState(false);
+  const [termosAbertos, setTermosAbertos] = useState(false);
 
   useEffect(() => {
     const d = window.bpLoad?.();
@@ -251,15 +253,126 @@ function AbaConfiguracoes() {
       </Row>
       {sobreAberto && (
         <div style={{ padding: '4px 2px 14px', borderBottom: '1px solid var(--c3)', fontSize: 12, color: 'var(--texto2)', lineHeight: 1.7 }}>
+          <p style={{ marginBottom: 10, fontWeight: 700, color: 'var(--texto)' }}>Sobre o EI PLACAR</p>
           <p style={{ marginBottom: 10 }}>
-            <strong style={{ color: 'var(--texto)' }}>EI PLACAR</strong> é uma plataforma de inteligência esportiva desenvolvida para transformar dados em informações claras, confiáveis e relevantes — análises e estatísticas que ajudam a entender melhor o desempenho das equipes e das partidas.
+            O EI PLACAR é uma plataforma de inteligência esportiva desenvolvida para transformar dados em informações claras, confiáveis e relevantes.
           </p>
           <p style={{ marginBottom: 10 }}>
-            Não é uma plataforma de apostas. É uma plataforma de dados, estatísticas e análises.
+            Nossa missão é oferecer estatísticas e análises que auxiliem os usuários a compreender melhor o desempenho das equipes e das partidas, contribuindo para uma visão mais completa do futebol por meio de dados.
           </p>
-          <p style={{ marginBottom: 10, fontWeight: 700, color: 'var(--texto)' }}>Uso responsável</p>
+          <p style={{ marginBottom: 10 }}>
+            O EI PLACAR não é uma plataforma de apostas. É uma plataforma dedicada à análise de dados, estatísticas e informações esportivas, desenvolvida para quem busca acompanhar o futebol com mais conhecimento e embasamento.
+          </p>
+          <p style={{ marginBottom: 14 }}>
+            Nosso compromisso é fornecer informações organizadas, confiáveis e de fácil compreensão, sempre buscando aprimorar a experiência dos usuários e a qualidade dos conteúdos disponibilizados.
+          </p>
+          <p style={{ marginBottom: 2 }}>Versão: 2.1.0</p>
+          <p>© 2026 EI PLACAR. Todos os direitos reservados.</p>
+        </div>
+      )}
+
+      <Row icone={ShieldHalf} label="Política de Privacidade" onClick={() => setPrivacidadeAberta((v) => !v)}>
+        <ChevronRight size={15} style={{ color: 'var(--texto2)' }} />
+      </Row>
+      {privacidadeAberta && (
+        <div style={{ padding: '4px 2px 14px', borderBottom: '1px solid var(--c3)', fontSize: 12, color: 'var(--texto2)', lineHeight: 1.7 }}>
+          <p style={{ marginBottom: 10, fontWeight: 700, color: 'var(--texto)' }}>Política de Privacidade</p>
+          <p style={{ marginBottom: 10 }}>Última atualização: 2026</p>
+          <p style={{ marginBottom: 10 }}>
+            O EI PLACAR respeita a privacidade dos seus usuários e está comprometido com a proteção dos dados pessoais.
+          </p>
+          <p style={{ marginBottom: 4, fontWeight: 700, color: 'var(--texto)' }}>1. Coleta de informações</p>
+          <p style={{ marginBottom: 10 }}>
+            Coletamos apenas as informações necessárias para o funcionamento da plataforma, como nome, e-mail, telefone (quando informado) e demais dados fornecidos pelo usuário durante o cadastro.
+          </p>
+          <p style={{ marginBottom: 4, fontWeight: 700, color: 'var(--texto)' }}>2. Uso das informações</p>
+          <p style={{ marginBottom: 4 }}>As informações coletadas são utilizadas para:</p>
+          <p style={{ marginBottom: 10 }}>
+            Identificar o usuário na plataforma; gerenciar assinaturas e acessos; melhorar a experiência de uso; enviar comunicações importantes sobre o serviço.
+          </p>
+          <p style={{ marginBottom: 4, fontWeight: 700, color: 'var(--texto)' }}>3. Compartilhamento de dados</p>
+          <p style={{ marginBottom: 10 }}>
+            O EI PLACAR não vende nem comercializa dados pessoais dos usuários. As informações poderão ser compartilhadas apenas quando exigido por lei ou quando necessário para o funcionamento dos serviços contratados.
+          </p>
+          <p style={{ marginBottom: 4, fontWeight: 700, color: 'var(--texto)' }}>4. Segurança</p>
+          <p style={{ marginBottom: 10 }}>
+            Adotamos medidas de segurança para proteger os dados dos usuários contra acesso não autorizado, alteração, divulgação ou destruição.
+          </p>
+          <p style={{ marginBottom: 4, fontWeight: 700, color: 'var(--texto)' }}>5. Cookies</p>
+          <p style={{ marginBottom: 10 }}>
+            O aplicativo poderá utilizar tecnologias semelhantes a cookies para melhorar a experiência do usuário e analisar o uso da plataforma.
+          </p>
+          <p style={{ marginBottom: 4, fontWeight: 700, color: 'var(--texto)' }}>6. Direitos do usuário</p>
+          <p style={{ marginBottom: 10 }}>
+            O usuário poderá solicitar a atualização, correção ou exclusão de seus dados, conforme permitido pela legislação aplicável.
+          </p>
+          <p style={{ marginBottom: 4, fontWeight: 700, color: 'var(--texto)' }}>7. Alterações</p>
+          <p style={{ marginBottom: 10 }}>
+            Esta Política de Privacidade poderá ser atualizada a qualquer momento. A versão mais recente estará sempre disponível no aplicativo.
+          </p>
+          <p style={{ marginBottom: 4, fontWeight: 700, color: 'var(--texto)' }}>8. Contato</p>
           <p>
-            As informações do EI PLACAR têm finalidade exclusivamente informativa e não constituem garantia de resultados ou ganhos. O futebol é um esporte imprevisível: nenhum dado é capaz de prever resultados com certeza. O uso dessas informações em apostas esportivas é de exclusiva responsabilidade do usuário.
+            Em caso de dúvidas sobre esta Política de Privacidade, entre em contato pelos canais oficiais de suporte do EI PLACAR.
+          </p>
+        </div>
+      )}
+
+      <Row icone={Info} label="Termos de Uso" onClick={() => setTermosAbertos((v) => !v)}>
+        <ChevronRight size={15} style={{ color: 'var(--texto2)' }} />
+      </Row>
+      {termosAbertos && (
+        <div style={{ padding: '4px 2px 14px', borderBottom: '1px solid var(--c3)', fontSize: 12, color: 'var(--texto2)', lineHeight: 1.7 }}>
+          <p style={{ marginBottom: 10, fontWeight: 700, color: 'var(--texto)' }}>Termos de Uso</p>
+          <p style={{ marginBottom: 10 }}>Última atualização: 2026</p>
+          <p style={{ marginBottom: 10 }}>
+            Bem-vindo ao EI PLACAR. Ao acessar ou utilizar a plataforma, o usuário declara que leu, compreendeu e concorda com os presentes Termos de Uso.
+          </p>
+          <p style={{ marginBottom: 4, fontWeight: 700, color: 'var(--texto)' }}>1. Objetivo da Plataforma</p>
+          <p style={{ marginBottom: 4 }}>
+            O EI PLACAR é uma plataforma de inteligência esportiva que disponibiliza dados, estatísticas e análises sobre partidas e equipes de futebol, com finalidade exclusivamente informativa.
+          </p>
+          <p style={{ marginBottom: 10 }}>
+            O EI PLACAR não realiza apostas esportivas, não intermedeia apostas e não garante resultados de eventos esportivos.
+          </p>
+          <p style={{ marginBottom: 4, fontWeight: 700, color: 'var(--texto)' }}>2. Idade Mínima</p>
+          <p style={{ marginBottom: 10 }}>
+            O EI PLACAR é destinado a usuários com 18 (dezoito) anos ou mais. Ao utilizar a plataforma, o usuário declara possuir idade igual ou superior a 18 anos e estar legalmente apto a utilizar os serviços oferecidos.
+          </p>
+          <p style={{ marginBottom: 4, fontWeight: 700, color: 'var(--texto)' }}>3. Uso da Plataforma</p>
+          <p style={{ marginBottom: 4 }}>
+            O usuário compromete-se a utilizar a plataforma de forma responsável, ética e em conformidade com a legislação vigente.
+          </p>
+          <p style={{ marginBottom: 10 }}>
+            É proibida a utilização do EI PLACAR para atividades ilícitas, fraudulentas ou que possam prejudicar a plataforma, seus serviços ou outros usuários.
+          </p>
+          <p style={{ marginBottom: 4, fontWeight: 700, color: 'var(--texto)' }}>4. Uso das Informações</p>
+          <p style={{ marginBottom: 4 }}>
+            As estatísticas, análises e demais conteúdos disponibilizados possuem caráter exclusivamente informativo.
+          </p>
+          <p style={{ marginBottom: 4 }}>
+            O futebol é um esporte imprevisível e nenhuma informação disponibilizada pelo EI PLACAR constitui garantia de resultados futuros.
+          </p>
+          <p style={{ marginBottom: 10 }}>
+            Qualquer decisão tomada pelo usuário com base nas informações fornecidas é de sua exclusiva responsabilidade.
+          </p>
+          <p style={{ marginBottom: 4, fontWeight: 700, color: 'var(--texto)' }}>5. Propriedade Intelectual</p>
+          <p style={{ marginBottom: 4 }}>
+            Todo o conteúdo disponibilizado pelo EI PLACAR, incluindo identidade visual, logotipos, textos, gráficos, análises, estatísticas e demais materiais, é protegido pela legislação de direitos autorais e de propriedade intelectual.
+          </p>
+          <p style={{ marginBottom: 10 }}>
+            É proibida a reprodução, distribuição ou utilização desses conteúdos sem autorização prévia do EI PLACAR.
+          </p>
+          <p style={{ marginBottom: 4, fontWeight: 700, color: 'var(--texto)' }}>6. Disponibilidade dos Serviços</p>
+          <p style={{ marginBottom: 10 }}>
+            O EI PLACAR busca manter seus serviços disponíveis continuamente. Entretanto, poderão ocorrer interrupções temporárias decorrentes de manutenção, atualização, falhas técnicas ou fatores externos.
+          </p>
+          <p style={{ marginBottom: 4, fontWeight: 700, color: 'var(--texto)' }}>7. Alterações dos Termos</p>
+          <p style={{ marginBottom: 10 }}>
+            Os presentes Termos de Uso poderão ser alterados a qualquer momento. A versão mais recente estará sempre disponível no aplicativo.
+          </p>
+          <p style={{ marginBottom: 4, fontWeight: 700, color: 'var(--texto)' }}>8. Contato</p>
+          <p>
+            Em caso de dúvidas sobre estes Termos de Uso, entre em contato pelos canais oficiais de suporte do EI PLACAR.
           </p>
         </div>
       )}
@@ -273,13 +386,14 @@ function AbaConfiguracoes() {
 
 export default function MinhaConta() {
   const [tab, setTab] = useState('perfil');
+  function trocarTab(t) { window.toastEsconder?.(); setTab(t); }
   return (
     <>
       <div className="sub-nav" style={{ marginBottom: 14 }}>
-        <button className={`sub-tab ${tab === 'perfil' ? 'active' : ''}`} onClick={() => setTab('perfil')}>
+        <button className={`sub-tab ${tab === 'perfil' ? 'active' : ''}`} onClick={() => trocarTab('perfil')}>
           <User size={13} style={{ verticalAlign: -2, marginRight: 4 }} />Perfil
         </button>
-        <button className={`sub-tab ${tab === 'configuracoes' ? 'active' : ''}`} onClick={() => setTab('configuracoes')}>
+        <button className={`sub-tab ${tab === 'configuracoes' ? 'active' : ''}`} onClick={() => trocarTab('configuracoes')}>
           <Settings size={13} style={{ verticalAlign: -2, marginRight: 4 }} />Configurações
         </button>
       </div>

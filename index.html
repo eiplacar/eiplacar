@@ -381,7 +381,16 @@
   <div class="logo" style="justify-self:center">
     <img src="logo-wordmark.png" alt="EI PLACAR" style="height:26px;width:auto;display:block" />
   </div>
-  <div style="justify-self:end"></div>
+  <div style="position:relative;justify-self:end">
+    <button id="userAvatar" onclick="toggleMenuUsuario()" style="width:38px;height:38px;background:transparent;border:1px solid var(--c3);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--texto);flex-shrink:0" title="Usuários" aria-label="Menu de usuário">
+      <span data-ic="users" data-ic-size="18"></span>
+    </button>
+    <div id="menuUsuario" style="display:none;position:absolute;right:0;top:46px;background:var(--c2);border:1px solid var(--c3);border-radius:12px;padding:8px;min-width:190px;z-index:300;box-shadow:0 8px 24px rgba(0,0,0,.4)">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--texto2);padding:6px 10px 8px;display:flex;align-items:center;gap:6px"><span data-ic="users" data-ic-size="12"></span>Usuários</div>
+      <button onclick="fecharMenuUsuario();goTo('minhaconta')" style="width:100%;display:flex;align-items:center;gap:10px;background:none;border:none;border-radius:8px;padding:9px 10px;color:var(--texto);font-size:13px;font-weight:600;cursor:pointer;text-align:left"><span data-ic="user" data-ic-size="15"></span>Conta</button>
+      <button onclick="fecharMenuUsuario();goTo('administracao')" class="so-organizador" style="width:100%;display:flex;align-items:center;gap:10px;background:none;border:none;border-radius:8px;padding:9px 10px;color:var(--texto);font-size:13px;font-weight:600;cursor:pointer;text-align:left"><span data-ic="shieldCheck" data-ic-size="15"></span>Administração</button>
+    </div>
+  </div>
 </header>
 
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar(false)"></div>
@@ -391,16 +400,27 @@
   </div>
   <nav class="sidebar-nav">
     <button class="nav-tab active" onclick="goTo('geral')"      id="tab-geral"><span class="nav-ic" data-ic="home"></span><span>Dashboard</span></button>
+
+    <div class="nav-group-title"><span data-ic="flag" data-ic-size="13"></span>Futebol</div>
     <button class="nav-tab so-organizador" onclick="goTo('confrontos')" id="tab-confrontos"><span class="nav-ic" data-ic="calendarPlus"></span><span>Partidas</span></button>
-    <button class="nav-tab"        onclick="goTo('dados')"      id="tab-dados"><span class="nav-ic" data-ic="database"></span><span>Dados</span></button>
+    <button class="nav-tab so-organizador" onclick="goTo('dados')"      id="tab-dados"><span class="nav-ic" data-ic="database"></span><span>Dados</span></button>
     <button class="nav-tab"        onclick="goTo('analise')"    id="tab-analise"><span class="nav-ic" data-ic="search"></span><span>Análise</span></button>
-    <button class="nav-tab"        onclick="goTo('calculadora')" id="tab-calculadora"><span class="nav-ic" data-ic="calculator"></span><span>Calculadora</span></button>
-    <button class="nav-tab" onclick="goTo('apostas')" id="tab-apostas"><span class="nav-ic" data-ic="target"></span><span>Apostas</span></button>
     <button class="nav-tab"        onclick="goTo('futebol')"    id="tab-futebol"><span class="nav-ic" data-ic="trendingUp"></span><span>Estatística</span></button>
     <button class="nav-tab"        onclick="goTo('classificacao')" id="tab-classificacao"><span class="nav-ic" data-ic="medal"></span><span>Classificação</span></button>
+
+    <div class="nav-group-title"><span data-ic="dollarSign" data-ic-size="13"></span>Ferramentas</div>
+    <button class="nav-tab"        onclick="goTo('calculadora')" id="tab-calculadora"><span class="nav-ic" data-ic="calculator"></span><span>Calculadora</span></button>
+    <button class="nav-tab" onclick="goTo('apostas')" id="tab-apostas"><span class="nav-ic" data-ic="target"></span><span>Apostas</span></button>
     <button class="nav-tab"        onclick="goTo('banca')"     id="tab-banca"><span class="nav-ic" data-ic="wallet"></span><span>Banca</span></button>
-    <button class="nav-tab"        onclick="goTo('minhaconta')" id="tab-minhaconta"><span class="nav-ic" data-ic="user"></span><span>Conta</span></button>
-    <button class="nav-tab so-organizador" onclick="goTo('administracao')" id="tab-administracao"><span class="nav-ic" data-ic="shieldCheck"></span><span>Administração</span></button>
+
+    <div class="nav-group-title"><span data-ic="star" data-ic-size="13"></span>Descubra</div>
+    <button class="nav-tab" disabled title="Em breve" style="opacity:.4;cursor:default"><span class="nav-ic" data-ic="crown"></span><span>Seja Assinante</span></button>
+    <button class="nav-tab" disabled title="Em breve" style="opacity:.4;cursor:default"><span class="nav-ic" data-ic="userPlus"></span><span>Convide um Amigo</span></button>
+
+    <div class="nav-group-title"><span data-ic="messageCircle" data-ic-size="13"></span>Comunidade</div>
+    <button class="nav-tab" disabled title="Em breve" style="opacity:.4;cursor:default"><span class="nav-ic" data-ic="send"></span><span>Telegram</span></button>
+    <button class="nav-tab" disabled title="Em breve" style="opacity:.4;cursor:default"><span class="nav-ic" data-ic="lifeBuoy"></span><span>Suporte</span></button>
+    <button class="nav-tab" disabled title="Em breve" style="opacity:.4;cursor:default"><span class="nav-ic" data-ic="messageSquare"></span><span>Sugestões e Feedback</span></button>
   </nav>
 </aside>
 

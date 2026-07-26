@@ -58,37 +58,28 @@ function pegarEstatistica(statsTime, tipo) {
 }
 
 // ═══════════════════════════════════════════════════
-// CORREÇÃO DE NOMES DE TIMES
-// A API-Football manda os nomes sem acento e às vezes com grafia
-// diferente da que já está cadastrada no sistema (ex: "Nautico Recife"
-// → "Náutico"). Aqui a gente traduz pro nome que já é usado no site,
-// pra não duplicar time por causa de acento/grafia diferente.
-//
-// Lista inicial baseada nos times já cadastrados no banco. Se aparecer
-// mais algum time errado, é só me avisar (o log da função mostra o
-// nome exato que a API mandou) que eu adiciono aqui.
+// NOMES DE TIMES — via tabela "clubes" (ID da API → nome do sistema)
+// Muito mais confiável que tentar corrigir por texto (acento, grafia
+// etc.): o ID do time na API-Football nunca muda, então a busca é exata.
+// Times que ainda não estão na tabela "clubes" continuam usando o nome
+// cru que a API manda (fallback), sem quebrar nada.
 // ═══════════════════════════════════════════════════
-const NOME_TIME_FIXO = new Map([
-  ['Nautico Recife', 'Náutico'],
-  ['Nautico', 'Náutico'],
-  ['Sao Paulo', 'São Paulo'],
-  ['Sao Bernardo', 'São Bernardo'],
-  ['Atletico Mineiro', 'Atletico-MG'],
-  ['Atletico-MG', 'Atletico-MG'],
-  ['Athletico Paranaense', 'Athletico-PR'],
-  ['Athletico-PR', 'Athletico-PR'],
-  ['Atletico Goianiense', 'Atlético-GO'],
-  ['Atletico GO', 'Atlético-GO'],
-  ['Ceara', 'Ceará'],
-  ['Cuiaba', 'Cuiabá'],
-  ['Criciuma', 'Criciúma'],
-  ['Chapecoense-sc', 'Chapecoense-SC'],
-  ['Chapecoense SC', 'Chapecoense-SC'],
-  ['Botafogo SP', 'Botafogo-SP'],
-]);
+async function buscarMapaClubes(supaUrl, supaServiceKey) {
+  const mapa = new Map();
+  try {
+    const res = await fetch(`${supaUrl}/rest/v1/clubes?select=api_team_id,nome`, {
+      headers: { apikey: supaServiceKey, Authorization: `Bearer ${supaServiceKey}` },
+    });
+    if (res.ok) {
+      const linhas = await res.json();
+      linhas.forEach((c) => { if (c.api_team_id) mapa.set(c.api_team_id, c.nome); });
+    }
+  } catch (e) { /* se der erro, segue com o mapa vazio — usa o nome cru da API como fallback */ }
+  return mapa;
+}
 
-function corrigirNomeTime(nome) {
-  return NOME_TIME_FIXO.get(nome) || nome;
+function nomeDoTime(mapaClubes, teamApi) {
+  return mapaClubes.get(teamApi.id) || teamApi.name;
 }
 
 // Brasileirão = temporada é o ano civil. Bundesliga = temporada europeia (ago-mai),
@@ -190,6 +181,8 @@ export const handler = async function () {
 
   const linhas = [];
   const cacheStandings = new Map();
+  const mapaClubes = await buscarMapaClubes(supaUrl, supaServiceKey);
+  console.log('Clubes cadastrados na tabela "clubes":', mapaClubes.size);
   for (const f of novos) {
     // 1 chamada extra por jogo NOVO (estatísticas) + 1 pros gols — é o preço de ter os dados completos
     const respStats = await fetch(`https://v3.football.api-sports.io/fixtures/statistics?fixture=${f.fixture.id}`, {
@@ -199,8 +192,8 @@ export const handler = async function () {
     const statsCasa = (jsonStats.response || [])[0];
     const statsVis = (jsonStats.response || [])[1];
 
-    const casaCorrigido = corrigirNomeTime(f.teams.home.name);
-    const visCorrigido = corrigirNomeTime(f.teams.away.name);
+    const casaCorrigido = nomeDoTime(mapaClubes, f.teams.home);
+    const visCorrigido = nomeDoTime(mapaClubes, f.teams.away);
 
     const ranks = await buscarRanksDaLiga(apiKey, f.league.id, cacheStandings);
     const gols = await buscarGolsDoJogo(apiKey, f.fixture.id, f.teams.home.name, f.teams.away.name);

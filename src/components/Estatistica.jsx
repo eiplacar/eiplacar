@@ -85,8 +85,8 @@ export default function Estatistica() {
   return (
     <>
       <div className="sub-nav" style={{ marginBottom: 14 }}>
-        <button className={`sub-tab ${tab === 'fligas' ? 'active' : ''}`} onClick={() => setTab('fligas')}><Trophy size={13} style={{ verticalAlign: -2, marginRight: 4 }} />Ligas</button>
-        <button className={`sub-tab ${tab === 'ftimes' ? 'active' : ''}`} onClick={() => setTab('ftimes')}><Goal size={13} style={{ verticalAlign: -2, marginRight: 4 }} />Times</button>
+        <button className={`sub-tab ${tab === 'fligas' ? 'active' : ''}`} onClick={() => { window.toastEsconder?.(); setTab('fligas'); }}><Trophy size={13} style={{ verticalAlign: -2, marginRight: 4 }} />Ligas</button>
+        <button className={`sub-tab ${tab === 'ftimes' ? 'active' : ''}`} onClick={() => { window.toastEsconder?.(); setTab('ftimes'); }}><Goal size={13} style={{ verticalAlign: -2, marginRight: 4 }} />Times</button>
       </div>
 
       {/* ═══ SUBPASTA LIGAS ═══ */}

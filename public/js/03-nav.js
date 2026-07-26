@@ -15,7 +15,8 @@ function goTo(p) {
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(x=>x.classList.remove('active'));
   document.getElementById('page-'+p).classList.add('active');
-  document.getElementById('tab-'+p).classList.add('active');
+  const tabEl = document.getElementById('tab-'+p); // Conta/Administração não têm mais botão na sidebar, só no ícone do cabeçalho
+  if (tabEl) tabEl.classList.add('active');
   toggleSidebar(false);
   window.scrollTo({top:0, behavior:'instant'});
   // Barra de navegação rápida (embaixo): acende o botão correspondente, se existir

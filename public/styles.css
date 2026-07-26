@@ -95,6 +95,8 @@ header { background: var(--gramado); border-bottom: 3px solid var(--ouro); paddi
 .nav-tab .nav-ic { font-size:19px; line-height:1; width:22px; text-align:center; flex-shrink:0; }
 .nav-tab:hover { color: var(--branco); background: var(--c3); }
 .nav-tab.active { color: var(--ouro); background: rgba(245,197,24,.1); border-left-color: var(--ouro); }
+.nav-group-title { display:flex; align-items:center; gap:7px; font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.7px; color:var(--texto2); padding:14px 14px 6px; }
+.nav-group-title:first-child { padding-top:6px; }
 
 /* SUBABAS */
 .sub-nav { display: flex; gap: 0; margin-bottom: 14px; background: var(--c2); border-radius: 10px; padding: 4px; border: 1px solid var(--c3); }
