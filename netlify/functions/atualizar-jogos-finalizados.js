@@ -99,9 +99,11 @@ async function buscarRanksDaLiga(apiKey, ligaId, cacheStandings) {
     headers: { 'x-apisports-key': apiKey },
   });
   const json = await resp.json();
+  console.log(`Resposta API-Football (standings liga=${ligaId} temporada=${temporada}):`, { httpStatus: resp.status, erros: json.errors, temResponse: !!json.response?.length });
   const grupos = json.response?.[0]?.league?.standings || [];
   const mapa = new Map();
-  grupos.flat().forEach((t) => mapa.set(t.team.name, t.rank));
+  grupos.flat().forEach((t) => mapa.set(t.team.id, t.rank));
+  console.log(`Ranking montado pra liga ${ligaId}:`, mapa.size, 'times —', [...mapa.entries()].map(([id, r]) => `${id}:${r}`).join(', '));
   cacheStandings.set(ligaId, mapa);
   return mapa;
 }
@@ -112,6 +114,7 @@ async function buscarGolsDoJogo(apiKey, fixtureId, nomeCasa, nomeVis) {
     headers: { 'x-apisports-key': apiKey },
   });
   const json = await resp.json();
+  console.log(`Resposta API-Football (events fixture=${fixtureId}):`, { httpStatus: resp.status, erros: json.errors, qtdEventos: (json.response || []).length });
   return (json.response || [])
     .filter((ev) => ev.type === 'Goal')
     .map((ev) => ({
@@ -191,6 +194,13 @@ export const handler = async function () {
     const jsonStats = await respStats.json();
     const statsCasa = (jsonStats.response || [])[0];
     const statsVis = (jsonStats.response || [])[1];
+    console.log(`Resposta API-Football (statistics fixture=${f.fixture.id}, ${f.teams.home.name} x ${f.teams.away.name}):`, {
+      httpStatus: respStats.status,
+      erros: jsonStats.errors,
+      qtdTimesNaResposta: (jsonStats.response || []).length,
+      temStatsCasa: !!statsCasa?.statistics?.length,
+      temStatsVis: !!statsVis?.statistics?.length,
+    });
 
     const casaCorrigido = nomeDoTime(mapaClubes, f.teams.home);
     const visCorrigido = nomeDoTime(mapaClubes, f.teams.away);
@@ -209,8 +219,8 @@ export const handler = async function () {
       vis: visCorrigido,
       gC: f.goals.home,
       gV: f.goals.away,
-      rankC: ranks.get(f.teams.home.name) ?? null,
-      rankV: ranks.get(f.teams.away.name) ?? null,
+      rankC: ranks.get(f.teams.home.id) ?? null,
+      rankV: ranks.get(f.teams.away.id) ?? null,
       gols,
       golsHT_C: f.score.halftime?.home ?? null,
       golsHT_V: f.score.halftime?.away ?? null,

@@ -298,9 +298,14 @@ export default function AnaliseResultado() {
                   {s.calendario.map((c, i) => (
                     <div className="cal-item" key={i}>
                       <div className={`cal-dot ${calDot(c.rank, c.tamCamp)}`} />
-                      <div style={{ minWidth: 28, fontSize: 11, color: 'var(--texto2)' }}>J{i + 1}</div>
-                      <div style={{ fontWeight: 600, flex: 1 }}>{c.adv} <span style={{ fontWeight: 700, color: 'var(--ouro)' }}>#{c.rank}</span></div>
-                      <div style={{ fontSize: 11, color: 'var(--texto2)' }}>{c.casaNome} {c.gC} × {c.gV} {c.visNome}</div>
+                      <div style={{ minWidth: 24, fontSize: 11, color: 'var(--texto2)' }}>J{i + 1}</div>
+                      <div style={{ flex: 1, fontSize: 12.5, fontWeight: 600 }}>
+                        <span style={{ color: 'var(--texto2)', fontWeight: 700 }}>#{c.rankCasa ?? '—'}</span>{' '}
+                        <span style={{ color: c.casaNome === nome ? cor : 'var(--texto)' }}>{c.casaNome}</span>
+                        {' '}{c.gC} × {c.gV}{' '}
+                        <span style={{ color: c.visNome === nome ? cor : 'var(--texto)' }}>{c.visNome}</span>{' '}
+                        <span style={{ color: 'var(--texto2)', fontWeight: 700 }}>#{c.rankVis ?? '—'}</span>
+                      </div>
                     </div>
                   ))}
                 </div>
