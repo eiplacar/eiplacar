@@ -66,6 +66,8 @@ function statsTime(nome, local, camp, qty){
   const gmCasa=como_casa.reduce((s,j)=>s+j.gC,0), gsCasa=como_casa.reduce((s,j)=>s+j.gV,0);
   const gmVis=como_vis.reduce((s,j)=>s+j.gV,0),   gsVis=como_vis.reduce((s,j)=>s+j.gC,0);
   const nc=como_casa.length, nv=como_vis.length;
+  const vedCasa = como_casa.reduce((acc,j)=>{ if(j.gC>j.gV) acc.v++; else if(j.gC===j.gV) acc.e++; else acc.d++; return acc; }, {v:0,e:0,d:0});
+  const vedFora = como_vis.reduce((acc,j)=>{ if(j.gV>j.gC) acc.v++; else if(j.gV===j.gC) acc.e++; else acc.d++; return acc; }, {v:0,e:0,d:0});
   const lambda=nt?r2(gmTot/nt):0; // ataque, sem ajuste (mantido para comparação)
   const lambdaDef=nt?r2(gsTot/nt):0; // defesa, sem ajuste (gols sofridos por jogo)
 
@@ -96,7 +98,7 @@ function statsTime(nome, local, camp, qty){
 
   const ranks=jogos.map(j=>j.casa===nome?j.rankV:j.rankC).filter(r=>r!=null);
   const rankMedAdv=ranks.length?r2(ranks.reduce((a,b)=>a+b,0)/ranks.length):null;
-  const calendario=jogos.map(j=>({ adv:j.casa===nome?j.vis:j.casa, rank:j.casa===nome?j.rankV:j.rankC, data:j.data, tamCamp:tamanhoCampeonato(j.camp) })).filter(x=>x.rank);
+  const calendario=jogos.map(j=>({ adv:j.casa===nome?j.vis:j.casa, rank:j.casa===nome?j.rankV:j.rankC, data:j.data, tamCamp:tamanhoCampeonato(j.camp), casaNome:j.casa, visNome:j.vis, gC:j.gC, gV:j.gV })).filter(x=>x.rank);
   const todosGols=jogos.flatMap(j=>(j.gols||[]).map(g=>({ min:g.min, marcado:(j.casa===nome&&g.time==='casa')||(j.vis===nome&&g.time==='vis') })));
   const jogosComMin=jogos.filter(j=>(j.gols||[]).length>0).length;
   const minStats=periodos4.map(p=>({ l:p.l, ico:p.ico, marc:todosGols.filter(g=>g.marcado&&g.min>=p.s&&g.min<=p.e).length, sofr:todosGols.filter(g=>!g.marcado&&g.min>=p.s&&g.min<=p.e).length }));
@@ -190,7 +192,7 @@ function statsTime(nome, local, camp, qty){
   // Reconverte o índice (relativo à média=1) para gols/jogo, com limites de sanidade.
   const lambdaIndice = Math.max(0.1, Math.min(6, r2(liga.gols * indiceForca)));
 
-  return { nome, nt, nc, nv, local, qty, mediaGM_casa:nc?r2(gmCasa/nc):0, mediaGS_casa:nc?r2(gsCasa/nc):0, mediaGM_vis:nv?r2(gmVis/nv):0, mediaGS_vis:nv?r2(gsVis/nv):0, lambda, lambdaDef, lambdaAjustado, lambdaDefAjustado, lambdaHT, lambdaDefHT, ntHT, lambdaIndice, indiceForca, mediaChutesGolMarc, mediaChutesTotMarc, mediaCantosMarc, mediaVermProprio, mediaAmarProprio, confCantos, confCartoes, confChutes, rankMedAdv, calendario, minStats, jogosComMin, todosGols, mediasGolJogo, mediasMarc, mediasSofr, mediaMinMarc, mediaMinSofr, jogosComGols:jogosComGols.length };
+  return { nome, nt, nc, nv, local, qty, mediaGM_casa:nc?r2(gmCasa/nc):0, mediaGS_casa:nc?r2(gsCasa/nc):0, mediaGM_vis:nv?r2(gmVis/nv):0, mediaGS_vis:nv?r2(gsVis/nv):0, vedCasa, vedFora, lambda, lambdaDef, lambdaAjustado, lambdaDefAjustado, lambdaHT, lambdaDefHT, ntHT, lambdaIndice, indiceForca, mediaChutesGolMarc, mediaChutesTotMarc, mediaCantosMarc, mediaVermProprio, mediaAmarProprio, confCantos, confCartoes, confChutes, rankMedAdv, calendario, minStats, jogosComMin, todosGols, mediasGolJogo, mediasMarc, mediasSofr, mediaMinMarc, mediaMinSofr, jogosComGols:jogosComGols.length };
 }
 
 // ══ RENDER MOMENTO DE ENTRADA ══

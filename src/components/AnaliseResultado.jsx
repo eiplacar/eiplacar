@@ -250,6 +250,33 @@ export default function AnaliseResultado() {
         </div>
 
         <div className="sec">
+          <div className="sec-title"><Trophy size={14} style={{ marginRight: 4 }} />Desempenho</div>
+          {times.map(({ s, nome, cor, Ico }) => (
+            <div key={`ved-${nome}`} style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: cor, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}><Ico size={14} /> {nome}</div>
+              <div className="forca-grid">
+                <div className="forca-box">
+                  <div className="fb-label">Em Casa ({s.nc}j)</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: 4 }}>
+                    <div style={{ textAlign: 'center' }}><div style={{ fontSize: 15, fontWeight: 800, color: '#4dd87a' }}>{s.vedCasa.v}</div><div style={{ fontSize: 9, color: 'var(--texto2)' }}>Vitória</div></div>
+                    <div style={{ textAlign: 'center' }}><div style={{ fontSize: 15, fontWeight: 800, color: 'var(--ouro)' }}>{s.vedCasa.e}</div><div style={{ fontSize: 9, color: 'var(--texto2)' }}>Empate</div></div>
+                    <div style={{ textAlign: 'center' }}><div style={{ fontSize: 15, fontWeight: 800, color: '#f08060' }}>{s.vedCasa.d}</div><div style={{ fontSize: 9, color: 'var(--texto2)' }}>Derrota</div></div>
+                  </div>
+                </div>
+                <div className="forca-box">
+                  <div className="fb-label">Fora ({s.nv}j)</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: 4 }}>
+                    <div style={{ textAlign: 'center' }}><div style={{ fontSize: 15, fontWeight: 800, color: '#4dd87a' }}>{s.vedFora.v}</div><div style={{ fontSize: 9, color: 'var(--texto2)' }}>Vitória</div></div>
+                    <div style={{ textAlign: 'center' }}><div style={{ fontSize: 15, fontWeight: 800, color: 'var(--ouro)' }}>{s.vedFora.e}</div><div style={{ fontSize: 9, color: 'var(--texto2)' }}>Empate</div></div>
+                    <div style={{ textAlign: 'center' }}><div style={{ fontSize: 15, fontWeight: 800, color: '#f08060' }}>{s.vedFora.d}</div><div style={{ fontSize: 9, color: 'var(--texto2)' }}>Derrota</div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="sec">
           <div className="sec-title"><Scale size={14} style={{ marginRight: 4 }} />Força Casa / Fora</div>
           {times.map(({ s, nome, cor, Ico }) => (
             <div key={nome} style={{ marginBottom: 14 }}>
@@ -272,14 +299,15 @@ export default function AnaliseResultado() {
                     <div className="cal-item" key={i}>
                       <div className={`cal-dot ${calDot(c.rank, c.tamCamp)}`} />
                       <div style={{ minWidth: 28, fontSize: 11, color: 'var(--texto2)' }}>J{i + 1}</div>
-                      <div style={{ fontWeight: 600, flex: 1 }}>{c.adv}</div>
-                      <div style={{ fontSize: 11, color: 'var(--texto2)' }}>#{c.rank} · {calLbl(c.rank, c.tamCamp)}</div>
+                      <div style={{ fontWeight: 600, flex: 1 }}>{c.adv} <span style={{ fontWeight: 700, color: 'var(--ouro)' }}>#{c.rank}</span></div>
+                      <div style={{ fontSize: 11, color: 'var(--texto2)' }}>{c.casaNome} {c.gC} × {c.gV} {c.visNome}</div>
                     </div>
                   ))}
                 </div>
-                <div className="cal-resumo">
-                  {s.calendario.filter((c) => calDot(c.rank, c.tamCamp) === 'dificil').length} difícil(eis) · {s.calendario.filter((c) => calDot(c.rank, c.tamCamp) === 'facil').length} fácil(eis)
-                  {s.rankMedAdv ? ` · Rank médio adv.: #${s.rankMedAdv}` : ''}
+                <div className="cal-resumo" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span className="cal-dot dificil" style={{ display: 'inline-block' }} /> {s.calendario.filter((c) => calDot(c.rank, c.tamCamp) === 'dificil').length} difícil</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span className="cal-dot medio" style={{ display: 'inline-block' }} /> {s.calendario.filter((c) => calDot(c.rank, c.tamCamp) === 'medio').length} médio</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span className="cal-dot facil" style={{ display: 'inline-block' }} /> {s.calendario.filter((c) => calDot(c.rank, c.tamCamp) === 'facil').length} fácil</span>
                 </div>
               </>
             ) : <div className="empty" style={{ padding: 16 }}><p>Sem jogos com ranking registrado.</p></div>}
