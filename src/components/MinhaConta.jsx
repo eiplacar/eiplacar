@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { User, Settings, Camera, CreditCard, ShieldHalf, Moon, Bell, Lock, Info, LogOut, ChevronRight, CheckCircle2, Save } from 'lucide-react';
+import { User, Settings, Camera, CreditCard, ShieldHalf, Moon, Bell, Lock, Info, LogOut, ChevronRight, CheckCircle2, Save, Target } from 'lucide-react';
 
 // ══ Conta — Perfil + Configurações ══
 //
@@ -161,6 +161,14 @@ function AbaConfiguracoes() {
   const [reservaAtiva, setReservaAtiva] = useState(true);
   const [reservaPct, setReservaPct] = useState(10);
   const [editarReserva, setEditarReserva] = useState(false);
+  const [metaDiaria, setMetaDiaria] = useState(0);
+  const [stopGain, setStopGain] = useState(0);
+  const [stopLoss, setStopLoss] = useState(0);
+  const [editarStopMeta, setEditarStopMeta] = useState(false);
+  const [metaInput, setMetaInput] = useState('');
+  const [stopGainInput, setStopGainInput] = useState('');
+  const [stopLossInput, setStopLossInput] = useState('');
+  const [salvandoStopMeta, setSalvandoStopMeta] = useState(false);
   const [alterandoSenha, setAlterandoSenha] = useState(false);
   const [senha1, setSenha1] = useState('');
   const [senha2, setSenha2] = useState('');
@@ -171,7 +179,13 @@ function AbaConfiguracoes() {
 
   useEffect(() => {
     const d = window.bpLoad?.();
-    if (d) { setReservaAtiva(d.protecaoAtiva !== false); setReservaPct(d.protecaoPct ?? 10); }
+    if (d) {
+      setReservaAtiva(d.protecaoAtiva !== false); setReservaPct(d.protecaoPct ?? 10);
+      setMetaDiaria(d.metaDiaria ?? 0); setStopGain(d.stopGain ?? 0); setStopLoss(d.stopLoss ?? 0);
+      setMetaInput(d.metaDiaria ? String(d.metaDiaria) : '');
+      setStopGainInput(d.stopGain ? String(d.stopGain) : '');
+      setStopLossInput(d.stopLoss ? String(d.stopLoss) : '');
+    }
   }, []);
 
   function alternarTema(claro) {
@@ -193,6 +207,18 @@ function AbaConfiguracoes() {
   function salvarReserva(ativa, pct) {
     setReservaAtiva(ativa); setReservaPct(pct);
     window.bancaSalvarProtecao?.(ativa, pct);
+  }
+
+  async function salvarStopMeta() {
+    setSalvandoStopMeta(true);
+    const meta = parseFloat(metaInput) || 0;
+    const gain = parseFloat(stopGainInput) || 0;
+    const loss = parseFloat(stopLossInput) || 0;
+    window.bancaSalvarStopMeta?.(meta, gain, loss);
+    setMetaDiaria(meta); setStopGain(gain); setStopLoss(loss);
+    setSalvandoStopMeta(false);
+    window.toast?.('✅ Stop e Meta salvos');
+    window.__bancaCarteiraTick?.();
   }
 
   async function salvarSenha() {
@@ -230,6 +256,28 @@ function AbaConfiguracoes() {
               <button key={p} onClick={() => salvarReserva(reservaAtiva, p)} className={`btn-pct ${reservaPct === p ? 'ativo' : ''}`} style={{ flex: 1 }}>{p}%</button>
             ))}
           </div>
+        </div>
+      )}
+
+      <Row icone={Target} label="Stop e Meta" onClick={() => setEditarStopMeta((v) => !v)}>
+        <span style={{ color: 'var(--ouro)', fontWeight: 700, fontSize: 12.5 }}>
+          {metaDiaria > 0 || stopGain > 0 || stopLoss > 0 ? `Meta R$${metaDiaria}` : 'Não definido'}
+        </span>
+        <ChevronRight size={15} style={{ color: 'var(--texto2)' }} />
+      </Row>
+      {editarStopMeta && (
+        <div style={{ padding: '10px 2px 14px', borderBottom: '1px solid var(--c3)' }}>
+          <div style={{ fontSize: 11, color: 'var(--texto2)', marginBottom: 10 }}>
+            Configure sua meta de lucro e seus limites de stop (gain e loss) por dia. Eles aparecem na aba Banca → Evolução, mostrando se já bateu a meta ou já deve parar por hoje.
+          </div>
+          <div className="fg">
+            <div><label>Meta Diária (R$)</label><input type="number" min="0" step="0.01" placeholder="0.00" value={metaInput} onChange={(e) => setMetaInput(e.target.value)} /></div>
+          </div>
+          <div className="fg fg2">
+            <div><label>Stop Gain (R$)</label><input type="number" min="0" step="0.01" placeholder="0.00" value={stopGainInput} onChange={(e) => setStopGainInput(e.target.value)} /></div>
+            <div><label>Stop Loss (R$)</label><input type="number" min="0" step="0.01" placeholder="0.00" value={stopLossInput} onChange={(e) => setStopLossInput(e.target.value)} /></div>
+          </div>
+          <button className="btn-primary" onClick={salvarStopMeta} disabled={salvandoStopMeta} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>{salvandoStopMeta ? 'Salvando...' : <><Save size={13} /> Salvar</>}</button>
         </div>
       )}
 

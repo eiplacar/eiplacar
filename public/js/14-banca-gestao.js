@@ -85,6 +85,85 @@ function bancaSalvarProtecao(ativa, pct){
 }
 window.bancaSalvarProtecao = bancaSalvarProtecao;
 
+// ══ STOP E META — configuração (aba Minha Conta → Configurações, ao lado da Proteção) ══
+function bancaSalvarStopMeta(meta, stopGain, stopLoss){
+  const d = bpLoad();
+  d.metaDiaria = Math.max(0, Math.round((parseFloat(meta)||0)*100)/100);
+  d.stopGain = Math.max(0, Math.round((parseFloat(stopGain)||0)*100)/100);
+  d.stopLoss = Math.max(0, Math.round((parseFloat(stopLoss)||0)*100)/100);
+  bpSave(d);
+}
+window.bancaSalvarStopMeta = bancaSalvarStopMeta;
+
+// ══ RESUMOS — Meta Diária, Controle de Stop, Resumo do Dia/Mês, Recordes ══
+// (usado pela sub-aba "Evolução" do componente React Banca.jsx)
+function computeResumoBanca(){
+  const d = bpLoad();
+  const hoje = new Date().toISOString().split('T')[0];
+  const mesAtual = hoje.slice(0,7);
+
+  const depositos = (d.movimentos||[]).filter(m=>m.tipo==='deposito').reduce((s,m)=>s+m.valor,0);
+  const retiradas = (d.movimentos||[]).filter(m=>m.tipo==='retirada').reduce((s,m)=>s+m.valor,0);
+  const capitalInicial = Math.round((depositos-retiradas)*100)/100;
+
+  // P&L por dia (só entradas resolvidas contam) — usado no resumo de hoje, do mês e nos recordes
+  const porDia = {};
+  d.entradas.forEach(e=>{
+    if(!e.data) return;
+    if(e.resultado==='green') porDia[e.data] = (porDia[e.data]||0) + (e.lucro||0);
+    else if(e.resultado==='red') porDia[e.data] = (porDia[e.data]||0) - (e.stake||0);
+  });
+
+  let maiorLucroDia = null, maiorPrejuizoDia = null;
+  Object.entries(porDia).forEach(([data, valorBruto])=>{
+    const valor = Math.round(valorBruto*100)/100;
+    if(valor>0 && (!maiorLucroDia || valor>maiorLucroDia.valor)) maiorLucroDia = { data, valor };
+    if(valor<0 && (!maiorPrejuizoDia || valor<maiorPrejuizoDia.valor)) maiorPrejuizoDia = { data, valor };
+  });
+
+  const entradasHoje = d.entradas.filter(e=>e.data===hoje && e.resultado);
+  const greensHoje = entradasHoje.filter(e=>e.resultado==='green').length;
+  const redsHoje = entradasHoje.filter(e=>e.resultado==='red').length;
+  const validasHoje = greensHoje+redsHoje;
+  const taxaAcertoHoje = validasHoje ? Math.round((greensHoje/validasHoje)*100) : 0;
+  const plHoje = Math.round((porDia[hoje]||0)*100)/100;
+
+  const entradasMes = d.entradas.filter(e=>(e.data||'').slice(0,7)===mesAtual && e.resultado);
+  const greensMes = entradasMes.filter(e=>e.resultado==='green').length;
+  const redsMes = entradasMes.filter(e=>e.resultado==='red').length;
+  const validasMes = greensMes+redsMes;
+  const taxaAcertoMes = validasMes ? Math.round((greensMes/validasMes)*100) : 0;
+  const plMes = Math.round(Object.entries(porDia).filter(([data])=>data.slice(0,7)===mesAtual).reduce((s,[,v])=>s+v,0)*100)/100;
+  const roiMes = capitalInicial>0 ? Math.round((plMes/capitalInicial)*1000)/10 : 0;
+
+  const metaDiaria = d.metaDiaria||0;
+  const stopGain = d.stopGain||0;
+  const stopLoss = d.stopLoss||0;
+
+  const progressoMeta = metaDiaria>0 ? Math.max(0, Math.min(100, Math.round((plHoje/metaDiaria)*100))) : 0;
+  const metaBatida = metaDiaria>0 && plHoje>=metaDiaria;
+  const faltaMeta = Math.max(0, Math.round((metaDiaria-plHoje)*100)/100);
+
+  const progressoStopGain = stopGain>0 ? Math.max(0, Math.min(100, Math.round((plHoje/stopGain)*100))) : 0;
+  const stopGainAtingido = stopGain>0 && plHoje>=stopGain;
+  const faltaStopGain = Math.max(0, Math.round((stopGain-plHoje)*100)/100);
+
+  const progressoStopLoss = stopLoss>0 ? Math.max(0, Math.min(100, Math.round((Math.abs(Math.min(0,plHoje))/stopLoss)*100))) : 0;
+  const stopLossAtingido = stopLoss>0 && plHoje<=-stopLoss;
+  const faltaStopLoss = Math.max(0, Math.round((stopLoss-Math.abs(Math.min(0,plHoje)))*100)/100);
+
+  return {
+    metaDiaria, stopGain, stopLoss,
+    progressoMeta, metaBatida, faltaMeta,
+    progressoStopGain, stopGainAtingido, faltaStopGain,
+    progressoStopLoss, stopLossAtingido, faltaStopLoss,
+    plHoje, entradasHoje: entradasHoje.length, greensHoje, redsHoje, taxaAcertoHoje,
+    plMes, entradasMes: entradasMes.length, greensMes, redsMes, taxaAcertoMes, roiMes,
+    maiorLucroDia, maiorPrejuizoDia,
+  };
+}
+window.computeResumoBanca = computeResumoBanca;
+
 // ══ EVOLUÇÃO — série histórica de saldo/reserva + métricas (melhor sequência, maior drawdown, crescimento mensal) ══
 function computeEvolucao(){
   const d = bpLoad();
@@ -98,7 +177,7 @@ function computeEvolucao(){
   const pontosSaldo=[], pontosReserva=[], datas=[];
   const protecaoAtiva = d.protecaoAtiva!==false, protecaoPct = d.protecaoPct??10;
 
-  let seqAtual=0, melhorSeq=0;
+  let seqAtual=0, melhorSeq=0, piorSeq=0;
   let pico=0, maiorDrawdown=0;
   const porMes = {}; // 'AAAA-MM' -> pl do mês
 
@@ -125,6 +204,7 @@ function computeEvolucao(){
         if(mesKey) porMes[mesKey] = (porMes[mesKey]||0) - (e.stake||0);
       }
       melhorSeq = Math.max(melhorSeq, seqAtual);
+      piorSeq = Math.min(piorSeq, seqAtual);
     }
     saldo = Math.round(saldo*100)/100; reserva = Math.round(reserva*100)/100;
     pontosSaldo.push(saldo); pontosReserva.push(reserva); datas.push(ev.data||null);
@@ -134,7 +214,7 @@ function computeEvolucao(){
 
   const crescimentoMensal = Object.entries(porMes).sort((a,b)=>a[0].localeCompare(b[0])).map(([mes,pl])=>({ mes, pl:Math.round(pl*100)/100 }));
 
-  return { pontosSaldo, pontosReserva, datas, melhorSequencia:melhorSeq, maiorDrawdown:Math.round(maiorDrawdown*100)/100, crescimentoMensal };
+  return { pontosSaldo, pontosReserva, datas, melhorSequencia:melhorSeq, piorSequencia:Math.abs(piorSeq), maiorDrawdown:Math.round(maiorDrawdown*100)/100, crescimentoMensal };
 }
 window.computeEvolucao = computeEvolucao;
 

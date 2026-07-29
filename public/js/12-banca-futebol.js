@@ -10,7 +10,7 @@ function bpLocalKey(){
   const uid = bpUserId();
   return BP_KEY_BASE + (uid ? '_' + uid : '_anon');
 }
-const BP_VAZIO = { saldo:0, reserva:0, entradas:[], movimentos:[], protecaoAtiva:true, protecaoPct:10 };
+const BP_VAZIO = { saldo:0, reserva:0, entradas:[], movimentos:[], protecaoAtiva:true, protecaoPct:10, metaDiaria:0, stopGain:0, stopLoss:0 };
 let bancaCache = null; // estado em memória, já carregado da nuvem
 
 // Migração automática do modelo antigo (compartilhado) pro novo (individual):
@@ -21,6 +21,9 @@ function migrarBanca(d){
   if(d.movimentos===undefined) d.movimentos = [];
   if(d.protecaoAtiva===undefined) d.protecaoAtiva = true;
   if(d.protecaoPct===undefined) d.protecaoPct = 10;
+  if(d.metaDiaria===undefined) d.metaDiaria = 0;
+  if(d.stopLoss===undefined) d.stopLoss = d.stopDiario!==undefined ? d.stopDiario : 0; // migra campo antigo "stopDiario"
+  if(d.stopGain===undefined) d.stopGain = 0;
   return d;
 }
 
