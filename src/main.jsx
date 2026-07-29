@@ -13,6 +13,7 @@ import Resolvidas from './components/Resolvidas.jsx';
 import AdicionarPartida from './components/AdicionarPartida.jsx';
 import NovoSinalEntrada from './components/NovoSinalEntrada.jsx';
 import NovaEntrada from './components/NovaEntrada.jsx';
+import Estrategias from './components/Estrategias.jsx';
 
 // Cada componente React migrado ganha uma <div id="...-root"> própria,
 // no lugar exato onde o card em JS puro ficava antes. O resto do app
@@ -86,4 +87,9 @@ if (sinalRoot) {
 const novaEntradaRoot = document.getElementById('nova-entrada-root');
 if (novaEntradaRoot) {
   createRoot(novaEntradaRoot).render(<NovaEntrada />);
+}
+
+const estrategiasRoot = document.getElementById('estrategias-root');
+if (estrategiasRoot) {
+  createRoot(estrategiasRoot).render(<Estrategias />);
 }

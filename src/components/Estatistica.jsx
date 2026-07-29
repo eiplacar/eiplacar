@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Trophy, Goal, Info, Search, LineChart, Ruler, Circle, FileText } from 'lucide-react';
+import { Trophy, Goal, Search, LineChart, Ruler, Circle, FileText } from 'lucide-react';
 
 // ══ Estatística (Ligas / Times) — oitavo módulo migrado para React ══
 //
@@ -53,6 +53,7 @@ export default function Estatistica() {
   const [fTimeBusca, setFTimeBusca] = useState('');
   const [fTimeFiltroLiga, setFTimeFiltroLiga] = useState('');
   const [fTimeFiltroLocal, setFTimeFiltroLocal] = useState('');
+  const [fLigaBusca, setFLigaBusca] = useState('');
 
   useEffect(() => {
     window.estatisticaRefresh = () => setTick((t) => t + 1);
@@ -92,13 +93,11 @@ export default function Estatistica() {
       {/* ═══ SUBPASTA LIGAS ═══ */}
       <div className={`sub-page ${tab === 'fligas' ? 'active' : ''}`}>
         <div className="sel-card" style={{ padding: '12px 16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-            <div className="sel-card-title" style={{ marginBottom: 0, display: 'flex', alignItems: 'center', gap: 6 }}><Trophy size={13} /> Campeonato</div>
-            <button onClick={() => document.getElementById('modalInfoLigas')?.classList.add('open')} style={{ background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 7, padding: '5px 11px', color: 'var(--ouro)', fontSize: 11, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}><Info size={12} /> Info</button>
-          </div>
+          <div className="sel-card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Search size={13} /> Buscar Liga</div>
+          <input type="text" placeholder="Digite o nome da liga..." value={fLigaBusca} onChange={(e) => setFLigaBusca(e.target.value)} style={{ marginBottom: 8 }} />
           <select value={filtroLigaGlobal} onChange={(e) => setFiltroLigaGlobal(e.target.value)}>
             <option value="">Todos os campeonatos</option>
-            <CampeonatoOptions camps={camps} />
+            <CampeonatoOptions camps={camps.filter((c) => c.toLowerCase().includes(fLigaBusca.toLowerCase()))} />
           </select>
           <div style={{ fontSize: 10, color: 'var(--texto2)', marginTop: 6 }}>Filtra as duas tabelas abaixo de uma vez. Deixe em "Todos" pra ver tudo.</div>
         </div>

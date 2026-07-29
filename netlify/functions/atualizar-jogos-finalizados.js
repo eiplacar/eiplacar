@@ -164,7 +164,7 @@ export const handler = async function () {
   // Descobre quais desses jogos já estão salvos, pra não gastar cota de novo
   const idsHoje = fixtures.map((f) => f.fixture.id);
   const respExistentes = await fetch(
-    `${supaUrl}/rest/v1/jogos?select=fixture_id&fixture_id=in.(${idsHoje.join(',')})`,
+    `${supaUrl}/rest/v1/jogos?select=fixture_id,chutesC&fixture_id=in.(${idsHoje.join(',')})`,
     { headers: { apikey: supaServiceKey, Authorization: `Bearer ${supaServiceKey}` } }
   );
   const textoExistentes = await respExistentes.text();
@@ -174,12 +174,20 @@ export const handler = async function () {
     return { statusCode: 500, body: JSON.stringify({ erro: 'Falha ao consultar jogos existentes no Supabase', detalhe: textoExistentes }) };
   }
 
-  const existentes = new Set(JSON.parse(textoExistentes).map((r) => r.fixture_id));
-  const novos = fixtures.filter((f) => !existentes.has(f.fixture.id));
-  console.log('Jogos novos a salvar:', novos.length);
+  // Jogos que JÁ existem mas foram salvos com "chutesC" vazio (sinal de que a API ainda não
+  // tinha as estatísticas prontas na hora que a função rodou) entram de novo na lista, pra
+  // tentar completar os dados que faltaram — em vez de ficar pra sempre com tudo em branco.
+  const existentesCompletos = new Set();
+  const existentesIncompletos = new Set();
+  JSON.parse(textoExistentes).forEach((r) => {
+    if (r.chutesC === null) existentesIncompletos.add(r.fixture_id);
+    else existentesCompletos.add(r.fixture_id);
+  });
+  const novos = fixtures.filter((f) => !existentesCompletos.has(f.fixture.id));
+  console.log('Jogos novos a salvar:', novos.length, '— dos quais reprocessando (dados incompletos):', novos.filter(f => existentesIncompletos.has(f.fixture.id)).length);
 
   if (novos.length === 0) {
-    return { statusCode: 200, body: JSON.stringify({ ok: true, mensagem: 'Jogos de hoje já estavam todos salvos.' }) };
+    return { statusCode: 200, body: JSON.stringify({ ok: true, mensagem: 'Jogos de hoje já estavam todos salvos e completos.' }) };
   }
 
   const linhas = [];

@@ -412,6 +412,7 @@
     <button class="nav-tab"        onclick="goTo('calculadora')" id="tab-calculadora"><span class="nav-ic" data-ic="calculator"></span><span>Calculadora</span></button>
     <button class="nav-tab" onclick="goTo('apostas')" id="tab-apostas"><span class="nav-ic" data-ic="target"></span><span>Apostas</span></button>
     <button class="nav-tab"        onclick="goTo('banca')"     id="tab-banca"><span class="nav-ic" data-ic="wallet"></span><span>Banca</span></button>
+    <button class="nav-tab"        onclick="goTo('estrategias')" id="tab-estrategias"><span class="nav-ic" data-ic="lightbulb"></span><span>Estratégias</span></button>
 
     <div class="nav-group-title"><span data-ic="star" data-ic-size="13"></span>Descubra</div>
     <button class="nav-tab" disabled title="Em breve" style="opacity:.4;cursor:default"><span class="nav-ic" data-ic="crown"></span><span>Seja Assinante</span></button>
@@ -462,6 +463,12 @@
 <div class="page" id="page-banca">
   <!-- Banca (Carteira individual) — componente React (src/components/Banca.jsx) -->
   <div id="banca-root"></div>
+</div>
+
+<!-- ══ ESTRATÉGIAS ══ -->
+<div class="page" id="page-estrategias">
+  <!-- Estratégias — componente React (src/components/Estrategias.jsx) -->
+  <div id="estrategias-root"></div>
 </div>
 
 <!-- ══ DADOS ══ -->
@@ -583,7 +590,20 @@
 // Só funciona quando o site estiver hospedado com HTTPS — não funciona abrindo o arquivo direto (file://).
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
+    navigator.serviceWorker.register('sw.js').then((reg) => {
+      // Verifica se tem versão nova toda vez que o app é aberto/volta a ficar visível
+      reg.update();
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) reg.update(); });
+    }).catch(() => {});
+  });
+
+  // Assim que o Service Worker novo assumir o controle da página, recarrega sozinho —
+  // a pessoa nunca mais precisa saber que existe "cache" pra limpar.
+  let jaRecarregou = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (jaRecarregou) return;
+    jaRecarregou = true;
+    window.location.reload();
   });
 }
 </script>
