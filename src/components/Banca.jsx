@@ -309,8 +309,6 @@ function AbaEvolucao() {
     maiorLucroDia: null, maiorPrejuizoDia: null,
   };
 
-  const grid2 = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14, alignItems: 'stretch' };
-
   // ── Evolução da Banca / Reserva: badges de variação % + rodapés ──
   const iniSaldo = ev.pontosSaldo[0], atualSaldo = ev.pontosSaldo[ev.pontosSaldo.length - 1];
   const pctSaldo = iniSaldo !== 0 ? ((atualSaldo - iniSaldo) / Math.abs(iniSaldo)) * 100 : (atualSaldo !== 0 ? 100 : 0);
@@ -320,7 +318,7 @@ function AbaEvolucao() {
 
   return (
     <>
-      <div style={grid2}>
+      <div className="grid2-resp">
         <GraficoLinha
           pontos={ev.pontosSaldo}
           cor={atualSaldo >= iniSaldo ? '#4dd87a' : '#f08060'}
@@ -350,7 +348,7 @@ function AbaEvolucao() {
         />
       </div>
 
-      <div style={grid2}>
+      <div className="grid2-resp">
         <div className="card" style={{ marginBottom: 0 }}>
           <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11 }}><Target size={13} color="#4dd87a" />Meta Diária</div>
           {r.metaDiaria > 0 ? (
@@ -402,7 +400,7 @@ function AbaEvolucao() {
         </div>
       </div>
 
-      <div style={grid2}>
+      <div className="grid2-resp">
         <div className="card" style={{ marginBottom: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <div className="card-title" style={{ marginBottom: 0, display: 'flex', alignItems: 'center', gap: 6, fontSize: 11 }}><CalendarDays size={13} />Resumo do Dia</div>

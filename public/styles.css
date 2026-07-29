@@ -106,6 +106,12 @@ header { background: var(--gramado); border-bottom: 3px solid var(--ouro); paddi
 .sub-page { display: none; }
 .sub-page.active { display: block; }
 
+/* Grade responsiva usada na aba Banca → Evolução (gráficos e cards em par).
+   1 coluna no celular (evita gráfico/card espremido), 2 colunas a partir de 480px —
+   mesmo padrão mobile-first já usado no resto do app (.stats-grid, .fg2, etc). */
+.grid2-resp { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 14px; align-items: stretch; }
+@media(min-width:480px){ .grid2-resp { grid-template-columns: 1fr 1fr; } }
+
 /* MAIN */
 main { flex: 1; padding: 16px; max-width: 900px; width: 100%; margin: 0 auto; padding-bottom: 78px; }
 

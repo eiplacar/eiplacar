@@ -366,10 +366,16 @@ async function authIniciarSessao(){
   perfilAtual = await authBuscarPerfil();
   // Recarrega jogos e banca usando o token da sessão que acabou de logar —
   // antes do login, esses dados podem ter vindo vazios (bloqueados pelo RLS sem login).
-  await carregarJogos();
-  await bpCarregarNuvem();
-  await cfgAppCarregarNuvem();
-  await escudosCarregarNuvem();
+  // As 4 chamadas abaixo são independentes entre si (tabelas diferentas: jogos, banca,
+  // config_app, escudos) — rodar em paralelo em vez de uma atrás da outra corta o tempo
+  // de espera de "4 viagens de rede" pra "1", o que era a causa da demora no login e no
+  // aparecimento das telas da Banca.
+  await Promise.all([
+    carregarJogos(),
+    bpCarregarNuvem(),
+    cfgAppCarregarNuvem(),
+    escudosCarregarNuvem(),
+  ]);
   authAplicarTela();
 }
 
