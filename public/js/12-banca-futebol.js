@@ -92,10 +92,21 @@ async function bpSyncNuvem(){
   if (bpSyncPendente) { bpSyncPendente = false; bpSyncNuvem(); }
 }
 
-// Busca o estado mais recente da nuvem (chamado ao entrar na aba Banca / abrir o app)
-async function bpCarregarNuvem(){
+// Busca o estado mais recente da nuvem (chamado ao entrar na aba Banca / abrir o app).
+//
+// CAUSA DA DEMORA (investigado): antes disso, TODA vez que a pessoa clicava na aba
+// Banca, o app disparava um fetch novo pro Supabase e só atualizava a tela quando a
+// resposta chegava — em conexão lenta/instável isso trava a exibição por 1-3s+ a cada
+// clique, mesmo que os dados não tenham mudado desde a última vez. Agora: só busca de
+// novo se já passou BP_THROTTLE_MS desde a última busca (ou se `force=true`, usado
+// depois de salvar/editar/excluir uma movimentação). A tela já mostra o cache local
+// na hora — a busca na nuvem só confirma/atualiza em segundo plano.
+const BP_THROTTLE_MS = 15000;
+let bpUltimaBuscaEm = 0;
+async function bpCarregarNuvem(force){
   const uid = bpUserId();
   if (!uid || !temConfig()) { bancaCache = bpLoad(); return; }
+  if (!force && (Date.now() - bpUltimaBuscaEm) < BP_THROTTLE_MS) return; // cache ainda "fresco", evita round-trip desnecessário
   // Se ainda tem um envio local pendente/em andamento, NÃO sobrescreve o cache com o que
   // tem na nuvem agora (que ainda está desatualizado) — senão a entrada que acabou de ser
   // salva localmente "some" ao navegar rápido demais pra outra aba. Deixa o envio em
@@ -105,6 +116,7 @@ async function bpCarregarNuvem(){
     const res = await fetch(bpUrl('?user_id=eq.'+uid+'&select=dados'), { headers: sbHeaders() });
     if (!res.ok) { const t = await res.text(); throw new Error(t); }
     const data = await res.json();
+    bpUltimaBuscaEm = Date.now();
     if (data && data[0] && data[0].dados) {
       bancaCache = migrarBanca({ ...BP_VAZIO, ...data[0].dados });
       localStorage.setItem(bpLocalKey(), JSON.stringify(bancaCache));
@@ -195,42 +207,6 @@ function computeFutebolTimes(busca, camp, local){
   return { temJogosCadastrados: jogosCache.length>0, linhas };
 }
 window.computeFutebolTimes = computeFutebolTimes;
-
-// ── LIGAS: mesma tabela de % Over de Gols/Cantos das Times, só que agrupada por liga
-// (total de gols/escanteios da partida, já que aqui não existe "time da casa" fixo) ──
-function computeFutebolLigas(busca, campUnico){
-  const buscaLower = (busca||'').trim().toLowerCase();
-  let ligas = sortNatural([...new Set(jogosCache.map(j=>j.camp))]);
-  if(campUnico) ligas = ligas.filter(l=>l===campUnico);
-  if(buscaLower) ligas = ligas.filter(l=>l.toLowerCase().includes(buscaLower));
-
-  const linhasGols   = [0.5,1.5,2.5,3.5,4.5];
-  const linhasCantos = [7.5,8.5,9.5,10.5];
-
-  const linhas = ligas.map(liga=>{
-    const jogosLiga = jogosCache.filter(j=>j.camp===liga);
-    const n = jogosLiga.length;
-    if(!n) return null;
-
-    const pctGols = linhasGols.map(l=>{
-      const bateu = jogosLiga.filter(j=>((j.gC||0)+(j.gV||0))>l).length;
-      return Math.round((bateu/n)*1000)/10;
-    });
-
-    const jogosComCantos = jogosLiga.filter(j=>j.escanteiosC!=null && j.escanteiosV!=null);
-    const nc = jogosComCantos.length;
-    const pctCantos = linhasCantos.map(l=>{
-      if(!nc) return null;
-      const bateu = jogosComCantos.filter(j=>(j.escanteiosC+j.escanteiosV)>l).length;
-      return Math.round((bateu/nc)*1000)/10;
-    });
-
-    return { nome: liga, n, pctGols, pctCantos };
-  }).filter(Boolean);
-
-  return { temJogosCadastrados: jogosCache.length>0, linhas };
-}
-window.computeFutebolLigas = computeFutebolLigas;
 
 // ── TIMES: tabela comparativa com % de Over de Gols e Over de Cantos, calculados a partir dos jogos já cadastrados ──
 function renderFutebolTimes(){

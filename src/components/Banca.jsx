@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Wallet, ShieldHalf, ShieldAlert, TrendingUp, ArrowDownCircle, ArrowUpCircle, ShieldPlus, Undo2, Trash2, ArrowLeftRight, BarChart3, Target, Lightbulb, Banknote, LineChart, CalendarDays, CalendarRange, Trophy, TrendingDown } from 'lucide-react';
+import { Wallet, ShieldHalf, ShieldAlert, TrendingUp, ArrowDown, ArrowUp, ArrowDownCircle, ArrowUpCircle, ShieldPlus, Undo2, Trash2, ArrowLeftRight, BarChart3, Target, Lightbulb, Banknote, LineChart, CalendarDays, CalendarRange, Trophy, TrendingDown } from 'lucide-react';
 
 // ══ Banca (carteira individual) — 10º módulo migrado/redesenhado em React ══
 //
@@ -57,6 +57,22 @@ function Grupo({ titulo, children }) {
   );
 }
 
+// Card de Depósitos/Retiradas: selo circular com a seta dentro (igual ao modelo),
+// mas sem a barra/linha colorida embaixo — só o ícone, sem esse resquício do design antigo.
+function StatBoxSeta({ icone: Icone, val, lbl, cor }) {
+  return (
+    <div style={{ flex: 1, minWidth: 130, background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 10, padding: '14px 12px', display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div style={{ width: 40, height: 40, borderRadius: '50%', border: `2px solid ${cor}`, background: cor + '1a', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <Icone size={18} color={cor} />
+      </div>
+      <div>
+        <div style={{ fontSize: 10, color: 'var(--texto2)', textTransform: 'uppercase', letterSpacing: '.4px', fontWeight: 700, marginBottom: 2 }}>{lbl}</div>
+        <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--texto)' }}>{val}</div>
+      </div>
+    </div>
+  );
+}
+
 function AbaCarteira() {
   const [, setTick] = useState(0);
   useEffect(() => {
@@ -78,8 +94,8 @@ function AbaCarteira() {
       </div>
 
       <Grupo titulo={<><ArrowLeftRight size={11} /> Depósitos / Retiradas</>}>
-        <StatBox val={'R$ ' + c.depositos.toFixed(2)} lbl="Depósitos" />
-        <StatBox val={'R$ ' + c.retiradas.toFixed(2)} lbl="Retiradas" />
+        <StatBoxSeta icone={ArrowDown} val={'R$ ' + c.depositos.toFixed(2)} lbl="Depósitos" cor="#4dd87a" />
+        <StatBoxSeta icone={ArrowUp} val={'R$ ' + c.retiradas.toFixed(2)} lbl="Retiradas" cor="#f08060" />
       </Grupo>
 
       <Grupo titulo={<><BarChart3 size={11} /> Performance</>}>
@@ -433,18 +449,6 @@ function AbaEvolucao() {
       </div>
 
       <div className="card">
-        <div className="card-title">Crescimento Mensal</div>
-        {ev.crescimentoMensal.length === 0 ? (
-          <div className="empty"><div className="icon"><LineChart size={22} /></div><p>Sem dados suficientes ainda.</p></div>
-        ) : ev.crescimentoMensal.map((m) => (
-          <div key={m.mes} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid var(--c3)' }}>
-            <span style={{ color: 'var(--texto2)', fontSize: 12 }}>{m.mes}</span>
-            <strong style={{ color: m.pl >= 0 ? '#4dd87a' : '#f08060' }}>{m.pl >= 0 ? '+' : ''}R$ {m.pl.toFixed(2)}</strong>
-          </div>
-        ))}
-      </div>
-
-      <div className="card">
         <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Trophy size={14} />Recordes</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           <StatBox val={ev.melhorSequencia} lbl="Melhor Sequência · Greens" cor="#4dd87a" />
@@ -461,7 +465,45 @@ function AbaEvolucao() {
           </div>
         </div>
       </div>
+
+      <CrescimentoMensal dados={ev.crescimentoMensal} />
     </>
+  );
+}
+
+// Crescimento Mensal — vem depois de Recordes. Mostra só os últimos meses por padrão
+// (mais recente primeiro) e expande sob demanda, pra não virar uma lista enorme.
+function CrescimentoMensal({ dados }) {
+  const [expandido, setExpandido] = useState(false);
+  const LIMITE = 6;
+  const ordenados = [...dados].sort((a, b) => b.mes.localeCompare(a.mes)); // mais recente primeiro
+  const visiveis = expandido ? ordenados : ordenados.slice(0, LIMITE);
+  const temMais = ordenados.length > LIMITE;
+
+  return (
+    <div className="card">
+      <div className="card-title">Crescimento Mensal</div>
+      {ordenados.length === 0 ? (
+        <div className="empty"><div className="icon"><LineChart size={22} /></div><p>Sem dados suficientes ainda.</p></div>
+      ) : (
+        <>
+          {visiveis.map((m) => (
+            <div key={m.mes} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid var(--c3)' }}>
+              <span style={{ color: 'var(--texto2)', fontSize: 12 }}>{m.mes}</span>
+              <strong style={{ color: m.pl >= 0 ? '#4dd87a' : '#f08060' }}>{m.pl >= 0 ? '+' : ''}R$ {m.pl.toFixed(2)}</strong>
+            </div>
+          ))}
+          {temMais && (
+            <button
+              onClick={() => setExpandido((v) => !v)}
+              style={{ width: '100%', marginTop: 10, background: 'none', border: '1px solid var(--c3)', borderRadius: 8, padding: '8px', color: 'var(--ouro)', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+            >
+              {expandido ? 'Ver menos' : `Ver mais (${ordenados.length - LIMITE})`}
+            </button>
+          )}
+        </>
+      )}
+    </div>
   );
 }
 
@@ -477,9 +519,9 @@ export default function Banca() {
   return (
     <>
       <div className="sub-nav" style={{ marginBottom: 14 }}>
-        <button className={`sub-tab ${tab === 'carteira' ? 'active' : ''}`} onClick={() => { window.toastEsconder?.(); setTab('carteira'); }}><Wallet size={13} style={{ verticalAlign: -2, marginRight: 4 }} />Carteira</button>
-        <button className={`sub-tab ${tab === 'movimentacoes' ? 'active' : ''}`} onClick={() => { window.toastEsconder?.(); setTab('movimentacoes'); }}><ArrowLeftRight size={13} style={{ verticalAlign: -2, marginRight: 4 }} />Movimentações</button>
-        <button className={`sub-tab ${tab === 'evolucao' ? 'active' : ''}`} onClick={() => { window.toastEsconder?.(); setTab('evolucao'); }}><TrendingUp size={13} style={{ verticalAlign: -2, marginRight: 4 }} />Evolução</button>
+        <button className={`sub-tab ${tab === 'carteira' ? 'active' : ''}`} onClick={() => { window.toastEsconder?.(); setTab('carteira'); }}><Wallet size={13} /><span>Carteira</span></button>
+        <button className={`sub-tab ${tab === 'movimentacoes' ? 'active' : ''}`} onClick={() => { window.toastEsconder?.(); setTab('movimentacoes'); }}><ArrowLeftRight size={13} /><span>Movimentações</span></button>
+        <button className={`sub-tab ${tab === 'evolucao' ? 'active' : ''}`} onClick={() => { window.toastEsconder?.(); setTab('evolucao'); }}><TrendingUp size={13} /><span>Evolução</span></button>
       </div>
 
       <div className={`sub-page ${tab === 'carteira' ? 'active' : ''}`}><AbaCarteira /></div>

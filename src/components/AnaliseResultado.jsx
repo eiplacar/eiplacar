@@ -314,7 +314,8 @@ export default function AnaliseResultado() {
                     </div>
                   ))}
                 </div>
-                <div className="cal-resumo" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div className="cal-resumo" style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+                  <span style={{ fontWeight: 700, color: 'var(--texto)' }}>{s.calendario.length} jogos</span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span className="cal-dot dificil" style={{ display: 'inline-block' }} /> {s.calendario.filter((c) => calDot(c.rank, c.tamCamp) === 'dificil').length} difícil</span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span className="cal-dot medio" style={{ display: 'inline-block' }} /> {s.calendario.filter((c) => calDot(c.rank, c.tamCamp) === 'medio').length} médio</span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span className="cal-dot facil" style={{ display: 'inline-block' }} /> {s.calendario.filter((c) => calDot(c.rank, c.tamCamp) === 'facil').length} fácil</span>
@@ -369,7 +370,7 @@ export default function AnaliseResultado() {
             {jogoSel.gols && jogoSel.gols.length > 0 && (
               <div>
                 <div style={{ fontSize: 11, color: 'var(--texto2)', fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4 }}><Award size={12} /> Gols do jogo</div>
-                <div className="gol-seq">
+                <div className="gol-modal-grid">
                   {jogoSel.gols.map((g, i) => (
                     <div className="gol-seq-item" key={i}>
                       <div className="gsi-num">{g.time === 'casa' ? jogoSel.casaNome : jogoSel.visNome}</div>
