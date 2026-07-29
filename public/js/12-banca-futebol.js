@@ -196,6 +196,42 @@ function computeFutebolTimes(busca, camp, local){
 }
 window.computeFutebolTimes = computeFutebolTimes;
 
+// ── LIGAS: mesma tabela de % Over de Gols/Cantos das Times, só que agrupada por liga
+// (total de gols/escanteios da partida, já que aqui não existe "time da casa" fixo) ──
+function computeFutebolLigas(busca, campUnico){
+  const buscaLower = (busca||'').trim().toLowerCase();
+  let ligas = sortNatural([...new Set(jogosCache.map(j=>j.camp))]);
+  if(campUnico) ligas = ligas.filter(l=>l===campUnico);
+  if(buscaLower) ligas = ligas.filter(l=>l.toLowerCase().includes(buscaLower));
+
+  const linhasGols   = [0.5,1.5,2.5,3.5,4.5];
+  const linhasCantos = [7.5,8.5,9.5,10.5];
+
+  const linhas = ligas.map(liga=>{
+    const jogosLiga = jogosCache.filter(j=>j.camp===liga);
+    const n = jogosLiga.length;
+    if(!n) return null;
+
+    const pctGols = linhasGols.map(l=>{
+      const bateu = jogosLiga.filter(j=>((j.gC||0)+(j.gV||0))>l).length;
+      return Math.round((bateu/n)*1000)/10;
+    });
+
+    const jogosComCantos = jogosLiga.filter(j=>j.escanteiosC!=null && j.escanteiosV!=null);
+    const nc = jogosComCantos.length;
+    const pctCantos = linhasCantos.map(l=>{
+      if(!nc) return null;
+      const bateu = jogosComCantos.filter(j=>(j.escanteiosC+j.escanteiosV)>l).length;
+      return Math.round((bateu/nc)*1000)/10;
+    });
+
+    return { nome: liga, n, pctGols, pctCantos };
+  }).filter(Boolean);
+
+  return { temJogosCadastrados: jogosCache.length>0, linhas };
+}
+window.computeFutebolLigas = computeFutebolLigas;
+
 // ── TIMES: tabela comparativa com % de Over de Gols e Over de Cantos, calculados a partir dos jogos já cadastrados ──
 function renderFutebolTimes(){
   const wrap = document.getElementById('fTimesLista');

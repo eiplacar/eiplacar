@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Target, BarChart3, Flag, Square, Search, AlertTriangle, MapPin, Trophy, Scale, Goal, Handshake, Clock, Calendar, Timer, Home, Plane, ShieldAlert, Sunrise, Zap, Flame } from 'lucide-react';
+import { Target, BarChart3, Flag, Square, Search, AlertTriangle, MapPin, Trophy, Scale, Goal, Handshake, Clock, Calendar, Timer, Home, Plane, ShieldAlert, Sunrise, Zap, Flame, X, Footprints, Award } from 'lucide-react';
 
 const PERIODO_ICONE = { '🌅': Sunrise, '⚡': Zap, '🔥': Flame, '🏁': Flag };
 
@@ -41,6 +41,7 @@ const localLbl = (loc) => (loc === 'all' ? 'Total' : loc === 'casa' ? 'Em casa' 
 export default function AnaliseResultado() {
   const [, setTick] = useState(0);
   const [tab, setTab] = useState('prob');
+  const [jogoSel, setJogoSel] = useState(null);
 
   useEffect(() => {
     window.analiseResultadoRefresh = () => setTick((t) => t + 1);
@@ -256,7 +257,7 @@ export default function AnaliseResultado() {
               <div style={{ fontSize: 14, fontWeight: 800, color: cor, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}><Ico size={14} /> {nome}</div>
               <div className="forca-grid">
                 <div className="forca-box">
-                  <div className="fb-label">Em Casa ({s.nc}j)</div>
+                  <div className="fb-label">Em Casa ({s.nc} Jogos)</div>
                   <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: 4 }}>
                     <div style={{ textAlign: 'center' }}><div style={{ fontSize: 15, fontWeight: 800, color: '#4dd87a' }}>{s.vedCasa.v}</div><div style={{ fontSize: 9, color: 'var(--texto2)' }}>Vitória</div></div>
                     <div style={{ textAlign: 'center' }}><div style={{ fontSize: 15, fontWeight: 800, color: 'var(--ouro)' }}>{s.vedCasa.e}</div><div style={{ fontSize: 9, color: 'var(--texto2)' }}>Empate</div></div>
@@ -264,7 +265,7 @@ export default function AnaliseResultado() {
                   </div>
                 </div>
                 <div className="forca-box">
-                  <div className="fb-label">Fora ({s.nv}j)</div>
+                  <div className="fb-label">Fora ({s.nv} Jogos)</div>
                   <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: 4 }}>
                     <div style={{ textAlign: 'center' }}><div style={{ fontSize: 15, fontWeight: 800, color: '#4dd87a' }}>{s.vedFora.v}</div><div style={{ fontSize: 9, color: 'var(--texto2)' }}>Vitória</div></div>
                     <div style={{ textAlign: 'center' }}><div style={{ fontSize: 15, fontWeight: 800, color: 'var(--ouro)' }}>{s.vedFora.e}</div><div style={{ fontSize: 9, color: 'var(--texto2)' }}>Empate</div></div>
@@ -282,8 +283,8 @@ export default function AnaliseResultado() {
             <div key={nome} style={{ marginBottom: 14 }}>
               <div style={{ fontSize: 14, fontWeight: 800, color: cor, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}><Ico size={14} /> {nome}</div>
               <div className="forca-grid">
-                <div className="forca-box"><div className="fb-label">Em Casa ({s.nc}j)</div><div className="fb-stat"><span className="fb-val">{s.mediaGM_casa}</span> <Goal size={11} style={{ verticalAlign: -2 }} /> marc./j</div><div className="fb-stat"><span className="fb-val">{s.mediaGS_casa}</span> <ShieldAlert size={11} style={{ verticalAlign: -2 }} /> sofr./j</div></div>
-                <div className="forca-box"><div className="fb-label">Fora ({s.nv}j)</div><div className="fb-stat"><span className="fb-val">{s.mediaGM_vis}</span> <Goal size={11} style={{ verticalAlign: -2 }} /> marc./j</div><div className="fb-stat"><span className="fb-val">{s.mediaGS_vis}</span> <ShieldAlert size={11} style={{ verticalAlign: -2 }} /> sofr./j</div></div>
+                <div className="forca-box"><div className="fb-label">Em Casa ({s.nc} Jogos)</div><div className="fb-stat"><span className="fb-val">{s.mediaGM_casa}</span> <Goal size={11} style={{ verticalAlign: -2 }} /> marcado/j</div><div className="fb-stat"><span className="fb-val">{s.mediaGS_casa}</span> <ShieldAlert size={11} style={{ verticalAlign: -2 }} /> sofrido/j</div></div>
+                <div className="forca-box"><div className="fb-label">Fora ({s.nv} Jogos)</div><div className="fb-stat"><span className="fb-val">{s.mediaGM_vis}</span> <Goal size={11} style={{ verticalAlign: -2 }} /> marcado/j</div><div className="fb-stat"><span className="fb-val">{s.mediaGS_vis}</span> <ShieldAlert size={11} style={{ verticalAlign: -2 }} /> sofrido/j</div></div>
               </div>
             </div>
           ))}
@@ -296,15 +297,19 @@ export default function AnaliseResultado() {
               <>
                 <div className="cal-list">
                   {s.calendario.map((c, i) => (
-                    <div className="cal-item" key={i}>
+                    <div className="cal-item cal-item-click" key={i} onClick={() => setJogoSel({ ...c, timeRef: nome, corRef: cor })}>
                       <div className={`cal-dot ${calDot(c.rank, c.tamCamp)}`} />
-                      <div style={{ minWidth: 24, fontSize: 11, color: 'var(--texto2)' }}>J{i + 1}</div>
-                      <div style={{ flex: 1, fontSize: 12.5, fontWeight: 600 }}>
-                        <span style={{ color: 'var(--texto2)', fontWeight: 700 }}>#{c.rankCasa ?? '—'}</span>{' '}
-                        <span style={{ color: c.casaNome === nome ? cor : 'var(--texto)' }}>{c.casaNome}</span>
-                        {' '}{c.gC} × {c.gV}{' '}
-                        <span style={{ color: c.visNome === nome ? cor : 'var(--texto)' }}>{c.visNome}</span>{' '}
-                        <span style={{ color: 'var(--texto2)', fontWeight: 700 }}>#{c.rankVis ?? '—'}</span>
+                      <div style={{ minWidth: 22, fontSize: 11, color: 'var(--texto2)' }}>J{i + 1}</div>
+                      <div className="cal-placar-row">
+                        <div className="cal-time cal-time-casa">
+                          <span style={{ color: 'var(--texto2)', fontWeight: 700 }}>#{c.rankCasa ?? '—'}</span>{' '}
+                          <span style={{ color: c.casaNome === nome ? cor : 'var(--texto)' }}>{c.casaNome}</span>
+                        </div>
+                        <div className="cal-placar-box">{c.gC} × {c.gV}</div>
+                        <div className="cal-time cal-time-vis">
+                          <span style={{ color: c.visNome === nome ? cor : 'var(--texto)' }}>{c.visNome}</span>{' '}
+                          <span style={{ color: 'var(--texto2)', fontWeight: 700 }}>#{c.rankVis ?? '—'}</span>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -326,6 +331,57 @@ export default function AnaliseResultado() {
           </div>
         ))}
       </div>
+
+      {jogoSel && (
+        <div className="modal-overlay open" onClick={() => setJogoSel(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <h2 style={{ marginBottom: 2 }}>Estatísticas do jogo</h2>
+              <button onClick={() => setJogoSel(null)} style={{ background: 'transparent', border: 'none', color: 'var(--texto2)', cursor: 'pointer', padding: 4 }}><X size={18} /></button>
+            </div>
+            <p style={{ marginBottom: 10 }}>{jogoSel.camp || 'Campeonato não informado'}{jogoSel.data ? ` · ${jogoSel.data}` : ''}</p>
+
+            <div className="prob-resultado" style={{ marginBottom: 14 }}>
+              <div className="prob-box"><div className="pb-label" style={{ color: jogoSel.casaNome === jogoSel.timeRef ? jogoSel.corRef : 'var(--texto)' }}>{jogoSel.casaNome}</div><div className="pb-pct">{jogoSel.gC}</div></div>
+              <div className="prob-box"><div className="pb-label">×</div><div className="pb-pct" style={{ color: 'var(--texto2)', fontSize: 13 }}>{jogoSel.golsHT_C != null && jogoSel.golsHT_V != null ? `HT ${jogoSel.golsHT_C}-${jogoSel.golsHT_V}` : ''}</div></div>
+              <div className="prob-box"><div className="pb-label" style={{ color: jogoSel.visNome === jogoSel.timeRef ? jogoSel.corRef : 'var(--texto)' }}>{jogoSel.visNome}</div><div className="pb-pct">{jogoSel.gV}</div></div>
+            </div>
+
+            <div className="forca-grid" style={{ marginBottom: 10 }}>
+              <div className="forca-box">
+                <div className="fb-label">{jogoSel.casaNome}</div>
+                <div className="fb-stat"><span className="fb-val">{jogoSel.chutesC ?? '—'}</span> <Footprints size={11} style={{ verticalAlign: -2 }} /> chutes</div>
+                <div className="fb-stat"><span className="fb-val">{jogoSel.chutesGolC ?? '—'}</span> <Goal size={11} style={{ verticalAlign: -2 }} /> no gol</div>
+                <div className="fb-stat"><span className="fb-val">{jogoSel.escanteiosC ?? '—'}</span> <Flag size={11} style={{ verticalAlign: -2 }} /> escanteios</div>
+                <div className="fb-stat"><span className="fb-val">{jogoSel.amarelosC ?? '—'}</span> <Square size={11} style={{ verticalAlign: -2, color: 'var(--ouro)' }} /> amarelos</div>
+                <div className="fb-stat"><span className="fb-val">{jogoSel.vermelhosC ?? '—'}</span> <Square size={11} style={{ verticalAlign: -2, color: '#f08060' }} /> vermelhos</div>
+              </div>
+              <div className="forca-box">
+                <div className="fb-label">{jogoSel.visNome}</div>
+                <div className="fb-stat"><span className="fb-val">{jogoSel.chutesV ?? '—'}</span> <Footprints size={11} style={{ verticalAlign: -2 }} /> chutes</div>
+                <div className="fb-stat"><span className="fb-val">{jogoSel.chutesGolV ?? '—'}</span> <Goal size={11} style={{ verticalAlign: -2 }} /> no gol</div>
+                <div className="fb-stat"><span className="fb-val">{jogoSel.escanteiosV ?? '—'}</span> <Flag size={11} style={{ verticalAlign: -2 }} /> escanteios</div>
+                <div className="fb-stat"><span className="fb-val">{jogoSel.amarelosV ?? '—'}</span> <Square size={11} style={{ verticalAlign: -2, color: 'var(--ouro)' }} /> amarelos</div>
+                <div className="fb-stat"><span className="fb-val">{jogoSel.vermelhosV ?? '—'}</span> <Square size={11} style={{ verticalAlign: -2, color: '#f08060' }} /> vermelhos</div>
+              </div>
+            </div>
+
+            {jogoSel.gols && jogoSel.gols.length > 0 && (
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--texto2)', fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4 }}><Award size={12} /> Gols do jogo</div>
+                <div className="gol-seq">
+                  {jogoSel.gols.map((g, i) => (
+                    <div className="gol-seq-item" key={i}>
+                      <div className="gsi-num">{g.time === 'casa' ? jogoSel.casaNome : jogoSel.visNome}</div>
+                      <div className="gsi-min marc">{g.min}'</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </>
   );
 }

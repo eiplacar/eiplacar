@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Trophy, Goal, Search, LineChart, Ruler, Circle, FileText } from 'lucide-react';
+import { Trophy, Goal, Search, LineChart } from 'lucide-react';
 
 // ══ Estatística (Ligas / Times) — oitavo módulo migrado para React ══
 //
@@ -48,8 +48,6 @@ export default function Estatistica() {
   const [, setTick] = useState(0);
   const [tab, setTab] = useState('fligas');
   const [filtroLigaGlobal, setFiltroLigaGlobal] = useState('');
-  const [filtroLigaTipo, setFiltroLigaTipo] = useState('');
-  const [filtroLigaMercado, setFiltroLigaMercado] = useState('');
   const [fTimeBusca, setFTimeBusca] = useState('');
   const [fTimeFiltroLiga, setFTimeFiltroLiga] = useState('');
   const [fTimeFiltroLocal, setFTimeFiltroLocal] = useState('');
@@ -64,15 +62,10 @@ export default function Estatistica() {
   const sortNatural = window.sortNatural || ((arr) => [...arr].sort());
   const camps = useMemo(() => sortNatural([...new Set(jogosCache.map((j) => j.camp))]), [jogosCache]);
 
-  const linhasLigas = useMemo(
-    () => (window.computeLigas ? window.computeLigas(filtroLigaTipo, filtroLigaGlobal, filtroLigaMercado) : []),
+  const linhasLigasOver = useMemo(
+    () => (window.computeFutebolLigas ? window.computeFutebolLigas(fLigaBusca, filtroLigaGlobal) : { temJogosCadastrados: false, linhas: [] }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [filtroLigaTipo, filtroLigaGlobal, filtroLigaMercado, jogosCache.length]
-  );
-  const linhasTempoGol = useMemo(
-    () => (window.computeTempoGolTabela ? window.computeTempoGolTabela(filtroLigaGlobal, filtroLigaMercado) : []),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [filtroLigaGlobal, filtroLigaMercado, jogosCache.length]
+    [fLigaBusca, filtroLigaGlobal, jogosCache.length]
   );
   const times = useMemo(
     () => (window.computeFutebolTimes ? window.computeFutebolTimes(fTimeBusca, fTimeFiltroLiga, fTimeFiltroLocal) : { temJogosCadastrados: false, linhas: [] }),
@@ -103,65 +96,31 @@ export default function Estatistica() {
         </div>
 
         <div className="card">
-          <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><LineChart size={14} /> Estatística por Liga</div>
-          <div className="filtros" style={{ marginBottom: 12 }}>
-            <select value={filtroLigaTipo} onChange={(e) => setFiltroLigaTipo(e.target.value)}>
-              <option value="">Pré-live + Live</option>
-              <option value="prelive">📋 Só Pré-live</option>
-              <option value="live">🔴 Só Live</option>
-            </select>
-            <select value={filtroLigaMercado} onChange={(e) => setFiltroLigaMercado(e.target.value)}>
-              <option value="">⚽🚩 Gols + Escanteios</option>
-              <option value="gols">⚽ Só Gols</option>
-              <option value="escanteios">🚩 Só Escanteios</option>
-            </select>
-          </div>
+          <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><LineChart size={14} /> Ligas — Over de Gols e Cantos</div>
           <div className="table-wrap">
             <table>
-              <thead><tr><th>Liga</th><th>Tipo</th><th>Mercado</th><th>Minuto Médio</th><th>Odd Média</th><th>Entradas</th><th>Acertos</th></tr></thead>
+              <thead>
+                <tr>
+                  <th>Liga</th><th className="td-c">Jogos</th>
+                  {linhasGolsLbl.map((l) => <th className="td-c" key={l}>{l}</th>)}
+                  {linhasCantosLbl.map((l) => <th className="td-c" key={l}>{l}</th>)}
+                </tr>
+              </thead>
               <tbody>
-                {linhasLigas.length === 0 ? (
-                  <tr><td colSpan={7}><div className="empty"><div className="icon"><LineChart size={24} /></div><p>Nenhuma entrada com Liga e Mercado preenchidos ainda. Lance entradas na Calculadora informando esses campos.</p></div></td></tr>
-                ) : linhasLigas.map((l, i) => (
-                  <tr key={i}>
-                    <td style={{ color: 'var(--verde2)', fontWeight: 600 }}>{l.liga}</td>
-                    <td style={{ display: 'flex', alignItems: 'center', gap: 4 }}>{l.tipo === 'live' ? <><Circle size={9} fill="#f08060" color="#f08060" /> Live</> : <><FileText size={11} /> Pré-live</>}</td>
-                    <td>{l.mercado}</td>
-                    <td className="td-c">{l.minMedio != null ? l.minMedio + "'" : '—'}</td>
-                    <td className="td-c">{l.oddMedia}</td>
-                    <td className="td-c">{l.qtd}</td>
-                    <td className="td-c" style={{ color: l.pctAcerto == null ? 'var(--texto2)' : l.pctAcerto >= 70 ? '#4dd87a' : l.pctAcerto >= 50 ? 'var(--ouro)' : '#f08060', fontWeight: 700 }}>
-                      {l.pctAcerto != null ? l.pctAcerto + '%' : '—'} <span style={{ color: 'var(--texto2)', fontWeight: 400, fontSize: 10 }}>({l.greens}G/{l.reds}R)</span>
-                    </td>
+                {linhasLigasOver.linhas.length === 0 ? (
+                  <tr><td colSpan={11} style={{ textAlign: 'center', color: 'var(--texto2)', padding: 16 }}>{linhasLigasOver.temJogosCadastrados ? 'Nenhuma liga encontrada nesse filtro.' : 'Nenhum jogo cadastrado ainda na Aba Dados.'}</td></tr>
+                ) : linhasLigasOver.linhas.map((l) => (
+                  <tr key={l.nome}>
+                    <td style={{ color: 'var(--verde2)', fontWeight: 600 }}>{l.nome}</td>
+                    <td className="td-c" style={{ color: 'var(--texto2)' }}>{l.n}</td>
+                    {l.pctGols.map((p, i) => <td className="td-c" key={i} style={{ color: corPct(p), fontWeight: 700 }}>{p}%</td>)}
+                    {l.pctCantos.map((p, i) => <td className="td-c" key={i} style={p == null ? { color: 'var(--texto2)' } : { color: corPct(p), fontWeight: 700 }}>{p == null ? '—' : p + '%'}</td>)}
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </div>
-
-        <div className="card">
-          <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Ruler size={14} /> Minuto Médio do Gol que Bate o Over</div>
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>Liga</th><th>Mercado</th><th>Categoria</th><th>Média 1º Gol</th><th>Média Gol que Bateu</th><th>Jogos</th><th>% Jogos</th></tr></thead>
-              <tbody>
-                {linhasTempoGol.length === 0 ? (
-                  <tr><td colSpan={7}><div className="empty"><div className="icon"><Ruler size={22} /></div><p>Nenhum jogo com gols por minuto cadastrados bateu esses Overs ainda.</p></div></td></tr>
-                ) : linhasTempoGol.map((r, i) => (
-                  <tr key={i}>
-                    <td style={{ color: 'var(--verde2)', fontWeight: 600 }}>{r.liga}</td>
-                    <td>{r.mercado}</td>
-                    <td>{r.rotuloTempo}</td>
-                    <td className="td-c">{r.mediaPrimeiro}'</td>
-                    <td className="td-c">{r.mediaBateu}'</td>
-                    <td className="td-c">{r.qtd}</td>
-                    <td className="td-c" style={{ color: r.pct >= 50 ? '#4dd87a' : r.pct >= 25 ? 'var(--ouro)' : '#f08060', fontWeight: 700 }}>{r.pct != null ? r.pct + '%' : '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <div style={{ fontSize: 10, color: 'var(--texto2)', marginTop: 6 }}>Over de Gols: baseado no total de gols da partida (mandante + visitante). Over de Cantos: baseado no total de escanteios da partida, só nos jogos com esse dado cadastrado.</div>
         </div>
       </div>
 

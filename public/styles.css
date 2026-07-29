@@ -335,12 +335,22 @@ tr:hover td { background: rgba(255,255,255,.03); }
 .fb-val   { color: var(--ouro); }
 .fb-jogos { font-size: 10px; color: var(--texto2); }
 .cal-list { display: flex; flex-direction: column; gap: 5px; }
-.cal-item { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.cal-item { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 4px 2px; border-radius: 6px; }
+.cal-item-click { cursor: pointer; transition: background .15s; }
+.cal-item-click:hover, .cal-item-click:active { background: var(--c2); }
 .cal-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 .cal-dot.facil   { background: var(--azul); }
 .cal-dot.medio   { background: var(--verde2); }
 .cal-dot.dificil { background: var(--perigo); }
 .cal-resumo { margin-top: 8px; font-size: 11px; color: var(--texto2); }
+/* Linha do calendário em 3 colunas (mandante | placar | visitante), placar sempre
+   centralizado numa coluna de largura fixa — evita o placar "andar" pro lado
+   dependendo do tamanho do nome do time. Times ocupam largura igual dos 2 lados. */
+.cal-placar-row { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; }
+.cal-time { flex: 1; min-width: 0; overflow-wrap: break-word; }
+.cal-time-casa { text-align: right; }
+.cal-time-vis  { text-align: left; }
+.cal-placar-box { flex-shrink: 0; min-width: 40px; text-align: center; font-weight: 800; color: var(--branco); background: var(--c3); border-radius: 5px; padding: 1px 5px; }
 .min-table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .min-table th { background: var(--c2); color: var(--texto2); font-size: 10px; text-transform: uppercase; padding: 6px 8px; text-align: center; border-bottom: 1px solid var(--c3); }
 .min-table td { padding: 6px 8px; text-align: center; border-bottom: 1px solid rgba(255,255,255,.05); }

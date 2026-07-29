@@ -98,7 +98,18 @@ function statsTime(nome, local, camp, qty){
 
   const ranks=jogos.map(j=>j.casa===nome?j.rankV:j.rankC).filter(r=>r!=null);
   const rankMedAdv=ranks.length?r2(ranks.reduce((a,b)=>a+b,0)/ranks.length):null;
-  const calendario=jogos.map(j=>({ adv:j.casa===nome?j.vis:j.casa, rank:j.casa===nome?j.rankV:j.rankC, data:j.data, tamCamp:tamanhoCampeonato(j.camp), casaNome:j.casa, visNome:j.vis, gC:j.gC, gV:j.gV, rankCasa:j.rankC, rankVis:j.rankV })).filter(x=>x.rank);
+  const calendario=jogos.map(j=>({
+    adv:j.casa===nome?j.vis:j.casa, rank:j.casa===nome?j.rankV:j.rankC, data:j.data, camp:j.camp,
+    tamCamp:tamanhoCampeonato(j.camp), casaNome:j.casa, visNome:j.vis, gC:j.gC, gV:j.gV,
+    rankCasa:j.rankC, rankVis:j.rankV,
+    golsHT_C:j.golsHT_C ?? null, golsHT_V:j.golsHT_V ?? null,
+    chutesC:j.chutesC ?? null, chutesV:j.chutesV ?? null,
+    chutesGolC:j.chutesGolC ?? null, chutesGolV:j.chutesGolV ?? null,
+    escanteiosC:j.escanteiosC ?? null, escanteiosV:j.escanteiosV ?? null,
+    amarelosC:j.amarelosC ?? null, amarelosV:j.amarelosV ?? null,
+    vermelhosC:j.vermelhosC ?? null, vermelhosV:j.vermelhosV ?? null,
+    gols:j.gols || [],
+  })).filter(x=>x.rank);
   const todosGols=jogos.flatMap(j=>(j.gols||[]).map(g=>({ min:g.min, marcado:(j.casa===nome&&g.time==='casa')||(j.vis===nome&&g.time==='vis') })));
   const jogosComMin=jogos.filter(j=>(j.gols||[]).length>0).length;
   const minStats=periodos4.map(p=>({ l:p.l, ico:p.ico, marc:todosGols.filter(g=>g.marcado&&g.min>=p.s&&g.min<=p.e).length, sofr:todosGols.filter(g=>!g.marcado&&g.min>=p.s&&g.min<=p.e).length }));
