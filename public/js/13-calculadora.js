@@ -563,6 +563,132 @@ function computeTempoGolTabela(camp, filtroMercado){
 }
 window.computeTempoGolTabela = computeTempoGolTabela;
 
+// ══ JANELA DE ENTRADA (aba Estratégias → Linha do Tempo) ══
+// Mesmíssimo cálculo de calcularTempoGolLiga()/calcularTempoGolBTTS() acima
+// (que já usa os jogos cadastrados na Aba Dados, com os gols por minuto), só
+// que aqui separa 1ºT/2ºT em duas listas prontas pra tabela, e aceita um
+// filtro extra de "últimos N jogos da liga" (5/10/20) além de liga/mercado.
+function jogosDaLigaFiltrados(camp, limite){
+  let jogos = camp ? jogosCache.filter(j=>j.camp===camp) : jogosCache.slice();
+  if(limite){
+    // do mais antigo pro mais recente (data, id como desempate) e fica só com
+    // os últimos N — assim "Últimos 10 jogos" pega os 10 mais recentes da liga
+    jogos = [...jogos].sort((a,b)=> (a.data||'').localeCompare(b.data||'') || (a.id||0)-(b.id||0));
+    jogos = jogos.slice(-limite);
+  }
+  return jogos;
+}
+function calcularJanelaLinha(jogos, linha){
+  const totalComDados = jogos.filter(j=>(j.gols||[]).some(g=>g.min!=null)).length;
+  const idxGolNecessario = Math.floor(linha+0.5);
+  const reg1T = [], reg2T = [];
+  jogos.forEach(j=>{
+    const total = (j.gC||0)+(j.gV||0);
+    if(total<=linha) return;
+    const golsOrdenados = (j.gols||[]).map(g=>g.min).filter(m=>m!=null).sort((a,b)=>a-b);
+    if(golsOrdenados.length<idxGolNecessario) return;
+    const primeiro = golsOrdenados[0];
+    const bateu = golsOrdenados[idxGolNecessario-1];
+    (primeiro<=45 ? reg1T : reg2T).push({primeiro, bateu});
+  });
+  function resumo(reg){
+    if(!reg.length) return null;
+    return { qtd: reg.length, pct: totalComDados ? Math.round((reg.length/totalComDados)*100) : null,
+      mediaPrimeiro: Math.round(reg.reduce((a,r)=>a+r.primeiro,0)/reg.length),
+      mediaBateu:    Math.round(reg.reduce((a,r)=>a+r.bateu,0)/reg.length) };
+  }
+  return { t1: resumo(reg1T), t2: resumo(reg2T) };
+}
+function calcularJanelaBTTS(jogos){
+  const totalComDados = jogos.filter(j=>(j.gols||[]).some(g=>g.min!=null)).length;
+  const reg1T = [], reg2T = [];
+  jogos.forEach(j=>{
+    if(!(j.gC>0 && j.gV>0)) return;
+    const golsCasa = (j.gols||[]).filter(g=>g.time==='casa' && g.min!=null).map(g=>g.min);
+    const golsVis  = (j.gols||[]).filter(g=>g.time==='vis'  && g.min!=null).map(g=>g.min);
+    if(!golsCasa.length || !golsVis.length) return;
+    const primeiroCasa = Math.min(...golsCasa), primeiroVis = Math.min(...golsVis);
+    const primeiro = Math.min(primeiroCasa, primeiroVis), bateu = Math.max(primeiroCasa, primeiroVis);
+    (primeiro<=45 ? reg1T : reg2T).push({primeiro, bateu});
+  });
+  function resumo(reg){
+    if(!reg.length) return null;
+    return { qtd: reg.length, pct: totalComDados ? Math.round((reg.length/totalComDados)*100) : null,
+      mediaPrimeiro: Math.round(reg.reduce((a,r)=>a+r.primeiro,0)/reg.length),
+      mediaBateu:    Math.round(reg.reduce((a,r)=>a+r.bateu,0)/reg.length) };
+  }
+  return { t1: resumo(reg1T), t2: resumo(reg2T) };
+}
+// filtros: { camp:'', mercadoLinha:''|'1.5'|'2.5'|'3.5'|'4.5'|'btts', limite:0|5|10|20 }
+// Retorna { t1:[...linhas], t2:[...linhas] } — cada linha: {liga, mercado, mediaPrimeiro, mediaBateu, qtd, pct}
+function computeJanelaEntrada(filtros){
+  filtros = filtros || {};
+  const camp = filtros.camp || '';
+  const mercadoLinha = filtros.mercadoLinha || '';
+  const limite = filtros.limite || 0;
+  const ligas = camp ? [camp] : sortNatural([...new Set(jogosCache.map(j=>j.camp))]);
+  const linhasDef = mercadoLinha === 'btts' ? [] : (mercadoLinha ? [parseFloat(mercadoLinha)] : [1.5,2.5,3.5,4.5]);
+  const mostrarBtts = !mercadoLinha || mercadoLinha==='btts';
+  const t1 = [], t2 = [];
+  ligas.forEach(liga=>{
+    const jogos = jogosDaLigaFiltrados(liga, limite);
+    linhasDef.forEach(linha=>{
+      const r = calcularJanelaLinha(jogos, linha);
+      if(r.t1) t1.push({ liga, mercado:`Over ${linha}`, ...r.t1 });
+      if(r.t2) t2.push({ liga, mercado:`Over ${linha}`, ...r.t2 });
+    });
+    if(mostrarBtts){
+      const rb = calcularJanelaBTTS(jogos);
+      if(rb.t1) t1.push({ liga, mercado:'Ambas Marcam', ...rb.t1 });
+      if(rb.t2) t2.push({ liga, mercado:'Ambas Marcam', ...rb.t2 });
+    }
+  });
+  return { t1, t2 };
+}
+window.computeJanelaEntrada = computeJanelaEntrada;
+
+// ══ FAIXA DE CONFIRMAÇÃO (aba Estratégias → Cenários) ══
+// Pergunta: "quando o placar tá X aos Y minutos, com que frequência o jogo
+// confirma (bate) cada linha de Over até o fim?". Usa os mesmos jogos da Aba
+// Dados, mas só entram os jogos com a cronologia de gols COMPLETA (todo gol do
+// placar final tem minuto registrado) — senão não dá pra saber com certeza
+// qual era o placar naquele minuto exato.
+// filtros: { camp:'', limite:0|10|20, minuto:10..80, placar:'1x0' (casaXvisitante) }
+// Retorna [{liga, mercado, cenario, jogos, confirmou, pct}, ...] — uma linha por Liga x Mercado
+function computeFaixaConfirmacao(filtros){
+  filtros = filtros || {};
+  const camp = filtros.camp || '';
+  const limite = filtros.limite || 0;
+  const minuto = Number(filtros.minuto) || 30;
+  const placar = filtros.placar || '0x0';
+  const [pCasa, pVis] = placar.split('x').map(Number);
+  const ligas = camp ? [camp] : sortNatural([...new Set(jogosCache.map(j=>j.camp))]);
+  const linhasDef = [1.5, 2.5, 3.5, 4.5];
+  const cenario = `${placar} aos ${minuto}'`;
+  const linhas = [];
+  ligas.forEach(liga=>{
+    const jogos = jogosDaLigaFiltrados(liga, limite);
+    // só jogos com a cronologia de gols 100% registrada (todo gol do placar final com minuto)
+    const jogosCompletos = jogos.filter(j=>{
+      const total = (j.gC||0)+(j.gV||0);
+      return total>0 && (j.gols||[]).length===total && (j.gols||[]).every(g=>g.min!=null);
+    });
+    const jogosCenario = jogosCompletos.filter(j=>{
+      const cCasa = (j.gols||[]).filter(g=>g.time==='casa' && g.min<=minuto).length;
+      const cVis  = (j.gols||[]).filter(g=>g.time==='vis'  && g.min<=minuto).length;
+      return cCasa===pCasa && cVis===pVis;
+    });
+    if(!jogosCenario.length) return; // sem jogos nesse cenário nessa liga, não polui a tabela
+    linhasDef.forEach(linha=>{
+      const confirmou = jogosCenario.filter(j=>((j.gC||0)+(j.gV||0))>linha).length;
+      const pct = Math.round((confirmou/jogosCenario.length)*100);
+      linhas.push({ liga, mercado:`Over ${linha}`, cenario, jogos:jogosCenario.length, confirmou, pct });
+    });
+  });
+  return linhas;
+}
+window.computeFaixaConfirmacao = computeFaixaConfirmacao;
+
 // Categoriza o texto livre do mercado como "Gols" ou "Escanteios" (cantos),
 // pra dar pra filtrar a tabela por um ou por outro.
 function categoriaMercado(mercado){

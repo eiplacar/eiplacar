@@ -29,6 +29,7 @@ function goTo(p) {
   if (p==='apostas')     { bpCarregarNuvem().then(()=>{ goSubApostas('nova-entrada'); window.resolvidasRefresh?.(); calcEntrada(); }); }
   if (p==='banca')       { window.bancaRefresh?.(); bpCarregarNuvem().then(()=>window.bancaRefresh?.()); }
   if (p==='futebol')     { window.estatisticaRefresh?.(); }
+  if (p==='estrategias') { window.estrategiasRefresh?.(); }
   if (p==='classificacao') { window.classificacaoRefresh?.(); }
   if (p==='confrontos')  { goSubConfrontos('add-partida'); }
   if (p==='minhaconta')  { window.perfilRefresh?.(); window.configuracoesRefresh?.(); }
