@@ -160,6 +160,7 @@ function StatMini({ icon, valor, label, cor }) {
 }
 
 
+const MINUTOS_CENARIO = [10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80];
 const PLACARES_CENARIO = ['0x0', '1x0', '0x1', '1x1', '2x0', '0x2', '2x1', '1x2', '2x2', '3x1', '1x3'];
 
 export default function Estrategias() {
