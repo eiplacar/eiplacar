@@ -326,9 +326,12 @@ function AbaEvolucao() {
   };
 
   // ── Evolução da Banca / Reserva: badges de variação % + rodapés ──
-  const iniSaldo = ev.pontosSaldo[0], atualSaldo = ev.pontosSaldo[ev.pontosSaldo.length - 1];
+  // `?? 0` protege contra pontosSaldo/pontosReserva vazios (banca sem nenhuma
+  // entrada/movimento ainda), que antes deixavam iniSaldo/atualSaldo undefined
+  // e quebravam a tela inteira em .toFixed(2).
+  const iniSaldo = ev.pontosSaldo[0] ?? 0, atualSaldo = ev.pontosSaldo[ev.pontosSaldo.length - 1] ?? 0;
   const pctSaldo = iniSaldo !== 0 ? ((atualSaldo - iniSaldo) / Math.abs(iniSaldo)) * 100 : (atualSaldo !== 0 ? 100 : 0);
-  const iniReserva = ev.pontosReserva[0], atualReserva = ev.pontosReserva[ev.pontosReserva.length - 1];
+  const iniReserva = ev.pontosReserva[0] ?? 0, atualReserva = ev.pontosReserva[ev.pontosReserva.length - 1] ?? 0;
   const pctReserva = iniReserva !== 0 ? ((atualReserva - iniReserva) / Math.abs(iniReserva)) * 100 : (atualReserva !== 0 ? 100 : 0);
   const pctProtegida = (atualSaldo + atualReserva) > 0 ? Math.round((atualReserva / (atualSaldo + atualReserva)) * 1000) / 10 : 0;
 

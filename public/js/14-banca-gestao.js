@@ -214,6 +214,11 @@ function computeEvolucao(){
 
   const crescimentoMensal = Object.entries(porMes).sort((a,b)=>a[0].localeCompare(b[0])).map(([mes,pl])=>({ mes, pl:Math.round(pl*100)/100 }));
 
+  // Sem nenhuma entrada/movimento ainda (banca zerada / conta nova): os arrays
+  // ficam vazios e quebravam o gráfico de Evolução (pontosSaldo[0] undefined
+  // → undefined.toFixed() explode a tela toda). Garante sempre 1 ponto inicial.
+  if(pontosSaldo.length===0){ pontosSaldo.push(0); pontosReserva.push(0); datas.push(null); }
+
   return { pontosSaldo, pontosReserva, datas, melhorSequencia:melhorSeq, piorSequencia:Math.abs(piorSeq), maiorDrawdown:Math.round(maiorDrawdown*100)/100, crescimentoMensal };
 }
 window.computeEvolucao = computeEvolucao;
