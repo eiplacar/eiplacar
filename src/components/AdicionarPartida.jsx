@@ -47,7 +47,7 @@ function StatRow({ idCasa, idVis, placeholderCasa, placeholderVis }) {
 export default function AdicionarPartida() {
   useEffect(() => {
     const iData = document.getElementById('iData');
-    if (iData && !iData.value) iData.value = new Date().toISOString().split('T')[0];
+    if (iData && !iData.value) iData.value = window.hojeBR ? window.hojeBR() : new Date().toISOString().split('T')[0];
   }, []);
 
   return (

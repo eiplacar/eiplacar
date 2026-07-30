@@ -31,7 +31,7 @@ function goTo(p) {
   if (p==='futebol')     { window.estatisticaRefresh?.(); }
   if (p==='classificacao') { window.classificacaoRefresh?.(); }
   if (p==='confrontos')  { goSubConfrontos('add-partida'); }
-  if (p==='minhaconta')  { window.perfilRefresh?.(); }
+  if (p==='minhaconta')  { window.perfilRefresh?.(); window.configuracoesRefresh?.(); }
   if (p==='administracao') { window.administracaoRefresh?.(); }
 }
 // "Início" na navegação rápida: sempre volta pra tela inicial do Dashboard
@@ -59,7 +59,7 @@ function goSubApostas(t) {
   document.getElementById('sp-'+t).classList.add('active');
   if(t==='nova-entrada') {
     const eDataEl=document.getElementById('eDataEntrada');
-    if(eDataEl && !eDataEl.value) eDataEl.value=new Date().toISOString().split('T')[0];
+    if(eDataEl && !eDataEl.value) eDataEl.value=hojeBR(); // corrigido pro fuso de Brasília (ver 04-utils.js)
     const cse=document.getElementById('campSugEntrada');
     if(cse) cse.innerHTML = sortNatural([...new Set(jogosCache.map(j=>j.camp))]).map(c=>`<option value="${c}">`).join('');
     atualizarResumoEntrada();

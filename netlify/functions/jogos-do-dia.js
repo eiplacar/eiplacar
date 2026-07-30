@@ -35,7 +35,13 @@ export const handler = async function (event) {
   }
 
   const params = event.queryStringParameters || {};
-  const data = params.data || new Date().toISOString().slice(0, 10);
+  // Mesma correção de fuso horário do front-end (ver hojeBR em public/js/04-utils.js):
+  // `new Date().toISOString()` usa UTC, e por isso "virava o dia" 3h antes da hora certa
+  // de Brasília. Aqui no backend (Node) não existe `window`, então repetimos a lógica.
+  const hojeBrasilia = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date());
+  const data = params.data || hojeBrasilia;
 
   try {
     const resp = await fetch(`https://v3.football.api-sports.io/fixtures?date=${data}`, {

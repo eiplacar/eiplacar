@@ -16,7 +16,7 @@ import { Wallet, ShieldHalf, ShieldAlert, TrendingUp, ArrowDown, ArrowUp, ArrowD
 // window.bancaRefresh é o "sininho" chamado pelo goTo('banca') e sempre que uma
 // entrada é lançada/editada/excluída na Calculadora (o saldo pode ter mudado).
 
-const hoje = () => new Date().toISOString().split('T')[0];
+const hoje = () => window.hojeBR ? window.hojeBR() : new Date().toISOString().split('T')[0];
 
 const MESES_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 function mesLabelAtual() {
@@ -27,7 +27,7 @@ function mesLabelAtual() {
 function rotuloDia(dataStr) {
   if (!dataStr) return '—';
   const d = dataStr, h = hoje();
-  const ontem = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  const ontem = window.hojeBR ? window.hojeBR(-1) : new Date(Date.now() - 86400000).toISOString().split('T')[0];
   if (d === h) return 'Hoje';
   if (d === ontem) return 'Ontem';
   return window.fd ? window.fd(d) : d;
@@ -482,7 +482,7 @@ function CrescimentoMensal({ dados }) {
 
   return (
     <div className="card">
-      <div className="card-title">Crescimento Mensal</div>
+      <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><LineChart size={14} />Crescimento Mensal</div>
       {ordenados.length === 0 ? (
         <div className="empty"><div className="icon"><LineChart size={22} /></div><p>Sem dados suficientes ainda.</p></div>
       ) : (

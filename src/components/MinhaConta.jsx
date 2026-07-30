@@ -64,7 +64,21 @@ function AbaPerfil() {
     setPerfil((p) => ({ ...p, ...r.dados }));
     setCarregando(false);
   }
-  useEffect(() => { carregar(); }, []);
+  useEffect(() => {
+    // Carrega já na primeira montagem...
+    carregar();
+    // ...e registra o "sininho" que o goTo('minhaconta') chama toda vez que a aba é
+    // aberta (window.perfilRefresh). Sem isso, os dados só eram buscados uma única vez,
+    // na primeira montagem do app — o que causava duas falhas:
+    // 1) Se nesse instante o perfil da sessão ainda não tivesse chegado (corrida com o
+    //    carregamento inicial), os campos ficavam vazios PRA SEMPRE, só voltando com um
+    //    reload completo da página.
+    // 2) Ao trocar de conta (ADM ↔ membro) sem recarregar a página inteira, a tela
+    //    continuava mostrando os dados da conta anterior, dando a falsa impressão de que
+    //    uma conta estava "vazando" dados pra outra — na verdade era só a tela desatualizada.
+    window.perfilRefresh = () => carregar();
+    return () => { delete window.perfilRefresh; };
+  }, []);
 
   async function salvar() {
     setSalvando(true);
@@ -113,7 +127,7 @@ function AbaPerfil() {
           <div><label>Telefone</label><input type="tel" placeholder="(00) 00000-0000" value={perfil.telefone || ''} onChange={(e) => setPerfil((p) => ({ ...p, telefone: e.target.value }))} disabled={carregando} /></div>
         </div>
         <div className="fg">
-          <div><label>E-mail</label><input type="email" value={window.authGetSessao?.()?.email || ''} disabled style={{ opacity: .6 }} /></div>
+          <div><label>E-mail</label><input type="email" value={window.authGetSessao?.()?.user?.email || ''} disabled style={{ opacity: .6 }} /></div>
         </div>
         <button className="btn-primary" onClick={salvar} disabled={salvando || carregando} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>{salvando ? 'Salvando...' : <><Save size={13} /> Salvar</>}</button>
       </div>
@@ -177,15 +191,33 @@ function AbaConfiguracoes() {
   const [privacidadeAberta, setPrivacidadeAberta] = useState(false);
   const [termosAbertos, setTermosAbertos] = useState(false);
 
+  // CAUSA DA STOP/META SEMPRE VAZIA (investigado): este componente já é montado no
+  // carregamento da página (src/main.jsx roda todos os createRoot de uma vez, mesmo
+  // enquanto a tela de login ainda está por cima) — ou seja, esse useEffect roda quase
+  // imediatamente, muito antes da busca da Banca na nuvem (bpCarregarNuvem, disparada em
+  // paralelo lá em 15-init.js/authIniciarSessao) terminar. window.bpLoad() só lê o que já
+  // tiver em memória NESSE instante; se a nuvem ainda não respondeu, bancaCache está vazio
+  // e os campos caem nos valores padrão (Meta/Stop = 0, Reserva = 10% — que por coincidência
+  // é o próprio valor padrão, por isso parecia "certo"). Como esse efeito só roda uma vez e
+  // nunca mais, os valores reais da nuvem nunca chegavam a aparecer.
+  // Correção: função de carregamento reaproveitável, que também aguarda a nuvem (não só o
+  // cache) e é registrada em window.configuracoesRefresh — chamada pelo goTo('minhaconta')
+  // toda vez que a aba é reaberta, garantindo que já deu tempo da resposta da nuvem chegar.
+  function carregarBancaConfig(d) {
+    if (!d) return;
+    setReservaAtiva(d.protecaoAtiva !== false); setReservaPct(d.protecaoPct ?? 10);
+    setMetaDiaria(d.metaDiaria ?? 0); setStopGain(d.stopGain ?? 0); setStopLoss(d.stopLoss ?? 0);
+    setMetaInput(d.metaDiaria ? String(d.metaDiaria) : '');
+    setStopGainInput(d.stopGain ? String(d.stopGain) : '');
+    setStopLossInput(d.stopLoss ? String(d.stopLoss) : '');
+  }
   useEffect(() => {
-    const d = window.bpLoad?.();
-    if (d) {
-      setReservaAtiva(d.protecaoAtiva !== false); setReservaPct(d.protecaoPct ?? 10);
-      setMetaDiaria(d.metaDiaria ?? 0); setStopGain(d.stopGain ?? 0); setStopLoss(d.stopLoss ?? 0);
-      setMetaInput(d.metaDiaria ? String(d.metaDiaria) : '');
-      setStopGainInput(d.stopGain ? String(d.stopGain) : '');
-      setStopLossInput(d.stopLoss ? String(d.stopLoss) : '');
-    }
+    carregarBancaConfig(window.bpLoad?.());
+    window.configuracoesRefresh = async () => {
+      if (window.bpCarregarNuvem) await window.bpCarregarNuvem();
+      carregarBancaConfig(window.bpLoad?.());
+    };
+    return () => { delete window.configuracoesRefresh; };
   }, []);
 
   function alternarTema(claro) {

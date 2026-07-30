@@ -34,7 +34,7 @@ function celulaCartoes(j) {
   return `<div style="white-space:nowrap">${icoAmarelo} ${j.amarelosC ?? 0} × ${j.amarelosV ?? 0}</div><div style="white-space:nowrap">${icoVermelho} ${j.vermelhosC ?? 0} × ${j.vermelhosV ?? 0}</div>`;
 }
 
-function LinhaJogo({ j, numero }) {
+function LinhaJogo({ j, numero, mapasClassificacao }) {
   const fd = window.fd || ((s) => s || '—');
   const ht = j.golsHT_C != null || j.golsHT_V != null ? `${j.golsHT_C ?? '—'} × ${j.golsHT_V ?? '—'}` : '—';
   const st = j.golsHT_C != null || j.golsHT_V != null
@@ -43,6 +43,15 @@ function LinhaJogo({ j, numero }) {
   const chutes = j.chutesC != null || j.chutesV != null ? `${j.chutesC ?? '—'} × ${j.chutesV ?? '—'}` : '—';
   const chutesGol = j.chutesGolC != null || j.chutesGolV != null ? `${j.chutesGolC ?? '—'} × ${j.chutesGolV ?? '—'}` : '—';
   const escanteios = j.escanteiosC != null || j.escanteiosV != null ? `${j.escanteiosC ?? '—'} × ${j.escanteiosV ?? '—'}` : '—';
+
+  // Quando o jogo não veio com rank da API (o caso hoje pro Brasileirão, por causa da
+  // restrição do plano gratuito), usa a posição calculada pelos critérios da CBF — ver
+  // window.computeClassificacao em public/js/12-banca-futebol.js. O estilo mais apagado +
+  // título avisam que esse número foi calculado, não veio direto da API.
+  const rankCApi = j.rankC != null;
+  const rankVApi = j.rankV != null;
+  const rankC = rankCApi ? j.rankC : mapasClassificacao?.[j.camp]?.[j.casa] ?? null;
+  const rankV = rankVApi ? j.rankV : mapasClassificacao?.[j.camp]?.[j.vis] ?? null;
 
   return (
     <tr>
@@ -54,8 +63,8 @@ function LinhaJogo({ j, numero }) {
       <td><strong>{j.casa}</strong></td>
       <td className="td-c">{j.gC} × {j.gV}</td>
       <td><strong>{j.vis}</strong></td>
-      <td className="td-r">{j.rankC ?? '—'}</td>
-      <td className="td-r">{j.rankV ?? '—'}</td>
+      <td className="td-r" style={!rankCApi && rankC != null ? { opacity: .7, fontStyle: 'italic' } : undefined} title={!rankCApi && rankC != null ? 'Calculado pelos critérios da CBF (a API não entregou rank)' : undefined}>{rankC ?? '—'}</td>
+      <td className="td-r" style={!rankVApi && rankV != null ? { opacity: .7, fontStyle: 'italic' } : undefined} title={!rankVApi && rankV != null ? 'Calculado pelos critérios da CBF (a API não entregou rank)' : undefined}>{rankV ?? '—'}</td>
       <td className="td-c" style={{ fontSize: 13, color: 'var(--texto2)', whiteSpace: 'nowrap' }}>{ht}</td>
       <td className="td-c" style={{ fontSize: 13, color: 'var(--texto2)', whiteSpace: 'nowrap' }}>{st}</td>
       <td className="td-c" style={{ fontSize: 11, color: 'var(--texto2)' }}>{chutes}</td>
@@ -96,6 +105,23 @@ export default function ListaPartidas() {
   const gruposCampeonato = window.gruposCampeonato || ((camps) => camps.map((c) => ({ base: c, itens: [c] })));
 
   const allCamps = useMemo(() => [...new Set(jogosCache.map((j) => j.camp))], [jogosCache]);
+
+  // Rank calculado (critérios da CBF) pros campeonatos do Brasileirão, pra preencher a
+  // coluna Rk quando o jogo não veio com rank da API — mesma fonte que a Aba Classificação usa.
+  const mapasClassificacao = useMemo(() => {
+    const mapa = {};
+    allCamps.forEach((c) => {
+      if (/brasileir[ãa]o/i.test(c) && window.computeClassificacao) {
+        const r = window.computeClassificacao(c);
+        if (r.estado === 'ok') {
+          mapa[c] = {};
+          r.linhas.forEach((l) => { mapa[c][l.nome] = l.rank; });
+        }
+      }
+    });
+    return mapa;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allCamps, jogosCache.length]);
 
   const { comVariante, soltas } = useMemo(() => {
     const grupos = gruposCampeonato(allCamps);
@@ -185,7 +211,7 @@ export default function ListaPartidas() {
             {jogosPagina.length === 0 ? (
               <tr><td colSpan={17}><div className="empty"><div className="icon"><FolderOpen size={28} /></div><p>Nenhum jogo encontrado.</p></div></td></tr>
             ) : (
-              jogosPagina.map((j, i) => <LinhaJogo key={j.id} j={j} numero={offsetNumero - i} />)
+              jogosPagina.map((j, i) => <LinhaJogo key={j.id} j={j} numero={offsetNumero - i} mapasClassificacao={mapasClassificacao} />)
             )}
           </tbody>
         </table>

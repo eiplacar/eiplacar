@@ -35,7 +35,7 @@ function bancaMovimentar(tipo, valor, data, obs){
   valor = Math.round((parseFloat(valor)||0)*100)/100;
   if(valor<=0) return { ok:false, msg:'Informe um valor válido' };
   const d = bpLoad();
-  const dataMov = data || new Date().toISOString().split('T')[0];
+  const dataMov = data || hojeBR(); // corrigido pro fuso de Brasília (ver 04-utils.js)
 
   if(tipo==='deposito'){
     d.saldo = Math.round(((d.saldo||0)+valor)*100)/100;
@@ -99,7 +99,7 @@ window.bancaSalvarStopMeta = bancaSalvarStopMeta;
 // (usado pela sub-aba "Evolução" do componente React Banca.jsx)
 function computeResumoBanca(){
   const d = bpLoad();
-  const hoje = new Date().toISOString().split('T')[0];
+  const hoje = hojeBR(); // corrigido pro fuso de Brasília — reset de Meta/Stop batia 3h cedo (ver 04-utils.js)
   const mesAtual = hoje.slice(0,7);
 
   const depositos = (d.movimentos||[]).filter(m=>m.tipo==='deposito').reduce((s,m)=>s+m.valor,0);

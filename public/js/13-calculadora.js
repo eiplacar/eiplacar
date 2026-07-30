@@ -257,7 +257,7 @@ async function lancarEntrada(){
     lucro:lucroB, reservaCorte, ganhoCarteira,
     liga, mercado, times, tipo, tipoAposta,
     minuto: tipo==='live' ? (parseInt(document.getElementById('eMinuto').value)||null) : null,
-    data: document.getElementById('eDataEntrada').value || new Date().toISOString().split('T')[0]
+    data: document.getElementById('eDataEntrada').value || hojeBR() // corrigido pro fuso de Brasília (ver 04-utils.js)
   });
   bpSave(d);
 
@@ -267,7 +267,7 @@ async function lancarEntrada(){
   setTipoEntrada('prelive');
   pernas = [];
   setTipoAposta('simples');
-  const eDataEl=document.getElementById('eDataEntrada'); if(eDataEl) eDataEl.value=new Date().toISOString().split('T')[0];
+  const eDataEl=document.getElementById('eDataEntrada'); if(eDataEl) eDataEl.value=hojeBR(); // corrigido pro fuso de Brasília (ver 04-utils.js)
   const epEl=document.getElementById('entradaPreview'); if(epEl) epEl.innerHTML='Selecione % da banca ou digite o valor em R$';
   document.querySelectorAll('.btn-pct').forEach(b=>b.classList.remove('ativo'));
   atualizarResumoEntrada();

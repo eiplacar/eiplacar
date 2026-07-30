@@ -79,19 +79,19 @@ async function adminExcluirUsuario(id){
 }
 
 function somarDias(dataBase, dias){
-  const d = new Date((dataBase||new Date().toISOString().split('T')[0])+'T00:00:00');
+  const d = new Date((dataBase||hojeBR())+'T00:00:00'); // corrigido pro fuso de Brasília (ver 04-utils.js)
   d.setDate(d.getDate()+dias);
   return d.toISOString().split('T')[0];
 }
 // Ativa/troca o plano de um usuário (o organizador confirma manualmente que recebeu o
 // pagamento — não existe gateway de pagamento integrado ainda).
 async function adminAprovarPlano(id, planoId, dias){
-  const hoje = new Date().toISOString().split('T')[0];
+  const hoje = hojeBR(); // corrigido pro fuso de Brasília (ver 04-utils.js)
   return adminAtualizarUsuario(id, { plano:planoId, assinatura_status:'ativo', assinatura_inicio:hoje, assinatura_vencimento: somarDias(hoje, dias) });
 }
 // Renova a partir do vencimento atual (se ainda não venceu) ou de hoje (se já venceu)
 async function adminRenovarPlano(id, vencimentoAtual, dias){
-  const base = (vencimentoAtual && vencimentoAtual >= new Date().toISOString().split('T')[0]) ? vencimentoAtual : new Date().toISOString().split('T')[0];
+  const base = (vencimentoAtual && vencimentoAtual >= hojeBR()) ? vencimentoAtual : hojeBR(); // corrigido pro fuso de Brasília (ver 04-utils.js)
   return adminAtualizarUsuario(id, { assinatura_status:'ativo', assinatura_vencimento: somarDias(base, dias) });
 }
 async function adminCancelarAssinatura(id){

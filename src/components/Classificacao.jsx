@@ -72,7 +72,7 @@ export default function Classificacao() {
             ? <option value="">Nenhum campeonato com classificação ainda</option>
             : <CampeonatoOptions camps={camps} />}
         </select>
-        <div style={{ fontSize: 10, color: 'var(--texto2)', marginTop: 6 }}>A posição vem do Ranking já informado em cada jogo. Onde não houver ranking, usa o cálculo por pontos (3 vitória, 1 empate). Copa do Mundo e Amistoso não entram aqui.</div>
+        <div style={{ fontSize: 10, color: 'var(--texto2)', marginTop: 6 }}>No Brasileirão (Série A/B), a posição é calculada automaticamente pelos critérios oficiais da CBF (pontos, vitórias, saldo de gols, gols marcados, confronto direto, cartões). Nas demais ligas, usa o Ranking informado em cada jogo, ou o cálculo por pontos quando não houver ranking.</div>
       </div>
 
       <div className="card">

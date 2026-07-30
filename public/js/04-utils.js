@@ -5,6 +5,24 @@
 const fd  = s => { if(!s) return '—'; const [y,m,d]=s.split('-'); return `${d}/${m}/${y}`; };
 const res = (gC,gV) => gC>gV?'<span class="badge-result badge-v">V</span>':gC===gV?'<span class="badge-result badge-e">E</span>':'<span class="badge-result badge-d">D</span>';
 const r2  = n => Math.round(n*100)/100;
+
+// CAUSA DO "DIA VIRA ÀS 21H" (investigado): `new Date().toISOString()` sempre usa o fuso
+// UTC, não o fuso de quem está usando o app. Às 21h em Brasília (UTC-3) já é 00h em UTC —
+// ou seja, o app achava que já tinha virado o dia 3 horas mais cedo do que realmente virou,
+// e por isso não dava pra anotar os jogos da noite com a data certa (o campo de data já
+// vinha preenchido com "amanhã"). O Brasil não tem mais horário de verão desde 2019, então
+// o fuso de Brasília é sempre UTC-3, mas usar a timezone "America/Sao_Paulo" (em vez de fixar
+// "-3" na unha) já deixa à prova de qualquer mudança futura na lei do horário de verão.
+// `offsetDias`: 0 = hoje, -1 = ontem, 1 = amanhã, etc.
+function hojeBR(offsetDias = 0){
+  const alvo = new Date(Date.now() + offsetDias * 86400000);
+  const partes = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(alvo);
+  const obj = {};
+  partes.forEach(p => { obj[p.type] = p.value; });
+  return `${obj.year}-${obj.month}-${obj.day}`;
+}
 // Ordenação natural: "Bundesliga" vem antes de "Bundesliga 2", e "Bundesliga 2" antes de "Bundesliga 10"
 // (ordenação alfabética pura colocaria "Bundesliga 10" antes de "Bundesliga 2").
 const sortNatural = arr => [...arr].sort((a,b)=>a.localeCompare(b, 'pt-BR', { numeric:true, sensitivity:'base' }));

@@ -92,6 +92,11 @@ function temporadaDaLiga(ligaId) {
 }
 
 // 1 chamada por liga (reaproveitada pra todos os jogos dessa liga nessa rodada da função)
+// Devolve { mapa, indisponivel }: "indisponivel" é true quando a API recusou por causa do
+// PLANO (ex: "Free plans do not have access to this season") — uma restrição permanente,
+// que vai continuar dando o mesmo erro sempre que tentar de novo. Nesse caso o jogo é salvo
+// com rank_indisponivel=true, pra função parar de tentar de novo a cada execução (evita
+// gastar cota de API à toa numa coisa que só se resolve trocando de plano na API-Football).
 async function buscarRanksDaLiga(apiKey, ligaId, cacheStandings) {
   if (cacheStandings.has(ligaId)) return cacheStandings.get(ligaId);
   const temporada = temporadaDaLiga(ligaId);
@@ -104,8 +109,13 @@ async function buscarRanksDaLiga(apiKey, ligaId, cacheStandings) {
   const mapa = new Map();
   grupos.flat().forEach((t) => mapa.set(t.team.id, t.rank));
   console.log(`Ranking montado pra liga ${ligaId}:`, mapa.size, 'times —', [...mapa.entries()].map(([id, r]) => `${id}:${r}`).join(', '));
-  cacheStandings.set(ligaId, mapa);
-  return mapa;
+  // Erro de "plan" = restrição do plano contratado na API-Football (ex: temporada não liberada
+  // no plano grátis). É diferente de um erro passageiro (fora do ar, rate limit etc.) — esse
+  // sim continua sendo tentado de novo normalmente, só o de "plan" que é marcado como definitivo.
+  const indisponivel = !!json.errors?.plan;
+  const resultado = { mapa, indisponivel };
+  cacheStandings.set(ligaId, resultado);
+  return resultado;
 }
 
 // 1 chamada por jogo novo — pega os gols com o minuto de cada um
@@ -164,7 +174,7 @@ export const handler = async function () {
   // Descobre quais desses jogos já estão salvos, pra não gastar cota de novo
   const idsHoje = fixtures.map((f) => f.fixture.id);
   const respExistentes = await fetch(
-    `${supaUrl}/rest/v1/jogos?select=fixture_id,chutesC&fixture_id=in.(${idsHoje.join(',')})`,
+    `${supaUrl}/rest/v1/jogos?select=fixture_id,chutesC,rankC,rankV,rank_indisponivel&fixture_id=in.(${idsHoje.join(',')})`,
     { headers: { apikey: supaServiceKey, Authorization: `Bearer ${supaServiceKey}` } }
   );
   const textoExistentes = await respExistentes.text();
@@ -174,13 +184,16 @@ export const handler = async function () {
     return { statusCode: 500, body: JSON.stringify({ erro: 'Falha ao consultar jogos existentes no Supabase', detalhe: textoExistentes }) };
   }
 
-  // Jogos que JÁ existem mas foram salvos com "chutesC" vazio (sinal de que a API ainda não
-  // tinha as estatísticas prontas na hora que a função rodou) entram de novo na lista, pra
-  // tentar completar os dados que faltaram — em vez de ficar pra sempre com tudo em branco.
+  // Jogos que JÁ existem mas foram salvos com "chutesC" vazio, OU com o ranking ("rankC"/
+  // "rankV") vazio E ainda sem a marca de "rank_indisponivel" (ou seja: ainda vale a pena
+  // tentar de novo), entram de novo na lista pra tentar completar o que faltou. Jogos com
+  // ranking vazio MAS já marcados como rank_indisponivel=true não entram — evita ficar
+  // gastando chamada de API pra sempre numa restrição de plano que não vai se resolver sozinha.
   const existentesCompletos = new Set();
   const existentesIncompletos = new Set();
   JSON.parse(textoExistentes).forEach((r) => {
-    if (r.chutesC === null) existentesIncompletos.add(r.fixture_id);
+    const rankFaltando = (r.rankC === null || r.rankV === null) && !r.rank_indisponivel;
+    if (r.chutesC === null || rankFaltando) existentesIncompletos.add(r.fixture_id);
     else existentesCompletos.add(r.fixture_id);
   });
   const novos = fixtures.filter((f) => !existentesCompletos.has(f.fixture.id));
@@ -213,7 +226,7 @@ export const handler = async function () {
     const casaCorrigido = nomeDoTime(mapaClubes, f.teams.home);
     const visCorrigido = nomeDoTime(mapaClubes, f.teams.away);
 
-    const ranks = await buscarRanksDaLiga(apiKey, f.league.id, cacheStandings);
+    const { mapa: ranks, indisponivel: rankIndisponivel } = await buscarRanksDaLiga(apiKey, f.league.id, cacheStandings);
     const gols = await buscarGolsDoJogo(apiKey, f.fixture.id, f.teams.home.name, f.teams.away.name);
 
     linhas.push({
@@ -229,6 +242,7 @@ export const handler = async function () {
       gV: f.goals.away,
       rankC: ranks.get(f.teams.home.id) ?? null,
       rankV: ranks.get(f.teams.away.id) ?? null,
+      rank_indisponivel: rankIndisponivel,
       gols,
       golsHT_C: f.score.halftime?.home ?? null,
       golsHT_V: f.score.halftime?.away ?? null,

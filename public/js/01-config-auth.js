@@ -118,8 +118,8 @@ async function fazerCadastro(){
       // Início do teste grátis — tentativa silenciosa; se as colunas de assinatura ainda não
       // existirem nessa base, não faz diferença nenhuma pro login (só não mostra prazo na aba Conta).
       const dias = (cfgAppLoad().diasTeste) || 60;
-      const hoje = new Date().toISOString().split('T')[0];
-      salvarPerfil({ assinatura_status:'trial', assinatura_inicio:hoje, assinatura_vencimento: (()=>{ const d=new Date(); d.setDate(d.getDate()+dias); return d.toISOString().split('T')[0]; })() }).catch(()=>{});
+      const hoje = hojeBR(); // corrigido pro fuso de Brasília (ver 04-utils.js)
+      salvarPerfil({ assinatura_status:'trial', assinatura_inicio:hoje, assinatura_vencimento: hojeBR(dias) }).catch(()=>{});
       salvarPerfil({ telefone, data_nascimento: dataNascimento }).catch(()=>{});
     } else if(data.user && Array.isArray(data.user.identities) && data.user.identities.length===0){
       // O Supabase, por segurança, não revela se o e-mail já existe: quando a confirmação por
@@ -407,7 +407,7 @@ function authAplicarTela(){
   const menuNome  = document.getElementById('menuNome');
   const menuEmail = document.getElementById('menuEmail');
   if(menuNome)  menuNome.textContent  = perfilAtual.nome  || '';
-  if(menuEmail) menuEmail.textContent = sessao.email || perfilAtual.email || '';
+  if(menuEmail) menuEmail.textContent = sessao.user?.email || perfilAtual.email || '';
 
   if(perfilAtual.papel === 'organizador'){
     // organizador sempre entra liberado e vê todos os botões de edição
