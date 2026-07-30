@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { TrendingUp, Target, ShieldHalf, CalendarRange, Trophy, Goal, Clock, History, Timer, Layers } from 'lucide-react';
+import { TrendingUp, Target, ShieldHalf, CalendarRange, Trophy, Goal, Clock, History, Timer, Layers, Home, Plane, LayoutGrid, ShieldCheck, Award } from 'lucide-react';
 
 // ══ Estratégias — 3 sub-abas: Linha do Tempo / Cenários / Equipes ══
 //
@@ -110,7 +110,56 @@ function TabelaFaixa({ linhas }) {
   );
 }
 
-const MINUTOS_CENARIO = [10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80];
+// Meio-círculo (gauge) do Score, 0-100. Cor muda por faixa: vermelho→ouro→verde.
+function ScoreGauge({ score }) {
+  const pct = Math.max(0, Math.min(100, score)) / 100;
+  const cx = 70, cy = 66, r = 54;
+  const toRad = (a) => (a * Math.PI) / 180;
+  const ponto = (a) => [cx + r * Math.cos(toRad(a)), cy + r * Math.sin(toRad(a))];
+  const arco = (a0, a1) => {
+    const [x0, y0] = ponto(a0), [x1, y1] = ponto(a1);
+    const largeArc = a1 - a0 <= 180 ? 0 : 1;
+    return `M ${x0} ${y0} A ${r} ${r} 0 ${largeArc} 1 ${x1} ${y1}`;
+  };
+  const angulo = -180 + pct * 180;
+  const cor = score >= 75 ? '#4dd87a' : score >= 55 ? '#c9d84d' : score >= 35 ? '#e0a53c' : '#f08060';
+  return (
+    <svg viewBox="0 0 140 74" width="128" height="68">
+      <path d={arco(-180, 0)} stroke="#2a3436" strokeWidth="11" fill="none" strokeLinecap="round" />
+      {pct > 0 && <path d={arco(-180, angulo)} stroke={cor} strokeWidth="11" fill="none" strokeLinecap="round" />}
+    </svg>
+  );
+}
+
+// Barra de progresso de um critério do Score (0 a 20 pts)
+function CriterioBar({ label, valor }) {
+  const pct = Math.max(0, Math.min(100, (valor / 20) * 100));
+  const cor = pct >= 75 ? '#4dd87a' : pct >= 50 ? '#c9d84d' : pct >= 25 ? '#e0a53c' : '#f08060';
+  return (
+    <div style={{ marginBottom: 10 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
+        <span style={{ color: 'var(--texto2)' }}>{label}</span>
+        <span style={{ fontWeight: 700, color: cor }}>{valor.toFixed(1)}/20</span>
+      </div>
+      <div style={{ background: 'var(--fundo3, #1c2426)', borderRadius: 4, height: 6, overflow: 'hidden' }}>
+        <div style={{ width: `${pct}%`, background: cor, height: '100%', borderRadius: 4 }} />
+      </div>
+    </div>
+  );
+}
+
+function StatMini({ icon, valor, label, cor }) {
+  return (
+    <div className="sel-card" style={{ padding: '10px 6px', textAlign: 'center' }}>
+      <div style={{ fontSize: 10, color: 'var(--texto2)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>{label}</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 20, fontWeight: 800, color: cor || 'var(--branco)' }}>
+        {icon} {valor}
+      </div>
+    </div>
+  );
+}
+
+
 const PLACARES_CENARIO = ['0x0', '1x0', '0x1', '1x1', '2x0', '0x2', '2x1', '1x2', '2x2', '3x1', '1x3'];
 
 export default function Estrategias() {
@@ -123,11 +172,21 @@ export default function Estrategias() {
   const [limiteC, setLimiteC] = useState(0);
   const [minutoC, setMinutoC] = useState(30);
   const [placarC, setPlacarC] = useState('0x0');
+  const [campE, setCampE] = useState('');
+  const [linhaE, setLinhaE] = useState(1.5);
+  const [mandanteE, setMandanteE] = useState('');
+  const [visitanteE, setVisitanteE] = useState('');
+  const [limiteE, setLimiteE] = useState(20);
+  const [minZerado, setMinZerado] = useState(30);
+  const [minVantagem, setMinVantagem] = useState(35);
+  const [minEmpate, setMinEmpate] = useState(45);
 
   useEffect(() => {
     window.estrategiasRefresh = () => setTick((t) => t + 1);
     return () => { delete window.estrategiasRefresh; };
   }, []);
+
+  useEffect(() => { setMandanteE(''); setVisitanteE(''); }, [campE]);
 
   const jogosCache = window.jogosCache || [];
   const sortNatural = window.sortNatural || ((arr) => [...arr].sort());
@@ -144,6 +203,25 @@ export default function Estrategias() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [campC, limiteC, minutoC, placarC, jogosCache.length]
   );
+
+  const times = useMemo(() => {
+    const jogos = campE ? jogosCache.filter((j) => j.camp === campE) : jogosCache;
+    return sortNatural([...new Set(jogos.flatMap((j) => [j.casa, j.vis]))]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [campE, jogosCache.length]);
+
+  const resultado = useMemo(() => {
+    if (!mandanteE || !visitanteE || !window.computeScoreEstrategia) return null;
+    return window.computeScoreEstrategia({
+      camp: campE, limite: limiteE || 0, linha: linhaE, mandante: mandanteE, visitante: visitanteE,
+      cenarios: [
+        { placar: '0x0', minuto: minZerado, tipo: 'Zerado' },
+        { placar: '1x0', minuto: minVantagem, tipo: 'Vantagem' },
+        { placar: '1x1', minuto: minEmpate, tipo: 'Empate' },
+      ],
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [campE, linhaE, mandanteE, visitanteE, limiteE, minZerado, minVantagem, minEmpate, jogosCache.length]);
 
   return (
     <>
@@ -219,13 +297,156 @@ export default function Estrategias() {
 
       {/* ═══ SUBPASTA EQUIPES ═══ */}
       <div className={`sub-page ${tab === 'eequipes' ? 'active' : ''}`}>
-        <div className="card">
-          <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><ShieldHalf size={14} /> Equipes</div>
-          <div className="empty">
-            <div className="icon"><ShieldHalf size={24} /></div>
-            <p>Em breve, análise por equipes por aqui.</p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }}>
+          <div className="sel-card" style={{ padding: '10px 12px' }}>
+            <div className="sel-card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Trophy size={13} /> Liga</div>
+            <select value={campE} onChange={(e) => setCampE(e.target.value)}>
+              <option value="">Todos os campeonatos</option>
+              <CampeonatoOptions camps={camps} />
+            </select>
+          </div>
+          <div className="sel-card" style={{ padding: '10px 12px' }}>
+            <div className="sel-card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Goal size={13} /> Mercado</div>
+            <select value={linhaE} onChange={(e) => setLinhaE(Number(e.target.value))}>
+              <option value={1.5}>Over 1.5</option>
+              <option value={2.5}>Over 2.5</option>
+              <option value={3.5}>Over 3.5</option>
+              <option value={4.5}>Over 4.5</option>
+            </select>
+          </div>
+          <div className="sel-card" style={{ padding: '10px 12px' }}>
+            <div className="sel-card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Home size={13} /> Mandante</div>
+            <select value={mandanteE} onChange={(e) => setMandanteE(e.target.value)}>
+              <option value="">Selecione</option>
+              {times.filter((t) => t !== visitanteE).map((t) => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+          <div className="sel-card" style={{ padding: '10px 12px' }}>
+            <div className="sel-card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Plane size={13} /> Visitante</div>
+            <select value={visitanteE} onChange={(e) => setVisitanteE(e.target.value)}>
+              <option value="">Selecione</option>
+              {times.filter((t) => t !== mandanteE).map((t) => <option key={t} value={t}>{t}</option>)}
+            </select>
           </div>
         </div>
+        <div className="sel-card" style={{ padding: '10px 12px', marginBottom: 10 }}>
+          <div className="sel-card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><CalendarRange size={13} /> Últimos Jogos</div>
+          <select value={limiteE} onChange={(e) => setLimiteE(Number(e.target.value))}>
+            <option value={5}>Últimos 5 jogos</option>
+            <option value={10}>Últimos 10 jogos</option>
+            <option value={20}>Últimos 20 jogos</option>
+            <option value={0}>Temporada (todos os jogos)</option>
+          </select>
+        </div>
+
+        {!mandanteE || !visitanteE ? (
+          <div className="card">
+            <div className="empty">
+              <div className="icon"><ShieldHalf size={24} /></div>
+              <p>Escolha um Mandante e um Visitante pra calcular o Score da Estratégia.</p>
+            </div>
+          </div>
+        ) : !resultado ? (
+          <div className="card">
+            <div className="empty">
+              <div className="icon"><ShieldHalf size={24} /></div>
+              <p>Sem jogos suficientes desses dois times na Aba Dados ainda.</p>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* SCORE DA ESTRATÉGIA */}
+            <div className="card" style={{ border: `1px solid ${resultado.score >= 55 ? 'var(--verde2)' : 'var(--ouro)'}`, background: 'rgba(77,216,122,0.04)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <ShieldCheck size={34} color="var(--verde2)" style={{ flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 11, color: 'var(--texto2)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Score da Estratégia</div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                    <span style={{ fontSize: 34, fontWeight: 800, color: 'var(--verde2)' }}>{resultado.score}</span>
+                    <span style={{ fontSize: 15, color: 'var(--texto2)' }}>/100</span>
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--verde2)', fontWeight: 600 }}>{resultado.classificacao}</div>
+                </div>
+                <ScoreGauge score={resultado.score} />
+              </div>
+            </div>
+
+            {/* STATS RÁPIDAS */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, margin: '10px 0' }}>
+              <StatMini icon={<TrendingUp size={16} />} valor={resultado.tendencia.pctConfirmacao != null ? resultado.tendencia.pctConfirmacao + '%' : '—'} label={`Over ${linhaE}`} cor={corPct(resultado.tendencia.pctConfirmacao)} />
+              <StatMini icon={<Clock size={16} color="var(--verde2)" />} valor={resultado.tendencia.mediaPrimeiroGol != null ? resultado.tendencia.mediaPrimeiroGol + "'" : '—'} label="Média 1º Gol" />
+              <StatMini icon={<Clock size={16} color="var(--ouro)" />} valor={resultado.tendencia.mediaConfirmacao != null ? resultado.tendencia.mediaConfirmacao + "'" : '—'} label="Média Confirmação" />
+              <StatMini icon={<LayoutGrid size={16} color="#5fa8f5" />} valor={resultado.tendencia.jogos} label="Jogos Analisados" />
+            </div>
+
+            {/* CENÁRIOS (ENTRADA NO 1º TEMPO) */}
+            <div className="card">
+              <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Timer size={14} /> Cenários (Entrada no 1º Tempo)</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                {[
+                  { rotulo: 'Zerado', placar: '0x0', min: minZerado, set: setMinZerado, dado: resultado.cenarios[0] },
+                  { rotulo: 'Vantagem', placar: '1x0', min: minVantagem, set: setMinVantagem, dado: resultado.cenarios[1] },
+                  { rotulo: 'Empate', placar: '1x1', min: minEmpate, set: setMinEmpate, dado: resultado.cenarios[2] },
+                ].map((c) => (
+                  <div key={c.rotulo} className="sel-card" style={{ padding: '10px 8px', textAlign: 'center' }}>
+                    <div style={{ fontSize: 10, color: 'var(--texto2)', marginBottom: 4 }}>{c.rotulo}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
+                      {c.placar} aos
+                      <input type="number" min={1} max={90} value={c.min} onChange={(e) => c.set(Number(e.target.value) || 1)} style={{ width: 42, padding: '2px 4px', textAlign: 'center' }} />'
+                    </div>
+                    <div style={{ fontSize: 20, fontWeight: 800, color: corPct(c.dado.pct) }}>{c.dado.pct != null ? c.dado.pct + '%' : '—'}</div>
+                    <div style={{ fontSize: 10, color: 'var(--texto2)' }}>Confirmaram Over {linhaE} ({c.dado.jogos} jogos)</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* CRITÉRIOS DO SCORE */}
+            <div className="card">
+              <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Award size={14} /> Critérios do Score</div>
+              <CriterioBar label="Força da Equipe" valor={resultado.criterios.forca} />
+              <CriterioBar label="Ataque" valor={resultado.criterios.ataque} />
+              <CriterioBar label="Momento" valor={resultado.criterios.momento} />
+              <CriterioBar label="Comportamento" valor={resultado.criterios.comportamento} />
+              <CriterioBar label="Tendência do Mercado" valor={resultado.criterios.tendencia} />
+            </div>
+
+            {/* COMPARATIVO ENTRE AS EQUIPES */}
+            <div className="card">
+              <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><ShieldHalf size={14} /> Comparativo entre as Equipes</div>
+              <div className="table-wrap">
+                <table>
+                  <thead>
+                    <tr><th>Estatística</th><th className="td-c">{mandanteE}</th><th className="td-c">{visitanteE}</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Over {linhaE}</td>
+                      <td className="td-c" style={{ color: corPct(resultado.comparativo.mandante?.pctOverLinha), fontWeight: 700 }}>{resultado.comparativo.mandante?.pctOverLinha ?? '—'}%</td>
+                      <td className="td-c" style={{ color: corPct(resultado.comparativo.visitante?.pctOverLinha), fontWeight: 700 }}>{resultado.comparativo.visitante?.pctOverLinha ?? '—'}%</td>
+                    </tr>
+                    <tr>
+                      <td>Marca no 2º Tempo</td>
+                      <td className="td-c">{resultado.comparativo.mandante?.pctMarca2T ?? '—'}%</td>
+                      <td className="td-c">{resultado.comparativo.visitante?.pctMarca2T ?? '—'}%</td>
+                    </tr>
+                    <tr>
+                      <td>Sofre no 2º Tempo</td>
+                      <td className="td-c">{resultado.comparativo.mandante?.pctSofre2T ?? '—'}%</td>
+                      <td className="td-c">{resultado.comparativo.visitante?.pctSofre2T ?? '—'}%</td>
+                    </tr>
+                    <tr>
+                      <td>Média 1º Gol</td>
+                      <td className="td-c">{resultado.comparativo.mandante?.avgMinPrimeiroGol != null ? Math.round(resultado.comparativo.mandante.avgMinPrimeiroGol) + "'" : '—'}</td>
+                      <td className="td-c">{resultado.comparativo.visitante?.avgMinPrimeiroGol != null ? Math.round(resultado.comparativo.visitante.avgMinPrimeiroGol) + "'" : '—'}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div style={{ fontSize: 10, color: 'var(--texto2)', marginTop: 8 }}>Dados baseados {limiteE ? `nos últimos ${limiteE} jogos` : 'na temporada inteira'} de cada equipe{campE ? ` na ${campE}` : ''}.</div>
+            </div>
+          </>
+        )}
       </div>
     </>
   );
