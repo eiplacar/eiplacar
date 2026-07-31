@@ -159,16 +159,48 @@ function StatMini({ icon, valor, label, cor }) {
   );
 }
 
-// Igual ao StatMini, mas com fonte compacta — pra valores em texto (nome de liga,
-// time, mercado) que não cabem grande sem quebrar feio, ao contrário de números curtos.
-function InfoMini({ icon, valor, label }) {
+// Card circular clicável (Liga/Mercado/Mandante/Visitante) — ícone/escudo dentro
+// de um anel colorido, com o valor selecionado embaixo. Abre o formulário de
+// Filtros Avançados ao ser tocado.
+function FiltroCard({ label, icon, valor, corAnel, onClick }) {
   return (
-    <div className="sel-card" style={{ padding: '10px 6px', textAlign: 'center' }}>
-      <div style={{ fontSize: 10, color: 'var(--texto2)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>{label}</div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, fontSize: 13, fontWeight: 700, lineHeight: 1.2, color: valor ? 'var(--branco)' : 'var(--texto2)' }}>
-        {icon} <span>{valor}</span>
+    <button type="button" onClick={onClick} className="sel-card" style={{ padding: '14px 4px 12px', textAlign: 'center', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0 }}>
+      <div style={{ fontSize: 9.5, color: 'var(--texto2)', letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 10 }}>{label}</div>
+      <div style={{ width: 52, height: 52, borderRadius: '50%', border: `2px solid ${corAnel}`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8, overflow: 'hidden', background: 'rgba(255,255,255,0.02)' }}>
+        {icon}
       </div>
+      <div style={{ fontSize: 12.5, fontWeight: 700, lineHeight: 1.2, color: valor ? 'var(--branco)' : 'var(--texto2)' }}>
+        {valor || 'Selecione'}
+      </div>
+    </button>
+  );
+}
+
+// Stat com legenda embaixo (ex: "Taxa de confirmação", "Minuto médio") — usado
+// na fileira de 4 estatísticas da aba Equipes.
+function StatCard({ icon, valor, label, caption, cor }) {
+  return (
+    <div className="sel-card" style={{ padding: '10px 4px', textAlign: 'center' }}>
+      <div style={{ fontSize: 9, color: 'var(--texto2)', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 6, minHeight: 22 }}>{label}</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, fontSize: 17, fontWeight: 800, color: cor || 'var(--branco)', marginBottom: 4 }}>
+        {icon} {valor}
+      </div>
+      <div style={{ fontSize: 9, color: 'var(--texto2)' }}>{caption}</div>
     </div>
+  );
+}
+
+// Barrinhas decorativas embaixo de cada cenário — floreio visual (não é gráfico
+// de dado real, só reforça visualmente a força do percentual daquele cenário).
+function MiniBars({ pct }) {
+  const p = pct ?? 50;
+  const alturas = [0.3, 0.42, 0.55, 1, 0.65, 0.4, 0.5].map((f) => Math.max(0.15, f * (0.5 + p / 100)));
+  return (
+    <svg viewBox="0 0 100 26" width="100%" height="22" preserveAspectRatio="none">
+      {alturas.map((h, i) => (
+        <rect key={i} x={i * 14 + 3} y={26 - h * 22} width="8" height={h * 22} rx="1.5" fill="var(--verde2)" opacity={0.35 + (i / alturas.length) * 0.5} />
+      ))}
+    </svg>
   );
 }
 
@@ -367,30 +399,20 @@ export default function Estrategias() {
           <ChevronDown size={14} color="var(--texto2)" style={{ transform: 'rotate(-90deg)' }} />
         </button>
 
-        {/* LINHA 1 — Liga / Últimos Jogos / Jogos Analisados */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 8 }}>
-          <InfoMini icon={<Trophy size={14} color="var(--verde2)" />} valor={campE || 'Todas'} label="Liga" />
-          <InfoMini icon={<CalendarRange size={14} color="#5fa8f5" />} valor={limiteE ? `Últimos ${limiteE}` : 'Temporada'} label="Últimos Jogos" />
-          <StatMini icon={<LayoutGrid size={16} color="var(--ouro)" />} valor={resultado ? resultado.tendencia.jogos : '—'} label="Jogos Analisados" />
-        </div>
-
-        {/* LINHA 2 — Mercado / Time Mandante / Time Visitante */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 8 }}>
-          <InfoMini icon={<Goal size={14} color="var(--ouro)" />} valor={mercadoLabel} label="Mercado" />
-          <div className="sel-card" style={{ padding: '10px 6px', textAlign: 'center' }}>
-            <div style={{ fontSize: 10, color: 'var(--texto2)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>Mandante</div>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-              {mandanteE ? <EscudoImg nome={mandanteE} size={24} /> : <Home size={18} color="var(--texto2)" />}
-              <span style={{ fontSize: 11.5, fontWeight: 700, color: mandanteE ? 'var(--branco)' : 'var(--texto2)' }}>{mandanteE || 'Selecione'}</span>
-            </div>
-          </div>
-          <div className="sel-card" style={{ padding: '10px 6px', textAlign: 'center' }}>
-            <div style={{ fontSize: 10, color: 'var(--texto2)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>Visitante</div>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-              {visitanteE ? <EscudoImg nome={visitanteE} size={24} /> : <Plane size={18} color="var(--texto2)" />}
-              <span style={{ fontSize: 11.5, fontWeight: 700, color: visitanteE ? 'var(--branco)' : 'var(--texto2)' }}>{visitanteE || 'Selecione'}</span>
-            </div>
-          </div>
+        {/* Liga / Mercado / Mandante / Visitante — cards circulares clicáveis, abrem o formulário de Filtros Avançados (Últimos Jogos, times jogam casa/fora e os 2 cenários ficam dentro dele) */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8, marginBottom: 10 }}>
+          <FiltroCard label="Liga" corAnel="var(--verde2)" valor={campE || 'Todas'}
+            icon={<Trophy size={22} color="var(--verde2)" />}
+            onClick={() => setFiltrosAbertos(true)} />
+          <FiltroCard label="Mercado" corAnel="var(--ouro)" valor={mercadoLabel}
+            icon={<Goal size={22} color="var(--ouro)" />}
+            onClick={() => setFiltrosAbertos(true)} />
+          <FiltroCard label="Mandante" corAnel="var(--verde2)" valor={mandanteE}
+            icon={mandanteE ? <EscudoImg nome={mandanteE} size={36} /> : <Home size={20} color="var(--texto2)" />}
+            onClick={() => setFiltrosAbertos(true)} />
+          <FiltroCard label="Visitante" corAnel="#e05a5a" valor={visitanteE}
+            icon={visitanteE ? <EscudoImg nome={visitanteE} size={36} /> : <Plane size={20} color="var(--texto2)" />}
+            onClick={() => setFiltrosAbertos(true)} />
         </div>
 
         {!mandanteE || !visitanteE ? (
@@ -409,7 +431,7 @@ export default function Estrategias() {
           </div>
         ) : (
           <>
-            {/* LINHA 3 — SCORE DA ESTRATÉGIA */}
+            {/* SCORE DA ESTRATÉGIA */}
             <div className="card" style={{ border: `1px solid ${resultado.score >= 55 ? 'var(--verde2)' : 'var(--ouro)'}`, background: 'rgba(77,216,122,0.04)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                 <ShieldCheck size={34} color="var(--verde2)" style={{ flexShrink: 0 }} />
@@ -425,14 +447,15 @@ export default function Estrategias() {
               </div>
             </div>
 
-            {/* LINHA 4 — Mercado / Média 1º Gol / Média Confirmação */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, margin: '10px 0' }}>
-              <StatMini icon={<TrendingUp size={16} />} valor={resultado.tendencia.pctConfirmacao != null ? resultado.tendencia.pctConfirmacao + '%' : '—'} label={mercadoLabel} cor={corPct(resultado.tendencia.pctConfirmacao)} />
-              <StatMini icon={<Clock size={16} color="var(--verde2)" />} valor={resultado.tendencia.mediaPrimeiroGol != null ? resultado.tendencia.mediaPrimeiroGol + "'" : '—'} label="Média 1º Gol" />
-              <StatMini icon={<Clock size={16} color="var(--ouro)" />} valor={resultado.tendencia.mediaConfirmacao != null ? resultado.tendencia.mediaConfirmacao + "'" : '—'} label="Média Confirmação" />
+            {/* Mercado / Média 1º Gol / Média Confirmação / Jogos Analisados */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8, margin: '10px 0' }}>
+              <StatCard icon={<TrendingUp size={15} />} valor={resultado.tendencia.pctConfirmacao != null ? resultado.tendencia.pctConfirmacao + '%' : '—'} label={mercadoLabel} caption="Taxa de confirmação" cor={corPct(resultado.tendencia.pctConfirmacao)} />
+              <StatCard icon={<Clock size={15} color="var(--verde2)" />} valor={resultado.tendencia.mediaPrimeiroGol != null ? resultado.tendencia.mediaPrimeiroGol + "'" : '—'} label="Média 1º Gol" caption="Minuto médio" />
+              <StatCard icon={<Clock size={15} color="var(--ouro)" />} valor={resultado.tendencia.mediaConfirmacao != null ? resultado.tendencia.mediaConfirmacao + "'" : '—'} label="Média Confirmação" caption="Minuto médio" />
+              <StatCard icon={<LayoutGrid size={15} color="#5fa8f5" />} valor={resultado.tendencia.jogos} label="Jogos Analisados" caption="Jogos" />
             </div>
 
-            {/* LINHA 5 — CENÁRIOS DE ENTRADA (2, definidos nos Filtros Avançados — sem botão de adicionar aqui) */}
+            {/* CENÁRIOS DE ENTRADA (2, definidos nos Filtros Avançados — sem botão de adicionar aqui) */}
             <div className="card">
               <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Timer size={14} /> Cenários de Entrada</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
@@ -442,7 +465,8 @@ export default function Estrategias() {
                     <div key={c.id} className="sel-card" style={{ padding: '10px 8px', textAlign: 'center' }}>
                       <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>{c.placar} aos {c.minuto}'</div>
                       <div style={{ fontSize: 20, fontWeight: 800, color: corPct(dado.pct) }}>{dado.pct != null ? dado.pct + '%' : '—'}</div>
-                      <div style={{ fontSize: 9.5, color: 'var(--texto2)' }}>Confirmaram {mercadoLabel} ({dado.jogos} jogos)</div>
+                      <div style={{ fontSize: 9.5, color: 'var(--texto2)', marginBottom: 6 }}>Confirmaram {mercadoLabel} ({dado.jogos} jogos)</div>
+                      <MiniBars pct={dado.pct} />
                     </div>
                   );
                 })}
