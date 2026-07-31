@@ -159,6 +159,19 @@ function StatMini({ icon, valor, label, cor }) {
   );
 }
 
+// Igual ao StatMini, mas com fonte compacta — pra valores em texto (nome de liga,
+// time, mercado) que não cabem grande sem quebrar feio, ao contrário de números curtos.
+function InfoMini({ icon, valor, label }) {
+  return (
+    <div className="sel-card" style={{ padding: '10px 6px', textAlign: 'center' }}>
+      <div style={{ fontSize: 10, color: 'var(--texto2)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>{label}</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, fontSize: 13, fontWeight: 700, lineHeight: 1.2, color: valor ? 'var(--branco)' : 'var(--texto2)' }}>
+        {icon} <span>{valor}</span>
+      </div>
+    </div>
+  );
+}
+
 // Escudo do time (se já foi cadastrado na Aba Dados/Confrontos) ou um ícone
 // genérico de escudo enquanto não tem nada salvo pra esse nome.
 function EscudoImg({ nome, size = 26 }) {
@@ -216,7 +229,8 @@ export default function Estrategias() {
   const [mandanteE, setMandanteE] = useState('');
   const [visitanteE, setVisitanteE] = useState('');
   const [limiteE, setLimiteE] = useState(20);
-  const [modoTimesE, setModoTimesE] = useState('ambas'); // 'ambas'|'casa'|'fora' — jogos considerados de cada time
+  const [modoMandanteE, setModoMandanteE] = useState('ambas'); // 'ambas'|'casa'|'fora' — jogos considerados do Mandante
+  const [modoVisitanteE, setModoVisitanteE] = useState('ambas'); // 'ambas'|'casa'|'fora' — jogos considerados do Visitante
   const [filtrosAbertos, setFiltrosAbertos] = useState(false); // abre o formulário de Filtros Avançados
   const [sheetAberto, setSheetAberto] = useState(null); // 'mandante'|'visitante'|null (seletores de time dentro do formulário)
   // Cenários da aba Equipes: sempre 2, editados via Filtros Avançados (placar e minuto por select).
@@ -259,10 +273,10 @@ export default function Estrategias() {
     return window.computeScoreEstrategia({
       camp: campE, limite: limiteE || 0, linha: linhaE, mandante: mandanteE, visitante: visitanteE,
       cenarios: cenariosE.map((c) => ({ placar: c.placar, minuto: c.minuto })),
-      modoTimes: modoTimesE,
+      modoMandante: modoMandanteE, modoVisitante: modoVisitanteE,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [campE, linhaE, mandanteE, visitanteE, limiteE, cenariosE, modoTimesE, jogosCache.length]);
+  }, [campE, linhaE, mandanteE, visitanteE, limiteE, cenariosE, modoMandanteE, modoVisitanteE, jogosCache.length]);
 
   const mercadoLabel = linhaE === 'btts' ? 'Ambas Marcam' : `Over ${linhaE}`;
 
@@ -355,14 +369,14 @@ export default function Estrategias() {
 
         {/* LINHA 1 — Liga / Últimos Jogos / Jogos Analisados */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 8 }}>
-          <StatMini icon={<Trophy size={16} color="var(--verde2)" />} valor={campE || 'Todas'} label="Liga" />
-          <StatMini icon={<CalendarRange size={16} color="#5fa8f5" />} valor={limiteE ? `Últimos ${limiteE}` : 'Temporada'} label="Últimos Jogos" />
+          <InfoMini icon={<Trophy size={14} color="var(--verde2)" />} valor={campE || 'Todas'} label="Liga" />
+          <InfoMini icon={<CalendarRange size={14} color="#5fa8f5" />} valor={limiteE ? `Últimos ${limiteE}` : 'Temporada'} label="Últimos Jogos" />
           <StatMini icon={<LayoutGrid size={16} color="var(--ouro)" />} valor={resultado ? resultado.tendencia.jogos : '—'} label="Jogos Analisados" />
         </div>
 
         {/* LINHA 2 — Mercado / Time Mandante / Time Visitante */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 8 }}>
-          <StatMini icon={<Goal size={16} color="var(--ouro)" />} valor={mercadoLabel} label="Mercado" />
+          <InfoMini icon={<Goal size={14} color="var(--ouro)" />} valor={mercadoLabel} label="Mercado" />
           <div className="sel-card" style={{ padding: '10px 6px', textAlign: 'center' }}>
             <div style={{ fontSize: 10, color: 'var(--texto2)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>Mandante</div>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
@@ -479,8 +493,9 @@ export default function Estrategias() {
                 </table>
               </div>
               <div style={{ fontSize: 10, color: 'var(--texto2)', marginTop: 8 }}>
-                Dados baseados {limiteE ? `nos últimos ${limiteE} jogos` : 'na temporada inteira'} de cada equipe{campE ? ` na ${campE}` : ''}
-                {modoTimesE === 'casa' ? ', jogando em casa' : modoTimesE === 'fora' ? ', jogando fora' : ''}.
+                Dados baseados {limiteE ? `nos últimos ${limiteE} jogos` : 'na temporada inteira'} de cada equipe{campE ? ` na ${campE}` : ''}.
+                {modoMandanteE !== 'ambas' && ` ${mandanteE} considerando só jogos ${modoMandanteE === 'casa' ? 'em casa' : 'fora'}.`}
+                {modoVisitanteE !== 'ambas' && ` ${visitanteE} considerando só jogos ${modoVisitanteE === 'casa' ? 'em casa' : 'fora'}.`}
               </div>
             </div>
           </>
@@ -518,11 +533,18 @@ export default function Estrategias() {
                 <option value={0}>Temporada (todos os jogos)</option>
               </select>
 
-              <div className="sel-card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Users size={13} /> Jogos dos Times São</div>
-              <select value={modoTimesE} onChange={(e) => setModoTimesE(e.target.value)} style={{ marginBottom: 10 }}>
+              <div className="sel-card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Users size={13} /> Mandante Joga</div>
+              <select value={modoMandanteE} onChange={(e) => setModoMandanteE(e.target.value)} style={{ marginBottom: 10 }}>
                 <option value="ambas">Ambas (casa e fora)</option>
-                <option value="casa">Casa</option>
-                <option value="fora">Fora</option>
+                <option value="casa">Só em Casa</option>
+                <option value="fora">Só Fora</option>
+              </select>
+
+              <div className="sel-card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Users size={13} /> Visitante Joga</div>
+              <select value={modoVisitanteE} onChange={(e) => setModoVisitanteE(e.target.value)} style={{ marginBottom: 10 }}>
+                <option value="ambas">Ambas (casa e fora)</option>
+                <option value="casa">Só em Casa</option>
+                <option value="fora">Só Fora</option>
               </select>
 
               <div className="sel-card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Home size={13} /> Mandante</div>

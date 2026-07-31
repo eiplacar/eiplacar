@@ -946,10 +946,10 @@ function classificacaoScore(score){
 // tendência de mercado da liga, os 3 cenários calculados e o comparativo.
 function computeScoreEstrategia(filtros){
   filtros = filtros || {};
-  const { camp, limite, linha=1.5, mandante, visitante, cenarios=[], modoTimes='ambas' } = filtros;
+  const { camp, limite, linha=1.5, mandante, visitante, cenarios=[], modoMandante='ambas', modoVisitante='ambas' } = filtros;
 
-  const statsM = mandante ? statsTimeRecente(mandante, camp, limite, linha, modoTimes) : null;
-  const statsV = visitante ? statsTimeRecente(visitante, camp, limite, linha, modoTimes) : null;
+  const statsM = mandante ? statsTimeRecente(mandante, camp, limite, linha, modoMandante) : null;
+  const statsV = visitante ? statsTimeRecente(visitante, camp, limite, linha, modoVisitante) : null;
   const catM = categoriasPorTime(statsM);
   const catV = categoriasPorTime(statsV);
   const media2 = (a,b)=> a!=null && b!=null ? (a+b)/2 : (a!=null ? a : (b!=null ? b : 2.5));
