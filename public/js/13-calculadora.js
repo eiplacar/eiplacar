@@ -751,8 +751,16 @@ window.computeHistoricoEntradas = computeHistoricoEntradas;
 
 // Últimos N jogos de UM time específico (mandante ou visitante em qualquer
 // jogo), do mais recente pro mais antigo, opcionalmente restrito a uma liga.
-function jogosDoTimeFiltrados(time, camp, limite){
-  let jogos = jogosCache.filter(j=> (j.casa===time || j.vis===time) && (!camp || j.camp===camp));
+// modo: 'ambas' (padrão, casa+fora) | 'casa' (só jogos em casa) | 'fora' (só jogos fora)
+function jogosDoTimeFiltrados(time, camp, limite, modo){
+  let jogos = jogosCache.filter(j=>{
+    if(!camp || j.camp===camp){
+      if(modo==='casa') return j.casa===time;
+      if(modo==='fora') return j.vis===time;
+      return j.casa===time || j.vis===time;
+    }
+    return false;
+  });
   jogos = [...jogos].sort((a,b)=> (b.data||'').localeCompare(a.data||'') || (b.id||0)-(a.id||0));
   if(limite) jogos = jogos.slice(0, limite);
   return jogos;
@@ -762,9 +770,10 @@ function jogosDoTimeFiltrados(time, camp, limite){
 // ou fora), usadas nos 4 primeiros critérios do Score + no comparativo.
 // linhaOver: se informado, também calcula a taxa de confirmação daquele Over
 // nos jogos do próprio time (usado no "Comparativo entre as Equipes").
-function statsTimeRecente(time, camp, limite, linhaOver){
-  const jogos = jogosDoTimeFiltrados(time, camp, limite);
+function statsTimeRecente(time, camp, limite, linhaOver, modo){
+  const jogos = jogosDoTimeFiltrados(time, camp, limite, modo);
   const n = jogos.length;
+  const linhaBTTS = linhaOver==='btts';
   if(!n) return null;
   let vit=0, emp=0, der=0, somaRank=0, nRank=0, somaMarcados=0, somaSofridos=0,
       somaChutes=0, nChutes=0, somaChutesSofridos=0, nChutesSofridos=0,
@@ -778,7 +787,8 @@ function statsTimeRecente(time, camp, limite, linhaOver){
     const sofridos = isCasa ? (j.gV||0) : (j.gC||0);
     somaMarcados+=marcados; somaSofridos+=sofridos;
     if(marcados>sofridos) vit++; else if(marcados===sofridos) emp++; else der++;
-    if(linhaOver!=null && (marcados+sofridos)>linhaOver) over++;
+    if(linhaBTTS){ if(marcados>0 && sofridos>0) over++; }
+    else if(linhaOver!=null && (marcados+sofridos)>linhaOver) over++;
     const rank = isCasa ? j.rankC : j.rankV;
     if(rank!=null){ somaRank+=rank; nRank++; }
     const chutes = isCasa ? j.chutesC : j.chutesV, chutesAdv = isCasa ? j.chutesV : j.chutesC;
@@ -826,6 +836,27 @@ window.statsTimeRecente = statsTimeRecente;
 // escolhida, e em que minuto médio sai o 1º gol e o gol que confirma.
 function tendenciaMercadoLiga(camp, limite, linha){
   const jogos = jogosDaLigaFiltrados(camp, limite);
+  if(linha==='btts'){
+    const comDados = jogos.filter(j=>(j.gols||[]).some(g=>g.min!=null));
+    let confirmaram=0, somaPrimeiro=0, nPrimeiro=0, somaConfirma=0, nConfirma=0;
+    comDados.forEach(j=>{
+      const golsOrdenados = (j.gols||[]).map(g=>g.min).filter(m=>m!=null).sort((a,b)=>a-b);
+      if(golsOrdenados.length){ somaPrimeiro += golsOrdenados[0]; nPrimeiro++; }
+      const golsCasa = (j.gols||[]).filter(g=>g.time==='casa' && g.min!=null).map(g=>g.min);
+      const golsVis  = (j.gols||[]).filter(g=>g.time==='vis'  && g.min!=null).map(g=>g.min);
+      if((j.gC||0)>0 && (j.gV||0)>0 && golsCasa.length && golsVis.length){
+        confirmaram++;
+        somaConfirma += Math.max(Math.min(...golsCasa), Math.min(...golsVis));
+        nConfirma++;
+      }
+    });
+    return {
+      jogos: comDados.length,
+      pctConfirmacao: comDados.length ? Math.round((confirmaram/comDados.length)*100) : null,
+      mediaPrimeiroGol: nPrimeiro ? Math.round(somaPrimeiro/nPrimeiro) : null,
+      mediaConfirmacao: nConfirma ? Math.round(somaConfirma/nConfirma) : null,
+    };
+  }
   const idxNecessario = Math.floor(linha+0.5);
   const comDados = jogos.filter(j=>(j.gols||[]).some(g=>g.min!=null));
   let confirmaram=0, somaPrimeiro=0, nPrimeiro=0, somaConfirma=0, nConfirma=0;
@@ -861,7 +892,9 @@ function cenarioLiga(camp, limite, placar, minuto, linha){
     return cCasa===pCasa && cVis===pVis;
   });
   if(!doCenario.length) return { jogos:0, confirmou:0, pct:null };
-  const confirmou = doCenario.filter(j=>((j.gC||0)+(j.gV||0))>linha).length;
+  const confirmou = linha==='btts'
+    ? doCenario.filter(j=>(j.gC||0)>0 && (j.gV||0)>0).length
+    : doCenario.filter(j=>((j.gC||0)+(j.gV||0))>linha).length;
   return { jogos: doCenario.length, confirmou, pct: Math.round((confirmou/doCenario.length)*100) };
 }
 window.cenarioLiga = cenarioLiga;
@@ -913,10 +946,10 @@ function classificacaoScore(score){
 // tendência de mercado da liga, os 3 cenários calculados e o comparativo.
 function computeScoreEstrategia(filtros){
   filtros = filtros || {};
-  const { camp, limite, linha=1.5, mandante, visitante, cenarios=[] } = filtros;
+  const { camp, limite, linha=1.5, mandante, visitante, cenarios=[], modoTimes='ambas' } = filtros;
 
-  const statsM = mandante ? statsTimeRecente(mandante, camp, limite, linha) : null;
-  const statsV = visitante ? statsTimeRecente(visitante, camp, limite, linha) : null;
+  const statsM = mandante ? statsTimeRecente(mandante, camp, limite, linha, modoTimes) : null;
+  const statsV = visitante ? statsTimeRecente(visitante, camp, limite, linha, modoTimes) : null;
   const catM = categoriasPorTime(statsM);
   const catV = categoriasPorTime(statsV);
   const media2 = (a,b)=> a!=null && b!=null ? (a+b)/2 : (a!=null ? a : (b!=null ? b : 2.5));
