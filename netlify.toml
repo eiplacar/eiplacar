@@ -5,7 +5,7 @@
 [functions]
   directory = "netlify/functions"
 
-# Roda a cada 1 hora, buscando jogos finalizados hoje e salvando no Supabase.
+# Roda a cada 2 horas, buscando jogos finalizados hoje e ontem, salvando no Supabase.
 [functions."atualizar-jogos-finalizados"]
   schedule = "0 */2 * * *"
 

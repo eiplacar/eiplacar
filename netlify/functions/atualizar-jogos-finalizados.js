@@ -29,12 +29,6 @@ function dataHojeSaoPaulo() {
   return fmt.format(agora); // AAAA-MM-DD
 }
 
-function horaAtualSaoPaulo() {
-  const agora = new Date();
-  const fmt = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Sao_Paulo', hour: '2-digit', hour12: false });
-  return parseInt(fmt.format(agora), 10);
-}
-
 function dataOntemSaoPaulo() {
   // Pega "agora" já subtraindo 1 dia, e formata do jeito de São Paulo —
   // assim evita bug de fuso horário na virada do dia.
@@ -146,12 +140,13 @@ export const handler = async function () {
   }
 
   const hoje = dataHojeSaoPaulo();
-  const horaAgora = horaAtualSaoPaulo();
 
-  // Só na(s) execução(ões) de madrugada (0h-2h) a gente também confere ontem —
-  // pega jogos que terminaram tarde da noite e escaparam da checagem anterior,
-  // sem gastar essa chamada extra o dia inteiro à toa.
-  const datas = horaAgora < 2 ? [hoje, dataOntemSaoPaulo()] : [hoje];
+  // Sempre confere hoje E ontem, em qualquer horário — assim jogos que terminaram
+  // tarde da noite (ou que passaram batido numa execução anterior) nunca ficam de fora,
+  // e rodar manualmente pelo "Run Now" da Netlify a qualquer hora do dia também funciona.
+  // Custa só 1 chamada extra de "fixtures" (lista), bem mais barata que as chamadas de
+  // estatística/gols — e jogo que já está salvo e completo não é reprocessado de novo.
+  const datas = [hoje, dataOntemSaoPaulo()];
   console.log('Buscando jogos finalizados para as datas:', datas);
 
   let todosFixtures = [];

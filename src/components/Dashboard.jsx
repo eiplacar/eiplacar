@@ -13,7 +13,7 @@ import { CalendarDays, Send, Trophy, Gamepad2, Handshake, BarChart3, Zap, Goal }
 //
 // Pontes com o restante do app, que ainda é JS puro:
 //   - window.renderGeral()               → preenche tudo daqui a partir de jogosCache
-//   - window.filtrarCamp(nome) / filtrarTime(nome) → trocam o filtro e re-renderizam
+//   - window.filtrarCamp(nome)            → troca o campeonato selecionado e re-renderiza
 //   - window.ophRenderLista() / ophCompartilharSelecionados() → card "Jogos de Hoje"
 //   - window.abrirDetalheJogo(id)        → abre o modal de detalhe (fora desta aba)
 
@@ -38,6 +38,29 @@ export default function Dashboard() {
         <div id="ophListaDash" style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }} />
       </div>
 
+      {/* Resumo: Campeonatos / Partidas na Temporada (só das ligas com jogo hoje) / Jogos de hoje.
+          Preenchido por renderGeral() em public/js/07-geral.js */}
+      <div className="card" id="cardResumo" style={{ marginBottom: 14 }}>
+        <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><BarChart3 size={15} /> Resumo</div>
+        <div className="resumo-grid">
+          <div className="resumo-box">
+            <div className="resumo-ic"><Trophy size={17} color="var(--verde2)" /></div>
+            <div className="resumo-num" id="resumoCampeonatos">0</div>
+            <div className="resumo-lbl">Campeonatos</div>
+          </div>
+          <div className="resumo-box">
+            <div className="resumo-ic"><Goal size={17} color="var(--azul, #3a8ee0)" /></div>
+            <div className="resumo-num" id="resumoPartidasTemporada">0</div>
+            <div className="resumo-lbl">Partidas na temporada</div>
+          </div>
+          <div className="resumo-box">
+            <div className="resumo-ic"><CalendarDays size={17} color="var(--ouro)" /></div>
+            <div className="resumo-num" id="resumoJogosHoje">0</div>
+            <div className="resumo-lbl">Jogos de hoje</div>
+          </div>
+        </div>
+      </div>
+
       {/* Grade de campeonatos: ponto de entrada. Clicar num campeonato abre as estatísticas dele */}
       <div className="card" id="cardCamps">
         <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Trophy size={15} /> Campeonatos</div>
@@ -51,9 +74,6 @@ export default function Dashboard() {
           <div id="geralCampNome" style={{ flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 800, color: 'var(--ouro)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6 }}>
             <Trophy size={14} />
           </div>
-          <select id="filtroTimeGeral" onChange={(e) => window.filtrarTime?.(e.target.value)} style={{ flexShrink: 0, maxWidth: 130, background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 7, padding: '7px 8px', color: 'var(--texto)', fontSize: 11, fontWeight: 700, outline: 'none' }}>
-            <option value="">Todos os times</option>
-          </select>
         </div>
 
         <div className="stats-grid">

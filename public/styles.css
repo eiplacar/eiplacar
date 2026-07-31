@@ -135,14 +135,28 @@ main { flex: 1; padding: 16px; max-width: 900px; width: 100%; margin: 0 auto; pa
 .stat-box .lbl { font-size: 10px; color: var(--texto2); margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
 .stat-box .stat-ic { font-size: 18px; margin-bottom: 2px; opacity: .85; }
 
-/* LISTA DE CAMPEONATOS (Geral) — cards em lista, com destaque dourado ao passar o mouse/tocar */
-/* GRADE DE CAMPEONATOS (Geral) — cartões compactos em 2 colunas, número de jogos em destaque */
+/* GRADE DE CAMPEONATOS (Geral) — cartões em 2 colunas: ícone+nome, número grande de
+   partidas disputadas na temporada e um selo (verde se tem jogo hoje, cinza se não tem) */
 .camp-list { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; }
-.camp-row { background: var(--c1); border: 1px solid var(--c3); border-radius: 10px; padding: 12px; text-align: center; cursor: pointer; transition: all .15s; }
+.camp-row { background: var(--c1); border: 1px solid var(--c3); border-radius: 10px; padding: 12px; text-align: left; cursor: pointer; transition: all .15s; display: flex; flex-direction: column; gap: 8px; }
 .camp-row:hover, .camp-row:active { border-color: var(--ouro); background: rgba(245,197,24,.06); }
-.camp-ic { font-size: 18px; margin-bottom: 4px; }
+.camp-top { display: flex; align-items: center; gap: 6px; }
+.camp-ic { font-size: 16px; flex-shrink: 0; }
 .camp-nome { font-weight: 700; font-size: 12.5px; line-height: 1.25; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-.camp-sub { font-size: 10px; color: var(--ouro); font-weight: 700; margin-top: 4px; }
+.camp-bottom { display: flex; align-items: flex-end; justify-content: space-between; gap: 6px; }
+.camp-num { font-size: 20px; font-weight: 800; font-family: var(--fonte-stat); line-height: 1; }
+.camp-cap { font-size: 9px; color: var(--texto2); margin-top: 2px; }
+.camp-badge { flex-shrink: 0; font-size: 9.5px; font-weight: 700; padding: 3px 8px; border-radius: 20px; background: var(--c3); color: var(--texto2); white-space: nowrap; }
+.camp-badge.tem-jogo { background: rgba(0,200,83,.16); color: var(--verde2); }
+
+/* RESUMO (Geral) — 3 caixinhas: campeonatos / partidas na temporada (só das ligas com jogo
+   hoje) / jogos de hoje. Mesma "cara" do stat-box, só um pouco mais compacto. */
+.resumo-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+.resumo-box { background: var(--c1); border: 1px solid var(--c3); border-radius: 10px; padding: 12px 8px; text-align: center; }
+.resumo-ic { font-size: 17px; margin-bottom: 4px; }
+.resumo-num { font-size: 20px; font-weight: 800; font-family: var(--fonte-stat); line-height: 1; }
+.resumo-lbl { font-size: 9.5px; color: var(--texto2); margin-top: 4px; }
+
 @media(max-width:479px){
   .stat-box { padding: 14px 10px; }
   .stat-box .num { font-size: 30px; }
