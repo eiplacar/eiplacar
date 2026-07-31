@@ -882,20 +882,30 @@ window.tendenciaMercadoLiga = tendenciaMercadoLiga;
 // "Cenários (Entrada no 1º Tempo)", cada um com o minuto editável pelo usuário.
 function cenarioLiga(camp, limite, placar, minuto, linha){
   const [pCasa, pVis] = placar.split('x').map(Number);
-  const jogos = jogosDaLigaFiltrados(camp, limite).filter(j=>{
+  let jogos = jogosDaLigaFiltrados(camp, limite).filter(j=>{
     const total = (j.gC||0)+(j.gV||0);
     return total>0 && (j.gols||[]).length===total && (j.gols||[]).every(g=>g.min!=null);
   });
+  jogos = [...jogos].sort((a,b)=> (a.data||'').localeCompare(b.data||'') || (a.id||0)-(b.id||0));
   const doCenario = jogos.filter(j=>{
     const cCasa = (j.gols||[]).filter(g=>g.time==='casa' && g.min<=minuto).length;
     const cVis  = (j.gols||[]).filter(g=>g.time==='vis'  && g.min<=minuto).length;
     return cCasa===pCasa && cVis===pVis;
   });
-  if(!doCenario.length) return { jogos:0, confirmou:0, pct:null };
-  const confirmou = linha==='btts'
-    ? doCenario.filter(j=>(j.gC||0)>0 && (j.gV||0)>0).length
-    : doCenario.filter(j=>((j.gC||0)+(j.gV||0))>linha).length;
-  return { jogos: doCenario.length, confirmou, pct: Math.round((confirmou/doCenario.length)*100) };
+  if(!doCenario.length) return { jogos:0, confirmou:0, pct:null, serie:[] };
+  const confirmouJogo = linha==='btts'
+    ? (j)=> (j.gC||0)>0 && (j.gV||0)>0
+    : (j)=> ((j.gC||0)+(j.gV||0))>linha;
+  // série real: taxa de confirmação acumulada, jogo a jogo, em ordem cronológica —
+  // mostra como o percentual foi se firmando conforme mais jogos entraram na amostra.
+  let acumHits = 0;
+  const evolucao = doCenario.map((j, idx)=>{
+    if(confirmouJogo(j)) acumHits++;
+    return Math.round((acumHits/(idx+1))*100);
+  });
+  const N_SERIE = 12;
+  const confirmou = acumHits;
+  return { jogos: doCenario.length, confirmou, pct: Math.round((confirmou/doCenario.length)*100), serie: evolucao.slice(-N_SERIE) };
 }
 window.cenarioLiga = cenarioLiga;
 
@@ -933,11 +943,11 @@ function categoriasPorTime(s){
 }
 
 function classificacaoScore(score){
-  if(score>=90) return 'Excelente oportunidade';
-  if(score>=75) return 'Muito forte para este cenário';
-  if(score>=55) return 'Cenário favorável';
-  if(score>=35) return 'Cenário neutro';
-  return 'Cenário fraco para este mercado';
+  if(score>=81) return 'Excelente oportunidade';
+  if(score>=61) return 'Cenário favorável';
+  if(score>=41) return 'Cenário neutro';
+  if(score>=21) return 'Cenário fraco para este mercado';
+  return 'Cenário muito fraco para este mercado';
 }
 
 // filtros: { camp, limite, linha (linha do Over, ex 1.5), mandante, visitante,

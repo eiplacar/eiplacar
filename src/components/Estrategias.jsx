@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { TrendingUp, Target, ShieldHalf, CalendarRange, Trophy, Goal, Clock, History, Timer, Layers, Home, Plane, LayoutGrid, ShieldCheck, Award, ChevronDown, X, Check, ShieldQuestion, Filter, Users } from 'lucide-react';
+import { TrendingUp, Target, ShieldHalf, CalendarRange, Trophy, Goal, Clock, History, Timer, Layers, Home, Plane, LayoutGrid, ShieldCheck, Award, ChevronDown, X, Check, ShieldQuestion, Users } from 'lucide-react';
 
 // ══ Estratégias — 3 sub-abas: Linha do Tempo / Cenários / Equipes ══
 //
@@ -111,22 +111,45 @@ function TabelaFaixa({ linhas }) {
 }
 
 // Meio-círculo (gauge) do Score, 0-100. Cor muda por faixa: vermelho→ouro→verde.
+// Faixas de classificação do Score — usadas tanto no rótulo abaixo do card
+// quanto desenhadas dentro do próprio gauge.
+const FAIXAS_SCORE = [
+  { min: 0, max: 20, nome: 'Muito Fraco', cor: '#f0554b' },
+  { min: 21, max: 40, nome: 'Fraco', cor: '#f0a83c' },
+  { min: 41, max: 60, nome: 'Neutro', cor: '#e0d83c' },
+  { min: 61, max: 80, nome: 'Favorável', cor: '#8bd84d' },
+  { min: 81, max: 100, nome: 'Excelente', cor: '#4dd87a' },
+];
+
 function ScoreGauge({ score }) {
   const pct = Math.max(0, Math.min(100, score)) / 100;
-  const cx = 70, cy = 66, r = 54;
+  const cx = 80, cy = 78, r = 62, espessura = 13;
   const toRad = (a) => (a * Math.PI) / 180;
-  const ponto = (a) => [cx + r * Math.cos(toRad(a)), cy + r * Math.sin(toRad(a))];
-  const arco = (a0, a1) => {
-    const [x0, y0] = ponto(a0), [x1, y1] = ponto(a1);
+  const ponto = (a, raio) => [cx + raio * Math.cos(toRad(a)), cy + raio * Math.sin(toRad(a))];
+  const arco = (a0, a1, raio) => {
+    const [x0, y0] = ponto(a0, raio), [x1, y1] = ponto(a1, raio);
     const largeArc = a1 - a0 <= 180 ? 0 : 1;
-    return `M ${x0} ${y0} A ${r} ${r} 0 ${largeArc} 1 ${x1} ${y1}`;
+    return `M ${x0} ${y0} A ${raio} ${raio} 0 ${largeArc} 1 ${x1} ${y1}`;
   };
   const angulo = -180 + pct * 180;
-  const cor = score >= 75 ? '#4dd87a' : score >= 55 ? '#c9d84d' : score >= 35 ? '#e0a53c' : '#f08060';
+  const anguloRad = 0.05; // folguinha entre as faixas
   return (
-    <svg viewBox="0 0 140 74" width="128" height="68">
-      <path d={arco(-180, 0)} stroke="#2a3436" strokeWidth="11" fill="none" strokeLinecap="round" />
-      {pct > 0 && <path d={arco(-180, angulo)} stroke={cor} strokeWidth="11" fill="none" strokeLinecap="round" />}
+    <svg viewBox="0 0 160 88" width="150" height="82">
+      {FAIXAS_SCORE.map((faixa, i) => {
+        const a0 = -180 + (faixa.min / 100) * 180 + (i === 0 ? 0 : anguloRad * 40);
+        const a1 = -180 + (faixa.max / 100) * 180 - (i === FAIXAS_SCORE.length - 1 ? 0 : anguloRad * 40);
+        const meio = (a0 + a1) / 2;
+        const [lx, ly] = ponto(meio, r - 17.5);
+        return (
+          <g key={faixa.nome}>
+            <path d={arco(a0, a1, r)} stroke={faixa.cor} strokeWidth={espessura} fill="none" strokeLinecap="round" opacity={score >= faixa.min && score <= faixa.max ? 1 : 0.38} />
+            <text x={lx} y={ly + 2} textAnchor="middle" fontSize="5.6" fontWeight="700" fill={faixa.cor}>{faixa.nome}</text>
+          </g>
+        );
+      })}
+      {/* agulha indicando o score atual */}
+      <line x1={cx} y1={cy} x2={ponto(angulo, r + 7)[0]} y2={ponto(angulo, r + 7)[1]} stroke="var(--branco)" strokeWidth="2.2" strokeLinecap="round" />
+      <circle cx={cx} cy={cy} r="4" fill="var(--branco)" />
     </svg>
   );
 }
@@ -190,16 +213,22 @@ function StatCard({ icon, valor, label, caption, cor }) {
   );
 }
 
-// Barrinhas decorativas embaixo de cada cenário — floreio visual (não é gráfico
-// de dado real, só reforça visualmente a força do percentual daquele cenário).
-function MiniBars({ pct }) {
-  const p = pct ?? 50;
-  const alturas = [0.3, 0.42, 0.55, 1, 0.65, 0.4, 0.5].map((f) => Math.max(0.15, f * (0.5 + p / 100)));
+// Barras de evolução real do cenário — cada barra é o % de confirmação
+// acumulado até aquele jogo (em ordem cronológica), calculado pelo backend
+// em cenarioLiga(). Mostra como a taxa foi se firmando com mais jogos.
+function MiniBars({ serie }) {
+  if (!serie || serie.length < 2) {
+    return <div style={{ height: 22, fontSize: 9, color: 'var(--texto2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Sem histórico suficiente pra evolução</div>;
+  }
+  const n = serie.length;
+  const w = 100 / n;
   return (
     <svg viewBox="0 0 100 26" width="100%" height="22" preserveAspectRatio="none">
-      {alturas.map((h, i) => (
-        <rect key={i} x={i * 14 + 3} y={26 - h * 22} width="8" height={h * 22} rx="1.5" fill="var(--verde2)" opacity={0.35 + (i / alturas.length) * 0.5} />
-      ))}
+      {serie.map((v, i) => {
+        const h = Math.max(1.5, (v / 100) * 24);
+        const cor = v >= 50 ? 'var(--verde2)' : v >= 25 ? 'var(--ouro)' : '#f08060';
+        return <rect key={i} x={i * w + w * 0.18} y={26 - h} width={w * 0.64} height={h} rx="1" fill={cor} opacity={0.55 + (i / n) * 0.45} />;
+      })}
     </svg>
   );
 }
@@ -263,8 +292,7 @@ export default function Estrategias() {
   const [limiteE, setLimiteE] = useState(20);
   const [modoMandanteE, setModoMandanteE] = useState('ambas'); // 'ambas'|'casa'|'fora' — jogos considerados do Mandante
   const [modoVisitanteE, setModoVisitanteE] = useState('ambas'); // 'ambas'|'casa'|'fora' — jogos considerados do Visitante
-  const [filtrosAbertos, setFiltrosAbertos] = useState(false); // abre o formulário de Filtros Avançados
-  const [sheetAberto, setSheetAberto] = useState(null); // 'mandante'|'visitante'|null (seletores de time dentro do formulário)
+  const [sheetAberto, setSheetAberto] = useState(null); // 'liga'|'mercado'|'mandante'|'visitante'|null
   // Cenários da aba Equipes: sempre 2, editados via Filtros Avançados (placar e minuto por select).
   const [cenariosE, setCenariosE] = useState([
     { id: 1, placar: '0x0', minuto: 30 },
@@ -391,35 +419,28 @@ export default function Estrategias() {
       {/* ═══ SUBPASTA EQUIPES ═══ */}
       <div className={`sub-page ${tab === 'eequipes' ? 'active' : ''}`}>
 
-        {/* Cabeçalho "Filtros Avançados" — clica e abre o formulário com tudo (liga, mercado, times, jogos dos times, cenários) */}
-        <button type="button" onClick={() => setFiltrosAbertos(true)} className="sel-card"
-          style={{ width: '100%', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: 10 }}>
-          <Filter size={15} color="var(--verde2)" />
-          <span style={{ fontWeight: 700, fontSize: 13, flex: 1, textAlign: 'left' }}>Filtros Avançados</span>
-          <ChevronDown size={14} color="var(--texto2)" style={{ transform: 'rotate(-90deg)' }} />
-        </button>
-
-        {/* Liga / Mercado / Mandante / Visitante — cards circulares clicáveis, abrem o formulário de Filtros Avançados (Últimos Jogos, times jogam casa/fora e os 2 cenários ficam dentro dele) */}
+        {/* Liga / Mercado / Mandante / Visitante — cada card abre o seu próprio seletor.
+            "Liga" concentra Liga + Últimos Jogos + Mandante Joga + Visitante Joga + Cenários. */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8, marginBottom: 10 }}>
           <FiltroCard label="Liga" corAnel="var(--verde2)" valor={campE || 'Todas'}
             icon={<Trophy size={22} color="var(--verde2)" />}
-            onClick={() => setFiltrosAbertos(true)} />
+            onClick={() => setSheetAberto('liga')} />
           <FiltroCard label="Mercado" corAnel="var(--ouro)" valor={mercadoLabel}
             icon={<Goal size={22} color="var(--ouro)" />}
-            onClick={() => setFiltrosAbertos(true)} />
+            onClick={() => setSheetAberto('mercado')} />
           <FiltroCard label="Mandante" corAnel="var(--verde2)" valor={mandanteE}
             icon={mandanteE ? <EscudoImg nome={mandanteE} size={36} /> : <Home size={20} color="var(--texto2)" />}
-            onClick={() => setFiltrosAbertos(true)} />
+            onClick={() => setSheetAberto('mandante')} />
           <FiltroCard label="Visitante" corAnel="#e05a5a" valor={visitanteE}
             icon={visitanteE ? <EscudoImg nome={visitanteE} size={36} /> : <Plane size={20} color="var(--texto2)" />}
-            onClick={() => setFiltrosAbertos(true)} />
+            onClick={() => setSheetAberto('visitante')} />
         </div>
 
         {!mandanteE || !visitanteE ? (
           <div className="card">
             <div className="empty">
               <div className="icon"><ShieldHalf size={24} /></div>
-              <p>Escolha um Mandante e um Visitante nos Filtros Avançados pra calcular o Score da Estratégia.</p>
+              <p>Escolha um Mandante e um Visitante nos cards acima pra calcular o Score da Estratégia.</p>
             </div>
           </div>
         ) : !resultado ? (
@@ -432,7 +453,7 @@ export default function Estrategias() {
         ) : (
           <>
             {/* SCORE DA ESTRATÉGIA */}
-            <div className="card" style={{ border: `1px solid ${resultado.score >= 55 ? 'var(--verde2)' : 'var(--ouro)'}`, background: 'rgba(77,216,122,0.04)' }}>
+            <div className="card" style={{ border: `1px solid ${resultado.score >= 61 ? 'var(--verde2)' : 'var(--ouro)'}`, background: 'rgba(77,216,122,0.04)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                 <ShieldCheck size={34} color="var(--verde2)" style={{ flexShrink: 0 }} />
                 <div style={{ flex: 1 }}>
@@ -460,13 +481,14 @@ export default function Estrategias() {
               <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Timer size={14} /> Cenários de Entrada</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 {cenariosE.map((c, i) => {
-                  const dado = resultado.cenarios[i] || { pct: null, jogos: 0 };
+                  const dado = resultado.cenarios[i] || { pct: null, jogos: 0, serie: [] };
                   return (
                     <div key={c.id} className="sel-card" style={{ padding: '10px 8px', textAlign: 'center' }}>
                       <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>{c.placar} aos {c.minuto}'</div>
                       <div style={{ fontSize: 20, fontWeight: 800, color: corPct(dado.pct) }}>{dado.pct != null ? dado.pct + '%' : '—'}</div>
                       <div style={{ fontSize: 9.5, color: 'var(--texto2)', marginBottom: 6 }}>Confirmaram {mercadoLabel} ({dado.jogos} jogos)</div>
-                      <MiniBars pct={dado.pct} />
+                      <div style={{ fontSize: 9, color: 'var(--texto2)', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 3 }}>Evolução</div>
+                      <MiniBars serie={dado.serie} />
                     </div>
                   );
                 })}
@@ -525,28 +547,19 @@ export default function Estrategias() {
           </>
         )}
 
-        {/* ═══ MODAL — FILTROS AVANÇADOS ═══ */}
-        {filtrosAbertos && (
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 300, display: 'flex', alignItems: 'flex-end' }} onClick={() => setFiltrosAbertos(false)}>
+        {/* Card "Liga" — concentra Liga, Últimos Jogos, Mandante Joga, Visitante Joga e os 2 Cenários de Entrada */}
+        {sheetAberto === 'liga' && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 300, display: 'flex', alignItems: 'flex-end' }} onClick={() => setSheetAberto(null)}>
             <div style={{ background: 'var(--fundo2, #12181a)', width: '100%', maxHeight: '88vh', borderRadius: '16px 16px 0 0', padding: '14px 16px 20px', overflowY: 'auto', borderTop: '1px solid var(--borda, #232b2d)' }} onClick={(e) => e.stopPropagation()}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, fontSize: 14 }}><Filter size={15} color="var(--verde2)" /> Filtros Avançados</div>
-                <button type="button" onClick={() => setFiltrosAbertos(false)} style={{ background: 'none', border: 'none', color: 'var(--texto2)', padding: 4 }}><X size={20} /></button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, fontSize: 14 }}><Trophy size={15} color="var(--verde2)" /> Liga</div>
+                <button type="button" onClick={() => setSheetAberto(null)} style={{ background: 'none', border: 'none', color: 'var(--texto2)', padding: 4 }}><X size={20} /></button>
               </div>
 
               <div className="sel-card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Trophy size={13} /> Liga</div>
               <select value={campE} onChange={(e) => setCampE(e.target.value)} style={{ marginBottom: 10 }}>
                 <option value="">Todos os campeonatos</option>
                 <CampeonatoOptions camps={camps} />
-              </select>
-
-              <div className="sel-card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Goal size={13} /> Mercado</div>
-              <select value={linhaE} onChange={(e) => setLinhaE(e.target.value === 'btts' ? 'btts' : Number(e.target.value))} style={{ marginBottom: 10 }}>
-                <option value={1.5}>Over 1.5</option>
-                <option value={2.5}>Over 2.5</option>
-                <option value={3.5}>Over 3.5</option>
-                <option value={4.5}>Over 4.5</option>
-                <option value="btts">Ambas Marcam</option>
               </select>
 
               <div className="sel-card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><CalendarRange size={13} /> Últimos Jogos</div>
@@ -571,20 +584,6 @@ export default function Estrategias() {
                 <option value="fora">Só Fora</option>
               </select>
 
-              <div className="sel-card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Home size={13} /> Mandante</div>
-              <button type="button" onClick={() => setSheetAberto('mandante')} className="sel-card" style={{ width: '100%', padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: 10 }}>
-                {mandanteE ? <EscudoImg nome={mandanteE} size={20} /> : <Home size={16} color="var(--texto2)" />}
-                <span style={{ flex: 1, textAlign: 'left', fontSize: 13, color: mandanteE ? 'var(--branco)' : 'var(--texto2)' }}>{mandanteE || 'Selecione'}</span>
-                <ChevronDown size={13} color="var(--texto2)" />
-              </button>
-
-              <div className="sel-card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Plane size={13} /> Visitante</div>
-              <button type="button" onClick={() => setSheetAberto('visitante')} className="sel-card" style={{ width: '100%', padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: 14 }}>
-                {visitanteE ? <EscudoImg nome={visitanteE} size={20} /> : <Plane size={16} color="var(--texto2)" />}
-                <span style={{ flex: 1, textAlign: 'left', fontSize: 13, color: visitanteE ? 'var(--branco)' : 'var(--texto2)' }}>{visitanteE || 'Selecione'}</span>
-                <ChevronDown size={13} color="var(--texto2)" />
-              </button>
-
               <div className="sel-card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Target size={13} /> Cenários de Entrada</div>
               <div style={{ fontSize: 10, color: 'var(--texto2)', marginBottom: 8 }}>Escolha o placar e o minuto de cada cenário — pode ser no 1º ou no 2º tempo.</div>
               {cenariosE.map((c, i) => (
@@ -600,12 +599,25 @@ export default function Estrategias() {
                 </div>
               ))}
 
-              <button type="button" onClick={() => setFiltrosAbertos(false)} className="btn-primary" style={{ width: '100%', padding: '10px', marginTop: 8 }}>Aplicar</button>
+              <button type="button" onClick={() => setSheetAberto(null)} className="btn-primary" style={{ width: '100%', padding: '10px', marginTop: 8 }}>Aplicar</button>
             </div>
           </div>
         )}
 
-        {/* Seletores de time (Mandante/Visitante), abertos por cima do formulário de Filtros Avançados */}
+        {/* Card "Mercado" */}
+        {sheetAberto === 'mercado' && (
+          <SeletorSheet titulo="Escolha o Mercado" valorAtual={linhaE} onFechar={() => setSheetAberto(null)}
+            onSelecionar={(v) => setLinhaE(v === 'btts' ? 'btts' : Number(v))}
+            opcoes={[
+              { value: 1.5, label: 'Over 1.5', icon: <Goal size={16} color="var(--ouro)" /> },
+              { value: 2.5, label: 'Over 2.5', icon: <Goal size={16} color="var(--ouro)" /> },
+              { value: 3.5, label: 'Over 3.5', icon: <Goal size={16} color="var(--ouro)" /> },
+              { value: 4.5, label: 'Over 4.5', icon: <Goal size={16} color="var(--ouro)" /> },
+              { value: 'btts', label: 'Ambas Marcam', icon: <Goal size={16} color="var(--ouro)" /> },
+            ]} />
+        )}
+
+        {/* Card "Mandante" e "Visitante" — lista de times */}
         {sheetAberto === 'mandante' && (
           <SeletorSheet titulo="Escolha o Mandante" valorAtual={mandanteE} onFechar={() => setSheetAberto(null)}
             onSelecionar={setMandanteE}
