@@ -65,13 +65,11 @@ export default function NovaEntrada() {
         </div>
       </div>
 
-      {/* Resumo da operação — atualiza sozinho conforme os campos abaixo são preenchidos */}
-      <div id="resumoEntrada" style={{ background: 'var(--c1)', border: '1px solid var(--ouro)', borderRadius: 10, padding: '10px 12px', marginBottom: 14, fontSize: 11.5, color: 'var(--texto2)', lineHeight: 1.8 }}>
-        Preencha os campos abaixo para montar o resumo da operação.
+      {/* Data (dia do registro) */}
+      <div style={{ marginBottom: 12 }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>Data</label>
+        <input type="date" id="eDataEntrada" />
       </div>
-      {/* Data não aparece mais no formulário — é registrada automaticamente com a
-          data de hoje (ver hojeBR() em lancarEntrada, 13-calculadora.js) */}
-      <input type="hidden" id="eDataEntrada" defaultValue="" />
 
       {/* Liga */}
       <div style={{ marginBottom: 12 }}>
@@ -202,40 +200,33 @@ export default function NovaEntrada() {
         <input type="number" id="eMinuto" min="0" max="120" placeholder="Ex: 20" onInput={() => window.atualizarResumoEntrada?.()} />
       </div>
 
-      {/* Stake + Odd de Entrada (não aparece no tipo Sistema, que já pede o valor direto) */}
+      {/* Stake + Retorno — a pessoa digita os dois na mão (não aparece no tipo Sistema,
+          que já pede o valor investido e o lucro direto) */}
       <div id="blocoPctBanca" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 4 }}>
         <div>
           {/* Em vez de escolher uma % fixa, a pessoa digita o valor em R$ que quer apostar (o "Stake") —
               o sistema calcula a % da banca correspondente sozinho (guardado por baixo dos
               panos em #ePct, que é o que o resto do código já usa pra tudo). */}
           <label>Stake (R$)</label>
-          <input type="number" id="eValorStake" min="0" step="0.01" placeholder="Ex: 50,00" title="Digite o valor em reais que você quer apostar" onInput={(e) => window.setValorStake?.(e.target.value)} />
+          <input type="number" id="eValorStake" min="0" step="0.01" placeholder="Ex: 10,00" title="Digite o valor em reais que você quer apostar" onInput={(e) => window.setValorStake?.(e.target.value)} />
           <input type="hidden" id="ePct" defaultValue="" />
         </div>
-        <div>
-          <label>Odd de Entrada</label>
-          <input type="number" id="eOdd" min="1.01" step="0.01" placeholder="1.80" onInput={() => { window.limparGanhoDireto?.(); window.calcEntrada?.(); }} />
+        <div id="blocoRetornoEntrada">
+          <label>Retorno (R$)</label>
+          <input type="number" id="eRetorno" min="0" step="0.01" placeholder="Ex: 18,10" title="Digite quanto volta se a aposta for Green (stake + lucro)" onInput={() => window.calcEntrada?.()} />
         </div>
       </div>
 
-      {/* Ganhos (opcional) — em vez de calcular pela odd, a pessoa pode digitar direto quanto
-          ganhou (R$); o sistema descobre a odd e a % sozinho a partir do Stake acima. */}
-      <div id="blocoGanhoDireto" style={{ marginBottom: 4 }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Coins size={13} /> Ganhos (R$) — opcional</label>
-        <input type="number" id="eGanhoDireto" min="0" step="0.01" placeholder="Ex: 40,00" title="Digite quanto você ganhou, em reais, e o sistema calcula a odd e a % sozinho" onInput={(e) => window.setGanhoDireto?.(e.target.value)} />
-        <div style={{ fontSize: 9.5, color: 'var(--texto2)', marginTop: 4 }}>Preencha o Stake e, se quiser, digite direto quanto ganhou aqui — o sistema calcula a odd e a % da banca sozinho.</div>
-      </div>
-
-      {/* Retorno + Resultado */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 4 }}>
-        <div id="blocoRetornoEntrada">
-          <label>Retorno</label>
-          <div id="retornoDisplay" style={{ background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 8, padding: '10px 12px', fontSize: 14, fontWeight: 800, color: 'var(--branco, #fff)' }}>—</div>
+      {/* Odd de Entrada + Resultado */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
+        <div>
+          <label>Odd de Entrada</label>
+          <input type="number" id="eOdd" min="1.01" step="0.01" placeholder="1.85" />
         </div>
         <div>
           <label>Resultado</label>
           <select id="eResultado" defaultValue="">
-            <option value="" disabled>Selecione o resultado</option>
+            <option value="" disabled>Selecione</option>
             <option value="green">Green</option>
             <option value="red">Red</option>
             <option value="void">Void</option>
@@ -243,13 +234,12 @@ export default function NovaEntrada() {
           </select>
         </div>
       </div>
-      <div style={{ fontSize: 9.5, color: 'var(--texto2)', marginBottom: 12 }}>Retorno = Stake + Lucro potencial (o valor que volta se a aposta for Green)</div>
 
       {/* Resumo da Operação (Lucro / % da Banca / Retorno Total) */}
       <div id="blocoGestaoEntrada">
         <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}><PiggyBank size={13} /> Resumo da Operação</label>
         <div id="entradaPreview" style={{ background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 9, padding: 12, marginBottom: 14, fontSize: 12, color: 'var(--texto2)' }}>
-          Preencha o Stake e a Odd (ou os Ganhos) para ver o resumo
+          Preencha o Stake e o Retorno para ver o resumo
         </div>
       </div>
 

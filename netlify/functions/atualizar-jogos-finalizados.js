@@ -8,19 +8,28 @@
 // jogo que já está no banco nunca é buscado de novo.
 //
 // Variáveis de ambiente necessárias (configurar no painel da Netlify):
-//   API_FOOTBALL_KEY      → chave da API-Football
+//   GOAL_API_KEY          → chave da GOAL API (goal-api.com)
 //   SUPABASE_URL          → mesma URL do public/js/01-config-auth.js
 //   SUPABASE_SERVICE_KEY  → chave "service_role" do Supabase (Settings → API)
 //                            NUNCA usar a chave anon aqui — precisa da
 //                            service_role pra poder escrever sem estar logado.
 // ═══════════════════════════════════════════════════
 
+const GOAL_API_URL = 'https://api.goal-api.com/v1';
+
+// IDs das ligas na GOAL API → nome do campeonato que aparece no app.
+// Mesma lista de 10 ligas usada em jogos-do-dia.js.
 const NOMES_CAMP_POR_LIGA = new Map([
-  [71, 'Brasileirão Série A'],
-  [72, 'Brasileirão Série B'],
-  [78, 'Bundesliga'],
-  [79, 'Bundesliga 2'],
-  [39, 'Premier League'],
+  ['cmr77dvww00bfrx061thkr8z4', 'Brasileirão Série A'],
+  ['cmr77dvww00bgrx06cb9fmnv0', 'Brasileirão Série B'],
+  ['cmr77dvkr005nrx06lp7rvp49', 'Premier League'],
+  ['cmr77dvnt006nrx063v3w622e', 'La Liga'],
+  ['cmr77dvgm0002rx06rt2uqxii', 'Bundesliga'],
+  ['cmr77dvgm0001rx060h6ivt4p', 'Bundesliga 2'],
+  ['cmr77dvpd006yrx06zig7907g', 'Serie A (Itália)'],
+  ['cmr77dvqg007crx06q1kaceyo', 'Ligue 1'],
+  ['cmr77dvrh007vrx0664phtxs5', 'Eredivisie'],
+  ['cmr77dw3900f5rx06j05wgzv4', 'UEFA Champions League'],
 ]);
 
 function dataHojeSaoPaulo() {
@@ -38,23 +47,52 @@ function dataOntemSaoPaulo() {
   return fmt.format(agora);
 }
 
-function dataBrParaTexto(isoDate) {
-  const d = new Date(isoDate);
-  const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric' });
-  return fmt.format(d); // 'en-CA' produz AAAA-MM-DD, formato que o resto do site usa
+// A GOAL API já manda matchDate como "AAAA-MM-DD" (sem hora), então só
+// repassamos — mantido como função pra deixar explícito o formato esperado
+// pelo resto do site (mesmo "AAAA-MM-DD" usado em jogos.data).
+function dataBrParaTexto(matchDate) {
+  return matchDate;
 }
 
-function pegarEstatistica(statsTime, tipo) {
-  const item = (statsTime?.statistics || []).find((s) => s.type === tipo);
-  const v = item?.value;
-  if (v === null || v === undefined) return null;
-  return typeof v === 'string' ? parseInt(v, 10) || null : v;
+// Estatísticas da GOAL API vêm como uma lista achatada — cada item tem
+// {type, home, away} em vez de um objeto por time como na API-Football.
+function pegarEstatistica(estatisticas, tipo, lado) {
+  const item = (estatisticas || []).find((s) => s.type === tipo);
+  if (!item) return null;
+  const bruto = String(item[lado] ?? '').replace('%', '').trim();
+  if (bruto === '') return null;
+  const n = parseInt(bruto, 10);
+  return Number.isNaN(n) ? null : n;
+}
+
+// "45", "90+3" etc. — soma os acréscimos pro minuto final do gol.
+function parseMinuto(tempo) {
+  if (!tempo) return 0;
+  return String(tempo)
+    .split('+')
+    .reduce((soma, parte) => soma + (parseInt(parte, 10) || 0), 0);
+}
+
+// Os eventos da GOAL API não trazem o nome do time que fez o gol — só
+// indicam o lado (homeScorer preenchido = gol da casa; awayScorer = visitante).
+function extrairGols(eventos, nomeCasa, nomeVis) {
+  return (eventos || [])
+    .filter((ev) => ev.type === 'GOAL')
+    .map((ev) => {
+      const daCasa = !!ev.homeScorer;
+      return {
+        min: parseMinuto(ev.time),
+        time: daCasa ? 'casa' : 'vis',
+        nome: daCasa ? nomeCasa : nomeVis,
+      };
+    })
+    .sort((a, b) => a.min - b.min);
 }
 
 // ═══════════════════════════════════════════════════
 // NOMES DE TIMES — via tabela "clubes" (ID da API → nome do sistema)
 // Muito mais confiável que tentar corrigir por texto (acento, grafia
-// etc.): o ID do time na API-Football nunca muda, então a busca é exata.
+// etc.): o ID do time na GOAL API nunca muda, então a busca é exata.
 // Times que ainda não estão na tabela "clubes" continuam usando o nome
 // cru que a API manda (fallback), sem quebrar nada.
 // ═══════════════════════════════════════════════════
@@ -72,71 +110,56 @@ async function buscarMapaClubes(supaUrl, supaServiceKey) {
   return mapa;
 }
 
-function nomeDoTime(mapaClubes, teamApi) {
-  return mapaClubes.get(teamApi.id) || teamApi.name;
+function nomeDoTime(mapaClubes, teamId, nomeCru) {
+  return mapaClubes.get(teamId) || nomeCru;
 }
 
-// Brasileirão = temporada é o ano civil. Bundesliga = temporada europeia (ago-mai),
-// então antes de julho ainda é a temporada que começou no ano anterior.
-function temporadaDaLiga(ligaId) {
-  const agora = new Date();
-  if (ligaId === 71 || ligaId === 72) return agora.getFullYear();
-  const mes = agora.getMonth() + 1;
-  return mes >= 7 ? agora.getFullYear() : agora.getFullYear() - 1;
-}
-
-// 1 chamada por liga (reaproveitada pra todos os jogos dessa liga nessa rodada da função)
-// Devolve { mapa, indisponivel }: "indisponivel" é true quando a API recusou por causa do
-// PLANO (ex: "Free plans do not have access to this season") — uma restrição permanente,
-// que vai continuar dando o mesmo erro sempre que tentar de novo. Nesse caso o jogo é salvo
-// com rank_indisponivel=true, pra função parar de tentar de novo a cada execução (evita
-// gastar cota de API à toa numa coisa que só se resolve trocando de plano na API-Football).
+// 1 chamada por liga (reaproveitada pra todos os jogos dessa liga nessa rodada da função).
+// A GOAL API já devolve a classificação da temporada atual automaticamente —
+// não precisa mais calcular/mandar o ano da temporada como na API-Football.
+// Devolve { mapa, indisponivel }: "indisponivel" é true quando a API não conseguiu
+// devolver a tabela dessa liga (ex: liga sem classificação disponível ainda).
 async function buscarRanksDaLiga(apiKey, ligaId, cacheStandings) {
   if (cacheStandings.has(ligaId)) return cacheStandings.get(ligaId);
-  const temporada = temporadaDaLiga(ligaId);
-  const resp = await fetch(`https://v3.football.api-sports.io/standings?league=${ligaId}&season=${temporada}`, {
-    headers: { 'x-apisports-key': apiKey },
+
+  const resp = await fetch(`${GOAL_API_URL}/leagues/${ligaId}/standings`, {
+    headers: { Authorization: `Bearer ${apiKey}` },
   });
   const json = await resp.json();
-  console.log(`Resposta API-Football (standings liga=${ligaId} temporada=${temporada}):`, { httpStatus: resp.status, erros: json.errors, temResponse: !!json.response?.length });
-  const grupos = json.response?.[0]?.league?.standings || [];
+  console.log(`Resposta GOAL API (standings liga=${ligaId}):`, { httpStatus: resp.status, success: json.success, qtdTimes: (json.data || []).length });
+
   const mapa = new Map();
-  grupos.flat().forEach((t) => mapa.set(t.team.id, t.rank));
-  console.log(`Ranking montado pra liga ${ligaId}:`, mapa.size, 'times —', [...mapa.entries()].map(([id, r]) => `${id}:${r}`).join(', '));
-  // Erro de "plan" = restrição do plano contratado na API-Football (ex: temporada não liberada
-  // no plano grátis). É diferente de um erro passageiro (fora do ar, rate limit etc.) — esse
-  // sim continua sendo tentado de novo normalmente, só o de "plan" que é marcado como definitivo.
-  const indisponivel = !!json.errors?.plan;
+  (json.data || []).forEach((t) => {
+    const pos = parseInt(t.overallLeaguePosition, 10);
+    if (t.teamId && !Number.isNaN(pos)) mapa.set(t.teamId, pos);
+  });
+
+  const indisponivel = !json.success;
   const resultado = { mapa, indisponivel };
   cacheStandings.set(ligaId, resultado);
   return resultado;
 }
 
-// 1 chamada por jogo novo — pega os gols com o minuto de cada um
-async function buscarGolsDoJogo(apiKey, fixtureId, nomeCasa, nomeVis) {
-  const resp = await fetch(`https://v3.football.api-sports.io/fixtures/events?fixture=${fixtureId}`, {
-    headers: { 'x-apisports-key': apiKey },
+// 1 chamada por jogo novo — o detalhe do fixture na GOAL API já vem com
+// eventos, cartões e estatísticas embutidos, então não precisa mais de
+// chamadas separadas pra "events" e "statistics" como na API-Football.
+async function buscarDetalheDoJogo(apiKey, fixtureId) {
+  const resp = await fetch(`${GOAL_API_URL}/fixtures/${fixtureId}`, {
+    headers: { Authorization: `Bearer ${apiKey}` },
   });
   const json = await resp.json();
-  console.log(`Resposta API-Football (events fixture=${fixtureId}):`, { httpStatus: resp.status, erros: json.errors, qtdEventos: (json.response || []).length });
-  return (json.response || [])
-    .filter((ev) => ev.type === 'Goal')
-    .map((ev) => ({
-      min: ev.time.elapsed + (ev.time.extra || 0),
-      time: ev.team.name === nomeCasa ? 'casa' : ev.team.name === nomeVis ? 'vis' : 'casa',
-      nome: ev.team.name,
-    }))
-    .sort((a, b) => a.min - b.min);
+  console.log(`Resposta GOAL API (fixture=${fixtureId}):`, { httpStatus: resp.status, success: json.success, qtdEventos: (json.data?.events || []).length, qtdStats: (json.data?.statistics || []).length });
+  return json.success ? json.data : null;
 }
 
 export const handler = async function () {
-  const apiKey = process.env.API_FOOTBALL_KEY;
+  const apiKey = process.env.GOAL_API_KEY;
   const supaUrl = process.env.SUPABASE_URL;
   const supaServiceKey = process.env.SUPABASE_SERVICE_KEY;
 
   if (!apiKey || !supaUrl || !supaServiceKey) {
     console.log('ERRO: faltam variáveis de ambiente', { temApiKey: !!apiKey, temSupaUrl: !!supaUrl, temSupaKey: !!supaServiceKey });
-    return { statusCode: 500, body: JSON.stringify({ erro: 'Faltam variáveis de ambiente (API_FOOTBALL_KEY / SUPABASE_URL / SUPABASE_SERVICE_KEY)' }) };
+    return { statusCode: 500, body: JSON.stringify({ erro: 'Faltam variáveis de ambiente (GOAL_API_KEY / SUPABASE_URL / SUPABASE_SERVICE_KEY)' }) };
   }
 
   const hoje = dataHojeSaoPaulo();
@@ -144,30 +167,40 @@ export const handler = async function () {
   // Sempre confere hoje E ontem, em qualquer horário — assim jogos que terminaram
   // tarde da noite (ou que passaram batido numa execução anterior) nunca ficam de fora,
   // e rodar manualmente pelo "Run Now" da Netlify a qualquer hora do dia também funciona.
-  // Custa só 1 chamada extra de "fixtures" (lista), bem mais barata que as chamadas de
-  // estatística/gols — e jogo que já está salvo e completo não é reprocessado de novo.
+  // Custa só 1 chamada extra de "fixtures" (lista), bem mais barata que a chamada de
+  // detalhe (que já traz estatística + gols juntos).
   const datas = [hoje, dataOntemSaoPaulo()];
   console.log('Buscando jogos finalizados para as datas:', datas);
 
   let todosFixtures = [];
   for (const data of datas) {
-    const respFixtures = await fetch(`https://v3.football.api-sports.io/fixtures?date=${data}&status=FT`, {
-      headers: { 'x-apisports-key': apiKey },
-    });
-    const jsonFixtures = await respFixtures.json();
-    console.log(`Resposta API-Football (fixtures ${data}):`, { httpStatus: respFixtures.status, totalRecebido: (jsonFixtures.response || []).length, erros: jsonFixtures.errors });
-    todosFixtures = todosFixtures.concat(jsonFixtures.response || []);
+    // Pagina em blocos de 100 (a GOAL API cobre o mundo inteiro) até acabar
+    // ou até a trava de segurança de 500 jogos finalizados nessa data.
+    let offset = 0;
+    for (let pagina = 0; pagina < 5; pagina++) {
+      const resp = await fetch(`${GOAL_API_URL}/fixtures?date=${data}&status=FINISHED&limit=100&offset=${offset}`, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      });
+      const json = await resp.json();
+      console.log(`Resposta GOAL API (fixtures ${data}, offset=${offset}):`, { httpStatus: resp.status, success: json.success, totalRecebido: (json.data || []).length });
+      if (!json.success) break;
+      todosFixtures = todosFixtures.concat(json.data || []);
+      if (!json.pagination?.hasMore) break;
+      offset += 100;
+    }
   }
 
-  const fixtures = todosFixtures.filter((f) => NOMES_CAMP_POR_LIGA.has(f.league?.id));
-  console.log('Jogos após filtro de ligas permitidas:', fixtures.length, fixtures.map(f => `${NOMES_CAMP_POR_LIGA.get(f.league?.id)} - ${f.teams?.home?.name} x ${f.teams?.away?.name}`));
+  const fixtures = todosFixtures.filter((f) => NOMES_CAMP_POR_LIGA.has(f.leagueId));
+  console.log('Jogos após filtro de ligas permitidas:', fixtures.length, fixtures.map((f) => `${NOMES_CAMP_POR_LIGA.get(f.leagueId)} - ${f.homeTeamName} x ${f.awayTeamName}`));
 
   if (fixtures.length === 0) {
     return { statusCode: 200, body: JSON.stringify({ ok: true, mensagem: 'Nenhum jogo finalizado hoje nos campeonatos escolhidos.' }) };
   }
 
-  // Descobre quais desses jogos já estão salvos, pra não gastar cota de novo
-  const idsHoje = fixtures.map((f) => f.fixture.id);
+  // Descobre quais desses jogos já estão salvos, pra não gastar cota de novo.
+  // fixture_id no Supabase é bigint — por isso usamos o "apiId" numérico da
+  // GOAL API (não o "id" alfanumérico tipo "cmrzltnb9v...") como identificador.
+  const idsHoje = fixtures.map((f) => f.apiId);
   const respExistentes = await fetch(
     `${supaUrl}/rest/v1/jogos?select=fixture_id,chutesC,rankC,rankV,rank_indisponivel&fixture_id=in.(${idsHoje.join(',')})`,
     { headers: { apikey: supaServiceKey, Authorization: `Bearer ${supaServiceKey}` } }
@@ -183,7 +216,7 @@ export const handler = async function () {
   // "rankV") vazio E ainda sem a marca de "rank_indisponivel" (ou seja: ainda vale a pena
   // tentar de novo), entram de novo na lista pra tentar completar o que faltou. Jogos com
   // ranking vazio MAS já marcados como rank_indisponivel=true não entram — evita ficar
-  // gastando chamada de API pra sempre numa restrição de plano que não vai se resolver sozinha.
+  // gastando chamada de API pra sempre numa restrição que não vai se resolver sozinha.
   const existentesCompletos = new Set();
   const existentesIncompletos = new Set();
   JSON.parse(textoExistentes).forEach((r) => {
@@ -191,8 +224,8 @@ export const handler = async function () {
     if (r.chutesC === null || rankFaltando) existentesIncompletos.add(r.fixture_id);
     else existentesCompletos.add(r.fixture_id);
   });
-  const novos = fixtures.filter((f) => !existentesCompletos.has(f.fixture.id));
-  console.log('Jogos novos a salvar:', novos.length, '— dos quais reprocessando (dados incompletos):', novos.filter(f => existentesIncompletos.has(f.fixture.id)).length);
+  const novos = fixtures.filter((f) => !existentesCompletos.has(parseInt(f.apiId, 10)));
+  console.log('Jogos novos a salvar:', novos.length, '— dos quais reprocessando (dados incompletos):', novos.filter((f) => existentesIncompletos.has(parseInt(f.apiId, 10))).length);
 
   if (novos.length === 0) {
     return { statusCode: 200, body: JSON.stringify({ ok: true, mensagem: 'Jogos de hoje já estavam todos salvos e completos.' }) };
@@ -202,55 +235,45 @@ export const handler = async function () {
   const cacheStandings = new Map();
   const mapaClubes = await buscarMapaClubes(supaUrl, supaServiceKey);
   console.log('Clubes cadastrados na tabela "clubes":', mapaClubes.size);
+
   for (const f of novos) {
-    // 1 chamada extra por jogo NOVO (estatísticas) + 1 pros gols — é o preço de ter os dados completos
-    const respStats = await fetch(`https://v3.football.api-sports.io/fixtures/statistics?fixture=${f.fixture.id}`, {
-      headers: { 'x-apisports-key': apiKey },
-    });
-    const jsonStats = await respStats.json();
-    const statsCasa = (jsonStats.response || [])[0];
-    const statsVis = (jsonStats.response || [])[1];
-    console.log(`Resposta API-Football (statistics fixture=${f.fixture.id}, ${f.teams.home.name} x ${f.teams.away.name}):`, {
-      httpStatus: respStats.status,
-      erros: jsonStats.errors,
-      qtdTimesNaResposta: (jsonStats.response || []).length,
-      temStatsCasa: !!statsCasa?.statistics?.length,
-      temStatsVis: !!statsVis?.statistics?.length,
-    });
+    // 1 chamada extra por jogo NOVO — já traz estatísticas E eventos juntos
+    const detalhe = await buscarDetalheDoJogo(apiKey, f.id);
 
-    const casaCorrigido = nomeDoTime(mapaClubes, f.teams.home);
-    const visCorrigido = nomeDoTime(mapaClubes, f.teams.away);
+    const casaCorrigido = nomeDoTime(mapaClubes, f.homeTeamId, f.homeTeamName);
+    const visCorrigido = nomeDoTime(mapaClubes, f.awayTeamId, f.awayTeamName);
 
-    const { mapa: ranks, indisponivel: rankIndisponivel } = await buscarRanksDaLiga(apiKey, f.league.id, cacheStandings);
-    const gols = await buscarGolsDoJogo(apiKey, f.fixture.id, f.teams.home.name, f.teams.away.name);
+    const { mapa: ranks, indisponivel: rankIndisponivel } = await buscarRanksDaLiga(apiKey, f.leagueId, cacheStandings);
+    const gols = extrairGols(detalhe?.events, f.homeTeamName, f.awayTeamName);
+    const stats = detalhe?.statistics || [];
 
     linhas.push({
-      fixture_id: f.fixture.id,
-      origem: 'api-football',
-      camp: NOMES_CAMP_POR_LIGA.get(f.league.id),
-      data: dataBrParaTexto(f.fixture.date),
-      rodada: (f.league.round || '').replace(/^Regular Season - /i, 'Rodada '),
-      local: f.fixture.venue?.name || '',
+      fixture_id: parseInt(f.apiId, 10),
+      origem: 'goal-api',
+      camp: NOMES_CAMP_POR_LIGA.get(f.leagueId),
+      data: dataBrParaTexto(f.matchDate),
+      rodada: (f.matchRound || '').replace(/^Regular Season - /i, 'Rodada '),
+      local: f.matchStadium || '',
       casa: casaCorrigido,
       vis: visCorrigido,
-      gC: f.goals.home,
-      gV: f.goals.away,
-      rankC: ranks.get(f.teams.home.id) ?? null,
-      rankV: ranks.get(f.teams.away.id) ?? null,
+      gC: f.homeTeamScore !== null ? parseInt(f.homeTeamScore, 10) : null,
+      gV: f.awayTeamScore !== null ? parseInt(f.awayTeamScore, 10) : null,
+      rankC: ranks.get(f.homeTeamId) ?? null,
+      rankV: ranks.get(f.awayTeamId) ?? null,
       rank_indisponivel: rankIndisponivel,
       gols,
-      golsHT_C: f.score.halftime?.home ?? null,
-      golsHT_V: f.score.halftime?.away ?? null,
-      chutesC: pegarEstatistica(statsCasa, 'Total Shots'),
-      chutesV: pegarEstatistica(statsVis, 'Total Shots'),
-      chutesGolC: pegarEstatistica(statsCasa, 'Shots on Goal'),
-      chutesGolV: pegarEstatistica(statsVis, 'Shots on Goal'),
-      escanteiosC: pegarEstatistica(statsCasa, 'Corner Kicks'),
-      escanteiosV: pegarEstatistica(statsVis, 'Corner Kicks'),
-      amarelosC: pegarEstatistica(statsCasa, 'Yellow Cards'),
-      amarelosV: pegarEstatistica(statsVis, 'Yellow Cards'),
-      vermelhosC: pegarEstatistica(statsCasa, 'Red Cards'),
-      vermelhosV: pegarEstatistica(statsVis, 'Red Cards'),
+      golsHT_C: f.homeTeamHalftimeScore !== null ? parseInt(f.homeTeamHalftimeScore, 10) : null,
+      golsHT_V: f.awayTeamHalftimeScore !== null ? parseInt(f.awayTeamHalftimeScore, 10) : null,
+      chutesC: pegarEstatistica(stats, 'Shots Total', 'home'),
+      chutesV: pegarEstatistica(stats, 'Shots Total', 'away'),
+      chutesGolC: pegarEstatistica(stats, 'Shots On Goal', 'home'),
+      chutesGolV: pegarEstatistica(stats, 'Shots On Goal', 'away'),
+      escanteiosC: pegarEstatistica(stats, 'Corners', 'home'),
+      escanteiosV: pegarEstatistica(stats, 'Corners', 'away'),
+      amarelosC: pegarEstatistica(stats, 'Yellow Cards', 'home'),
+      amarelosV: pegarEstatistica(stats, 'Yellow Cards', 'away'),
+      vermelhosC: pegarEstatistica(stats, 'Red Cards', 'home'),
+      vermelhosV: pegarEstatistica(stats, 'Red Cards', 'away'),
     });
   }
 
