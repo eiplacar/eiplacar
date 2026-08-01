@@ -169,28 +169,25 @@ export const handler = async function () {
   // e rodar manualmente pelo "Run Now" da Netlify a qualquer hora do dia também funciona.
   // Custa só 1 chamada extra de "fixtures" (lista), bem mais barata que a chamada de
   // detalhe (que já traz estatística + gols juntos).
-  const datas = [hoje, dataOntemSaoPaulo()];
-  console.log('Buscando jogos finalizados para as datas:', datas);
+  const datasValidas = new Set([hoje, dataOntemSaoPaulo()]);
+  console.log('Buscando jogos finalizados para as datas:', [...datasValidas]);
 
+  // IMPORTANTE: a GOAL API ignora o filtro "date" quando combinado com "leagueId"
+  // (bug/limitação observada) — em vez disso devolve os jogos mais recentes
+  // daquela liga, do mais novo pro mais antigo. Por isso buscamos por liga
+  // (poucas chamadas, uma por liga) e filtramos a data aqui no código.
   let todosFixtures = [];
-  for (const data of datas) {
-    // Pagina em blocos de 100 (a GOAL API cobre o mundo inteiro) até acabar
-    // ou até a trava de segurança de 500 jogos finalizados nessa data.
-    let offset = 0;
-    for (let pagina = 0; pagina < 5; pagina++) {
-      const resp = await fetch(`${GOAL_API_URL}/fixtures?date=${data}&status=FINISHED&limit=100&offset=${offset}`, {
-        headers: { Authorization: `Bearer ${apiKey}` },
-      });
-      const json = await resp.json();
-      console.log(`Resposta GOAL API (fixtures ${data}, offset=${offset}):`, { httpStatus: resp.status, success: json.success, totalRecebido: (json.data || []).length });
-      if (!json.success) break;
-      todosFixtures = todosFixtures.concat(json.data || []);
-      if (!json.pagination?.hasMore) break;
-      offset += 100;
-    }
+  for (const ligaId of NOMES_CAMP_POR_LIGA.keys()) {
+    const resp = await fetch(`${GOAL_API_URL}/fixtures?leagueId=${ligaId}&status=FINISHED&limit=20`, {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    const json = await resp.json();
+    console.log(`Resposta GOAL API (fixtures liga=${ligaId}):`, { httpStatus: resp.status, success: json.success, totalRecebido: (json.data || []).length });
+    if (!json.success) continue;
+    todosFixtures = todosFixtures.concat(json.data || []);
   }
 
-  const fixtures = todosFixtures.filter((f) => NOMES_CAMP_POR_LIGA.has(f.leagueId));
+  const fixtures = todosFixtures.filter((f) => NOMES_CAMP_POR_LIGA.has(f.leagueId) && datasValidas.has(f.matchDate));
   console.log('Jogos após filtro de ligas permitidas:', fixtures.length, fixtures.map((f) => `${NOMES_CAMP_POR_LIGA.get(f.leagueId)} - ${f.homeTeamName} x ${f.awayTeamName}`));
 
   if (fixtures.length === 0) {
