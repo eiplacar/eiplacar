@@ -4,26 +4,34 @@
 // carteira individual só, gerenciada em 14-banca-gestao.js / src/components/Banca.jsx)
 // ═══════════════════════════════════════════════════
 // ══ ENTRADA ══
-function buscarMercadoAnalise(){
-  if(!ultimaAnalise){ toast('⚠️ Faça uma análise primeiro na aba 📊 Análise'); return; }
-  const wrap = document.getElementById('mercadoSugestoesWrap');
-  const sel  = document.getElementById('mercadoSugestoes');
-  document.getElementById('mercadoSugestoesLabel').textContent = `📊 Mercados da análise: ${ultimaAnalise.casa} × ${ultimaAnalise.vis}`;
-  sel.innerHTML = '<option value="">— Selecione um mercado —</option>' +
-    ultimaAnalise.mercados.map(m=>`<option value="${m.nome}">${m.nome} — ${m.prob}%</option>`).join('');
-  wrap.style.display='block';
+
+// Ao digitar a Liga, mostra os times daquele campeonato nos selects de Mandante/Visitante
+// (usa o mesmo jogosCache já carregado pela Aba Dados — nada de API aqui).
+function popularTimesLigaEntrada(){
+  const liga = document.getElementById('eLiga')?.value.trim();
+  const wrap = document.getElementById('blocoJogoEntrada');
+  const selM = document.getElementById('eMandanteSel');
+  const selV = document.getElementById('eVisitanteSel');
+  if(!wrap || !selM || !selV) return;
+  if(!liga){ wrap.style.display='none'; return; }
+  const times = [...new Set(jogosCache.filter(j=>j.camp===liga).flatMap(j=>[j.casa,j.vis]))].sort();
+  if(!times.length){ wrap.style.display='none'; return; }
+  const valM = selM.value, valV = selV.value;
+  selM.innerHTML = '<option value="">Mandante</option>' + times.map(t=>`<option value="${t}">${t}</option>`).join('');
+  selV.innerHTML = '<option value="">Visitante</option>' + times.map(t=>`<option value="${t}">${t}</option>`).join('');
+  if(times.includes(valM)) selM.value = valM;
+  if(times.includes(valV)) selV.value = valV;
+  wrap.style.display = 'block';
+  atualizarTimesEntrada();
 }
 
-function selecionarMercado(nome){
-  if(!nome || !ultimaAnalise) return;
-  document.getElementById('eMercado').value = nome;
-  document.getElementById('eTimes').value = ultimaAnalise.casa+' × '+ultimaAnalise.vis;
-  if(ultimaAnalise.liga){
-    const eLigaEl = document.getElementById('eLiga');
-    if(eLigaEl && !eLigaEl.value) eLigaEl.value = ultimaAnalise.liga;
-  }
+// Junta Mandante + Visitante escolhidos em #eTimes (usado no resumo, na descrição e no lançamento)
+function atualizarTimesEntrada(){
+  const m = document.getElementById('eMandanteSel')?.value || '';
+  const v = document.getElementById('eVisitanteSel')?.value || '';
+  const eTimes = document.getElementById('eTimes');
+  if(eTimes) eTimes.value = (m && v) ? `${m} × ${v}` : (m || v || '');
   atualizarResumoEntrada();
-  toast('✅ '+nome+' preenchido!');
 }
 
 // ══ Resumo da operação — atualiza sozinho conforme os campos vão sendo preenchidos ══
@@ -57,7 +65,7 @@ function setPct(pct, ev){
   calcEntrada();
 }
 
-// Pessoa digita o valor em R$ que quer apostar (em vez de calcular a % de cabeça) —
+// Pessoa digita o valor em R$ que quer apostar (o "Stake", em vez de calcular a % de cabeça) —
 // aqui a gente traduz esse valor pra % da banca, que é o que o resto do sistema
 // (cálculo de lucro, histórico, etc) já usa por baixo dos panos.
 function setValorStake(valorStr){
@@ -72,14 +80,24 @@ function setValorStake(valorStr){
 }
 
 function calcEntrada(){
+  const retornoEl = document.getElementById('retornoDisplay');
+
+  // Sistema: não usa % da banca nem odd — o Retorno vem direto de Stake + Lucro informados.
+  if(tipoAposta==='sistema'){
+    const stake = parseFloat(document.getElementById('eSistemaStake')?.value) || 0;
+    const lucro = parseFloat(document.getElementById('eSistemaLucro')?.value) || 0;
+    if(retornoEl) retornoEl.textContent = (stake || lucro) ? `R$ ${(stake+lucro).toFixed(2)}` : '—';
+    return;
+  }
+
   const d = bpLoad();
   const tot = d.saldo||0;
   const pct = parseFloat(document.getElementById('ePct').value);
   const odd = parseFloat(document.getElementById('eOdd').value);
   const el  = document.getElementById('entradaPreview');
   if(!el) return;
-  if(!tot){ el.innerHTML='<span style="color:var(--perigo)">⚠️ Saldo da carteira zerado — faça um depósito na aba Banca</span>'; return; }
-  if(!pct){ el.innerHTML='Selecione % da banca ou digite o valor em R$'; return; }
+  if(!tot){ el.innerHTML='<span style="color:var(--perigo)">⚠️ Saldo da carteira zerado — faça um depósito na aba Banca</span>'; if(retornoEl) retornoEl.textContent='—'; return; }
+  if(!pct){ el.innerHTML='Selecione % da banca ou digite o Stake em R$'; if(retornoEl) retornoEl.textContent='—'; return; }
   const stake = Math.round(tot*pct/100*100)/100;
   const lucro = odd ? Math.round(stake*(odd-1)*100)/100 : null;
   el.innerHTML=`<div style="display:flex;flex-direction:column;gap:9px">
@@ -87,6 +105,7 @@ function calcEntrada(){
     <div style="display:flex;justify-content:space-between;align-items:center"><span style="color:var(--texto2)">Stake (${pct}%)</span><strong>R$ ${stake.toFixed(2)}</strong></div>
     ${lucro!=null?`<div style="display:flex;justify-content:space-between;align-items:center;padding-top:9px;border-top:1px solid var(--c3)"><span style="color:var(--texto2)">Lucro Pot.</span><strong style="color:#4dd87a">R$ ${lucro.toFixed(2)}</strong></div>`:''}
   </div>`;
+  if(retornoEl) retornoEl.textContent = lucro!=null ? `R$ ${(stake+lucro).toFixed(2)}` : '—';
 }
 
 function setTipoEntrada(tipo){
@@ -104,30 +123,60 @@ function setTipoEntrada(tipo){
   atualizarResumoEntrada();
 }
 
-// ══ SIMPLES / DUPLA / MÚLTIPLA ══
+// Bet (casa de apostas normal) ou Exchange (corretora tipo Betfair) — por enquanto só
+// fica salvo junto com a entrada, sem afetar o cálculo.
+function setOperacao(tipo){
+  const el = document.getElementById('eOperacao'); if(el) el.value = tipo;
+  const bet  = document.getElementById('btnOperacaoBet');
+  const exch = document.getElementById('btnOperacaoExchange');
+  if(!bet || !exch) return;
+  if(tipo==='bet'){
+    bet.style.borderColor='var(--verde2)'; bet.style.background='rgba(37,163,82,.15)'; bet.style.color='var(--verde2)';
+    exch.style.borderColor='var(--c3)';    exch.style.background='var(--c1)';           exch.style.color='var(--texto2)';
+  } else {
+    exch.style.borderColor='var(--ouro)'; exch.style.background='rgba(245,197,24,.15)'; exch.style.color='var(--ouro)';
+    bet.style.borderColor='var(--c3)';    bet.style.background='var(--c1)';              bet.style.color='var(--texto2)';
+  }
+}
+
+// ══ SIMPLES / DUPLA / MÚLTIPLA / SISTEMA ══
 let tipoAposta = 'simples';
 let pernas = [];
 
 function setTipoAposta(tipo){
   tipoAposta = tipo;
-  const botoes = { simples:'btnApostaSimples', dupla:'btnApostaDupla', multipla:'btnApostaMultipla', outros:'btnApostaOutros' };
+  const botoes = { simples:'btnApostaSimples', dupla:'btnApostaDupla', multipla:'btnApostaMultipla', sistema:'btnApostaSistema' };
   Object.entries(botoes).forEach(([t,id])=>{
     const b = document.getElementById(id);
+    if(!b) return;
     if(t===tipo){ b.style.borderColor='var(--verde2)'; b.style.background='rgba(37,163,82,.15)'; b.style.color='var(--verde2)'; }
     else        { b.style.borderColor='var(--c3)';     b.style.background='var(--c1)';           b.style.color='var(--texto2)'; }
   });
 
   document.getElementById('blocoMercadoSimples').style.display = tipo==='simples' ? 'block' : 'none';
-  document.getElementById('blocoPernas').style.display         = tipo==='simples' ? 'none'  : 'block';
-  document.getElementById('btnAddPerna').style.display          = (tipo==='multipla'||tipo==='outros') ? 'block' : 'none';
+  document.getElementById('blocoPernas').style.display         = (tipo==='dupla'||tipo==='multipla') ? 'block' : 'none';
+  document.getElementById('btnAddPerna').style.display          = tipo==='multipla' ? 'block' : 'none';
+  const blocoSistemaEl = document.getElementById('blocoSistema');
+  if(blocoSistemaEl) blocoSistemaEl.style.display = tipo==='sistema' ? 'block' : 'none';
+
+  // Sistema pede o valor investido e o lucro direto — não usa % da banca, odd nem o card de Gestão
+  ['blocoPctBanca','blocoGestaoEntrada','blocoOddRetorno'].forEach(id=>{
+    const el = document.getElementById(id); if(el) el.style.display = tipo==='sistema' ? 'none' : '';
+  });
 
   const eOddEl = document.getElementById('eOdd');
   eOddEl.readOnly = tipo!=='simples';
   eOddEl.style.opacity = tipo!=='simples' ? '.7' : '1';
 
+  if(tipo==='sistema'){
+    document.getElementById('eMercado').value = 'Sistema';
+    calcEntrada();
+    atualizarResumoEntrada();
+    return;
+  }
+
   if(tipo==='simples'){
     document.getElementById('eMercado').value = '';
-    document.getElementById('eTimes').value = '';
     eOddEl.value = '';
     calcEntrada();
     atualizarResumoEntrada();
@@ -137,12 +186,10 @@ function setTipoAposta(tipo){
   // Ao entrar em Dupla/Múltipla, reseta o "mesmo jogo?" — evita herdar um confronto de outro mercado
   document.getElementById('mesmoJogoCheck').checked = false;
   document.getElementById('eTimesCombo').value = '';
-  document.getElementById('eTimes').value = '';
   document.getElementById('blocoConfrontoCombo').style.display = 'none';
   atualizarResumoEntrada();
 
-  const minPernas = tipo==='outros' ? 1 : 2;
-  if(pernas.length<minPernas) pernas = tipo==='outros' ? [{id:Date.now(), mercado:'', odd:''}] : [{id:Date.now(), mercado:'', odd:''}, {id:Date.now()+1, mercado:'', odd:''}];
+  if(pernas.length<2) pernas = [{id:Date.now(), mercado:'', odd:''}, {id:Date.now()+1, mercado:'', odd:''}];
   if(tipo==='dupla' && pernas.length>2) pernas = pernas.slice(0,2);
   renderPernas();
   atualizarCombinada();
@@ -153,20 +200,19 @@ function toggleMesmoJogo(){
   document.getElementById('blocoConfrontoCombo').style.display = marcado ? 'block' : 'none';
   if(!marcado){
     document.getElementById('eTimesCombo').value = '';
-    document.getElementById('eTimes').value = '';
+    // não zera #eTimes aqui — se a pessoa já escolheu Mandante/Visitante lá em cima, mantém
   }
   atualizarResumoEntrada();
 }
 
 function adicionarPerna(){
-  if(tipoAposta!=='multipla' && tipoAposta!=='outros') return;
+  if(tipoAposta!=='multipla') return;
   pernas.push({ id:Date.now(), mercado:'', odd:'' });
   renderPernas();
   atualizarCombinada();
 }
 function removerPerna(id){
-  const minimo = tipoAposta==='outros' ? 1 : 2;
-  if(pernas.length<=minimo){ toast(tipoAposta==='outros' ? '⚠️ Mínimo 1 mercado' : '⚠️ Mínimo 2 mercados numa combinada'); return; }
+  if(pernas.length<=2){ toast('⚠️ Mínimo 2 mercados numa combinada'); return; }
   pernas = pernas.filter(p=>p.id!==id);
   renderPernas();
   atualizarCombinada();
@@ -179,15 +225,14 @@ function renderPernas(){
   const wrap = document.getElementById('pernasLista');
   if(!wrap) return;
   wrap.innerHTML = pernas.map((p,i)=>`<div style="display:flex;gap:8px;align-items:center">
-    <input type="text" placeholder="${tipoAposta==='outros' ? 'Ex: Jogador a marcar' : 'Mercado '+(i+1)+' (ex: Over 1.5)'}" value="${p.mercado}" list="mercadoDatalist" oninput="atualizarPerna(${p.id},'mercado',this.value)" style="flex:2">
+    <input type="text" placeholder="Mercado ${i+1} (ex: Over 1.5)" value="${p.mercado}" list="mercadoDatalist" oninput="atualizarPerna(${p.id},'mercado',this.value)" style="flex:2">
     <input type="number" min="1.01" step="0.01" placeholder="Odd" value="${p.odd}" oninput="atualizarPerna(${p.id},'odd',this.value)" style="flex:1;min-width:0">
-    ${((tipoAposta==='multipla'||tipoAposta==='outros') && pernas.length>(tipoAposta==='outros'?1:2)) ? `<button type="button" onclick="removerPerna(${p.id})" style="background:none;border:1px solid var(--perigo);border-radius:6px;padding:8px 10px;color:var(--perigo);cursor:pointer;flex-shrink:0">✕</button>` : ''}
+    ${(tipoAposta==='multipla' && pernas.length>2) ? `<button type="button" onclick="removerPerna(${p.id})" style="background:none;border:1px solid var(--perigo);border-radius:6px;padding:8px 10px;color:var(--perigo);cursor:pointer;flex-shrink:0">✕</button>` : ''}
   </div>`).join('');
 }
 function atualizarCombinada(){
   const validas = pernas.filter(p=>p.mercado.trim() && parseFloat(p.odd)>0);
-  const minPernasValidas = tipoAposta==='outros' ? 1 : 2;
-  const todasValidas = validas.length===pernas.length && pernas.length>=minPernasValidas;
+  const todasValidas = validas.length===pernas.length && pernas.length>=2;
   const oddCombinada = pernas.reduce((acc,p)=>acc*(parseFloat(p.odd)||1), 1);
   document.getElementById('oddCombinadaDisplay').textContent = todasValidas ? oddCombinada.toFixed(2) : '—';
   document.getElementById('eMercado').value = pernas.map(p=>p.mercado.trim()).filter(Boolean).join(' + ');
@@ -198,27 +243,42 @@ function atualizarCombinada(){
 
 
 async function lancarEntrada(){
-  const mercado = document.getElementById('eMercado').value.trim();
-  const liga    = document.getElementById('eLiga').value.trim();
-  const times   = document.getElementById('eTimes').value.trim();
-  const tipo    = document.getElementById('eTipo').value || 'prelive';
-  const desc    = mercado + (times?' · '+times:'') + (liga?' · '+liga:'');
-  const pct  = parseFloat(document.getElementById('ePct').value);
-  const odd  = parseFloat(document.getElementById('eOdd').value);
-  const res  = document.getElementById('eResultado').value;
-  if(!mercado){ toast('⚠️ Informe o mercado'); return; }
-  if(!pct)  { toast('⚠️ Informe a % da banca'); return; }
-  if(!odd)  { toast('⚠️ Informe a odd'); return; }
+  const mercado  = document.getElementById('eMercado').value.trim();
+  const liga     = document.getElementById('eLiga').value.trim();
+  const times    = document.getElementById('eTimes').value.trim();
+  const tipo     = document.getElementById('eTipo').value || 'prelive';
+  const operacao = document.getElementById('eOperacao')?.value || 'bet';
+  const desc     = mercado + (times?' · '+times:'') + (liga?' · '+liga:'');
+  const res      = document.getElementById('eResultado').value;
   if(!res)  { toast('⚠️ Selecione o resultado'); return; }
+
+  // Sistema: valor investido e lucro são digitados direto, sem % da banca nem odd.
+  // Os outros tipos continuam pelo fluxo de sempre (% da banca + odd).
+  let pct, odd, stake, lucroInformado = 0;
+  if(tipoAposta==='sistema'){
+    stake = parseFloat(document.getElementById('eSistemaStake').value);
+    lucroInformado = parseFloat(document.getElementById('eSistemaLucro').value) || 0;
+    if(!stake){ toast('⚠️ Informe o valor investido'); return; }
+    const dPreview = bpLoad();
+    pct = dPreview.saldo ? Math.round((stake/dPreview.saldo*100)*100)/100 : 0;
+    odd = stake ? Math.round(((stake+lucroInformado)/stake)*100)/100 : null;
+  } else {
+    if(!mercado){ toast('⚠️ Informe o mercado'); return; }
+    pct = parseFloat(document.getElementById('ePct').value);
+    odd = parseFloat(document.getElementById('eOdd').value);
+    if(!pct)  { toast('⚠️ Informe a % da banca ou o Stake'); return; }
+    if(!odd)  { toast('⚠️ Informe a odd'); return; }
+  }
 
   // Confirmação final — modal customizado (evita bug de path no Android)
   const rotuloTipo = tipo==='live' ? `LIVE — minuto ${document.getElementById('eMinuto').value||'?'}'` : 'PRÉ-LIVE';
-  const rotuloAposta = { simples:'Simples', dupla:'Dupla (2 mercados)', multipla:`Múltipla (${pernas.length} mercados)`, outros:`Outros (${pernas.length} ${pernas.length===1?'mercado':'mercados'})` }[tipoAposta];
+  const rotuloAposta = { simples:'Simples', dupla:'Dupla (2 mercados)', multipla:`Múltipla (${pernas.length} mercados)`, sistema:'Sistema' }[tipoAposta];
   const linhas = [
     `<strong>Aposta:</strong> ${rotuloAposta}`,
+    `<strong>Operação:</strong> ${operacao==='bet'?'Bet':'Exchange'}`,
     `<strong>Mercado:</strong> ${mercado}${times?' ('+times+')':''}`,
     `<strong>Tipo:</strong> ${rotuloTipo}`,
-    `<strong>Odd:</strong> ${odd}`,
+    tipoAposta==='sistema' ? `<strong>Valor Investido:</strong> R$ ${stake.toFixed(2)}` : `<strong>Odd:</strong> ${odd}`,
     `<strong>Resultado:</strong> ${res.toUpperCase()}`
   ];
   document.getElementById('modalConfirmarTexto').innerHTML = linhas.join('<br>');
@@ -240,12 +300,12 @@ async function lancarEntrada(){
   const d = bpLoad();
   const tot = d.saldo||0;
   if(tot<=0){ toast('⚠️ Saldo da carteira zerado — faça um depósito na aba Banca'); return; }
-  const stake   = Math.round(tot*pct/100*100)/100;
-  const lucroB  = res==='green' ? Math.round(stake*(odd-1)*100)/100 : 0;
+  if(tipoAposta!=='sistema') stake = Math.round(tot*pct/100*100)/100;
+  const lucroB  = res==='green' ? (tipoAposta==='sistema' ? lucroInformado : Math.round(stake*(odd-1)*100)/100) : 0;
   const protecaoAtiva = d.protecaoAtiva!==false;
   const protecaoPct   = d.protecaoPct??10;
   // Green: parte do lucro vai automaticamente pra Reserva (proteção da banca), o resto fica na Carteira.
-  // Red: o stake sai direto da Carteira. Void: não mexe em nada.
+  // Red: o stake sai direto da Carteira. Void/Cash Out: não mexe em nada (ajuste manual se precisar).
   const reservaCorte  = res==='green' ? Math.round(lucroB*(protecaoAtiva?protecaoPct:0)/100*100)/100 : 0;
   const ganhoCarteira = res==='green' ? Math.round((lucroB-reservaCorte)*100)/100 : 0;
   const percaCarteira = res==='red'   ? stake : 0;
@@ -253,7 +313,7 @@ async function lancarEntrada(){
   d.reserva = Math.round(((d.reserva||0)+reservaCorte)*100)/100;
   d.saldo   = Math.round(((d.saldo||0)+ganhoCarteira-percaCarteira)*100)/100;
   d.entradas.unshift({
-    id:Date.now(), desc, pct, odd, stake, resultado:res,
+    id:Date.now(), desc, pct, odd, stake, resultado:res, operacao,
     lucro:lucroB, reservaCorte, ganhoCarteira,
     liga, mercado, times, tipo, tipoAposta,
     minuto: tipo==='live' ? (parseInt(document.getElementById('eMinuto').value)||null) : null,
@@ -261,20 +321,25 @@ async function lancarEntrada(){
   });
   bpSave(d);
 
-  ['ePct','eValorStake','eOdd','eLiga','eMercado','eMinuto','eTimes','eTimesCombo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['ePct','eValorStake','eOdd','eLiga','eMercado','eMinuto','eTimes','eTimesCombo','eSistemaStake','eSistemaLucro'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   const mjEl=document.getElementById('mesmoJogoCheck'); if(mjEl) mjEl.checked=false;
-  const erEl=document.getElementById('eResultado'); if(erEl) erEl.value='cancelado';
+  const erEl=document.getElementById('eResultado'); if(erEl) erEl.value='';
+  const selM=document.getElementById('eMandanteSel'); if(selM) selM.innerHTML='<option value="">Mandante</option>';
+  const selV=document.getElementById('eVisitanteSel'); if(selV) selV.innerHTML='<option value="">Visitante</option>';
+  const wrapJogo=document.getElementById('blocoJogoEntrada'); if(wrapJogo) wrapJogo.style.display='none';
+  setOperacao('bet');
   setTipoEntrada('prelive');
   pernas = [];
   setTipoAposta('simples');
   const eDataEl=document.getElementById('eDataEntrada'); if(eDataEl) eDataEl.value=hojeBR(); // corrigido pro fuso de Brasília (ver 04-utils.js)
-  const epEl=document.getElementById('entradaPreview'); if(epEl) epEl.innerHTML='Selecione % da banca ou digite o valor em R$';
+  const epEl=document.getElementById('entradaPreview'); if(epEl) epEl.innerHTML='Selecione % da banca ou digite o Stake em R$';
+  const rdEl=document.getElementById('retornoDisplay'); if(rdEl) rdEl.textContent='—';
   document.querySelectorAll('.btn-pct').forEach(b=>b.classList.remove('ativo'));
   atualizarResumoEntrada();
 
   window.resolvidasRefresh?.();
   window.bancaRefresh?.();
-  toast(res==='green'?'✅ Green!':res==='red'?'❌ Red!':res==='void'?'↩️ Void!':'⬜ Registrado como encerrado');
+  toast(res==='green'?'✅ Green!':res==='red'?'❌ Red!':res==='void'?'↩️ Void!':'💰 Cash Out registrado');
 }
 
 function excluirEntrada(id){
@@ -466,7 +531,7 @@ function renderLigas(){
   }
 
   // Agrupa por Liga + Tipo (prelive/live) + Mercado
-  // Só entram aqui entradas Simples — Dupla/Múltipla/Outros não alimentam essa tabela
+  // Só entram aqui entradas Simples — Dupla/Múltipla/Sistema não alimentam essa tabela
   // (mercados combinados costumam ter poucas entradas repetidas, não rendem estatística útil aqui)
   const grupos = {};
   entradas.forEach(e=>{

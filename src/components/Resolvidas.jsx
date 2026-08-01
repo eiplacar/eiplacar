@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, XCircle, Undo2, Circle, Pencil, Trash2, Calendar, Target } from 'lucide-react';
+import { CheckCircle2, XCircle, Undo2, Coins, Pencil, Trash2, Calendar, Target } from 'lucide-react';
 
 // ══ Apostas Resolvidas — 11º módulo migrado para React ══
 // Lista o histórico de entradas lançadas na Calculadora, com filtro por data.
-// A liquidação (green/red/void) já aconteceu no lançamento — aqui é só consulta,
+// A liquidação (green/red/void/cashout) já aconteceu no lançamento — aqui é só consulta,
 // edição e exclusão (que revertem/recalculam o efeito na Carteira/Reserva).
 //
 // Pontes com o JS puro (public/js/13-calculadora.js):
@@ -13,8 +13,8 @@ import { CheckCircle2, XCircle, Undo2, Circle, Pencil, Trash2, Calendar, Target 
 // window.resolvidasRefresh é o "sininho" chamado sempre que uma entrada é
 // lançada/editada/excluída, ou quando a aba é reaberta.
 
-const ROTULO_APOSTA = { simples: 'Simples', dupla: 'Dupla', multipla: 'Múltipla', outros: 'Outros' };
-const COR_APOSTA = { dupla: 'var(--ouro)', multipla: '#f08060', outros: '#8b7ae8' };
+const ROTULO_APOSTA = { simples: 'Simples', dupla: 'Dupla', multipla: 'Múltipla', sistema: 'Sistema' };
+const COR_APOSTA = { dupla: 'var(--ouro)', multipla: '#f08060', sistema: '#8b7ae8' };
 
 export default function Resolvidas() {
   const [, setTick] = useState(0);
@@ -66,9 +66,9 @@ export default function Resolvidas() {
         {entradas.length === 0 ? (
           <div className="empty"><div className="icon"><Target size={22} /></div><p>{resumo ? 'Nenhuma entrada nesse filtro.' : 'Nenhuma entrada ainda.'}</p></div>
         ) : entradas.map((e) => {
-          const Icone = e.resultado === 'green' ? CheckCircle2 : e.resultado === 'red' ? XCircle : e.resultado === 'void' ? Undo2 : Circle;
-          const cor = e.resultado === 'green' ? '#4dd87a' : e.resultado === 'red' ? '#f08060' : 'var(--texto2)';
-          const val = e.resultado === 'green' ? `+R$ ${(e.ganhoCarteira || 0).toFixed(2)}` : e.resultado === 'red' ? `-R$ ${(e.stake || 0).toFixed(2)}` : e.resultado === 'void' ? 'Void' : 'Encerrado';
+          const Icone = e.resultado === 'green' ? CheckCircle2 : e.resultado === 'red' ? XCircle : e.resultado === 'void' ? Undo2 : Coins;
+          const cor = e.resultado === 'green' ? '#4dd87a' : e.resultado === 'red' ? '#f08060' : e.resultado === 'void' ? 'var(--texto2)' : 'var(--ouro)';
+          const val = e.resultado === 'green' ? `+R$ ${(e.ganhoCarteira || 0).toFixed(2)}` : e.resultado === 'red' ? `-R$ ${(e.stake || 0).toFixed(2)}` : e.resultado === 'void' ? 'Void' : 'Cash Out';
           const rotuloAposta = ROTULO_APOSTA[e.tipoAposta] || 'Simples';
           const corAposta = COR_APOSTA[e.tipoAposta] || 'var(--texto2)';
           return (
