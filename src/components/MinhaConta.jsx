@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { User, Settings, Camera, CreditCard, ShieldHalf, Moon, Bell, Lock, Info, LogOut, ChevronRight, CheckCircle2, Save, Target } from 'lucide-react';
+import { User, Settings, Camera, CreditCard, ShieldHalf, Moon, Bell, Lock, Info, LogOut, ChevronRight, CheckCircle2, Save, Target, Mail, MessageCircle } from 'lucide-react';
 
 // ══ Conta — Perfil + Configurações ══
 //
@@ -31,6 +31,12 @@ function diasRestantes(vencimento) {
   return d;
 }
 function fdBr(s) { return window.fd ? window.fd(s) : s; }
+
+// Abre o app de e-mail padrão do usuário (Gmail, Outlook, app nativo do celular etc.)
+// já com o destinatário e assunto preenchidos — não precisa digitar nada.
+function abrirEmail(destino, assunto) {
+  window.location.href = `mailto:${destino}?subject=${encodeURIComponent(assunto)}`;
+}
 
 function Row({ icone: Icone, label, children, onClick }) {
   return (
@@ -327,6 +333,14 @@ function AbaConfiguracoes() {
           <button className="btn-primary" onClick={salvarSenha} disabled={salvandoSenha} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>{salvandoSenha ? 'Salvando...' : <><Lock size={13} /> Salvar nova senha</>}</button>
         </div>
       )}
+
+      <Row icone={Mail} label="Falar com o Suporte" onClick={() => abrirEmail('suporte@eiplacar.com.br', 'Suporte - EI PLACAR')}>
+        <ChevronRight size={15} style={{ color: 'var(--texto2)' }} />
+      </Row>
+
+      <Row icone={MessageCircle} label="Enviar Sugestão" onClick={() => abrirEmail('sugestoes@eiplacar.com.br', 'Sugestão - EI PLACAR')}>
+        <ChevronRight size={15} style={{ color: 'var(--texto2)' }} />
+      </Row>
 
       <Row icone={Info} label="Sobre" onClick={() => setSobreAberto((v) => !v)}>
         <ChevronRight size={15} style={{ color: 'var(--texto2)' }} />

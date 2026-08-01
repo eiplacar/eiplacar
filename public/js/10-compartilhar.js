@@ -125,6 +125,20 @@ function copiarTexto(txt){
   }
 }
 
+// ══ CONVIDE UM AMIGO ══
+// Reaproveita o mesmo compartilhamento nativo usado em Análise/Jogos do Dia/Sinal de Entrada.
+function convidarAmigo(){
+  const txt = [
+    `⚽ *EI PLACAR*`,
+    ``,
+    `Tô usando o Ei Placar pra acompanhar estatísticas e análises de futebol — dados, probabilidades e histórico de confrontos, tudo num só lugar.`,
+    ``,
+    `Dá uma olhada:`,
+    `https://eiplacar.com.br`,
+  ].join('\n');
+  abrirCompartilhamento(txt, 'Ei Placar');
+}
+
 // ══ COMPARTILHAR ══
 // Compartilha direto: usa o menu nativo do celular (WhatsApp, Telegram, o que tiver
 // instalado) quando disponível. Sem isso (ex: computador), copia o texto e avisa.

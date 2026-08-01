@@ -131,6 +131,12 @@ function mercadosCantosCartoes(sC, sV){
   };
 }
 
+// Abre o app de e-mail padrão do usuário (Gmail, Outlook, app nativo do celular etc.)
+// já com o destinatário e assunto preenchidos — não precisa digitar nada.
+function abrirEmail(destino, assunto){
+  window.location.href = `mailto:${destino}?subject=${encodeURIComponent(assunto)}`;
+}
+
 // Ponte pro mundo React: funções declaradas com "const" não viram propriedade de
 // window automaticamente (diferente de "function", que vira). Os componentes React
 // (bundle à parte, carregado como <script type="module">) precisam delas via window.

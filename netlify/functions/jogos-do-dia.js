@@ -61,6 +61,16 @@ async function buscarTodosFixturesDoDia(apiKey, data) {
 // horários saírem errados depois do deploy (comparando com um jogo que você
 // sabe a hora real), é só ajustar essa função (ex: trocar o "Z" do final
 // por um offset fixo, tipo "-03:00").
+// A GOAL API manda "matchRound" como número puro (ex: "21"), diferente da
+// API-Football que mandava um texto tipo "Regular Season - 21". Se vier só
+// número, adiciona o "Rodada " na frente; se já vier outro texto (grupos,
+// fases eliminatórias etc.), deixa como está.
+function formatarRodada(matchRound) {
+  const bruto = (matchRound || '').toString().trim();
+  if (!bruto) return '';
+  return /^\d+$/.test(bruto) ? `Rodada ${bruto}` : bruto;
+}
+
 function horarioBR(matchDate, matchTime) {
   if (!matchDate || !matchTime) return '';
   const dt = new Date(`${matchDate}T${matchTime}:00Z`);
@@ -99,7 +109,7 @@ export const handler = async function (event) {
       .map((f) => ({
         id: f.id,
         campeonato: f.leagueName,
-        rodada: f.matchRound || '',
+        rodada: formatarRodada(f.matchRound),
         casa: f.homeTeamName,
         vis: f.awayTeamName,
         escudoCasa: f.teamHomeBadge,

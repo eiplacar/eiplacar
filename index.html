@@ -417,12 +417,12 @@
 
     <div class="nav-group-title"><span data-ic="star" data-ic-size="13"></span>Descubra</div>
     <button class="nav-tab" disabled title="Em breve" style="opacity:.4;cursor:default"><span class="nav-ic" data-ic="crown"></span><span>Seja Assinante</span></button>
-    <button class="nav-tab" disabled title="Em breve" style="opacity:.4;cursor:default"><span class="nav-ic" data-ic="userPlus"></span><span>Convide um Amigo</span></button>
+    <button class="nav-tab" onclick="convidarAmigo();toggleSidebar(false)"><span class="nav-ic" data-ic="userPlus"></span><span>Convide um Amigo</span></button>
 
     <div class="nav-group-title"><span data-ic="messageCircle" data-ic-size="13"></span>Comunidade</div>
     <button class="nav-tab" disabled title="Em breve" style="opacity:.4;cursor:default"><span class="nav-ic" data-ic="send"></span><span>Telegram</span></button>
-    <button class="nav-tab" disabled title="Em breve" style="opacity:.4;cursor:default"><span class="nav-ic" data-ic="lifeBuoy"></span><span>Suporte</span></button>
-    <button class="nav-tab" disabled title="Em breve" style="opacity:.4;cursor:default"><span class="nav-ic" data-ic="messageSquare"></span><span>Sugestões e Feedback</span></button>
+    <button class="nav-tab" onclick="abrirEmail('suporte@eiplacar.com.br','Suporte - EI PLACAR');toggleSidebar(false)"><span class="nav-ic" data-ic="lifeBuoy"></span><span>Suporte</span></button>
+    <button class="nav-tab" onclick="abrirEmail('sugestoes@eiplacar.com.br','Sugestão - EI PLACAR');toggleSidebar(false)"><span class="nav-ic" data-ic="messageSquare"></span><span>Sugestões e Feedback</span></button>
   </nav>
 </aside>
 

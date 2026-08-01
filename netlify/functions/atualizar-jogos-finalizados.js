@@ -54,6 +54,16 @@ function dataBrParaTexto(matchDate) {
   return matchDate;
 }
 
+// A GOAL API manda "matchRound" como número puro (ex: "21"), diferente da
+// API-Football que mandava um texto tipo "Regular Season - 21". Se vier só
+// número, adiciona o "Rodada " na frente; se já vier outro texto (grupos,
+// fases eliminatórias etc.), deixa como está.
+function formatarRodada(matchRound) {
+  const bruto = (matchRound || '').toString().trim();
+  if (!bruto) return '';
+  return /^\d+$/.test(bruto) ? `Rodada ${bruto}` : bruto;
+}
+
 // Estatísticas da GOAL API vêm como uma lista achatada — cada item tem
 // {type, home, away} em vez de um objeto por time como na API-Football.
 function pegarEstatistica(estatisticas, tipo, lado) {
@@ -249,7 +259,7 @@ export const handler = async function () {
       origem: 'goal-api',
       camp: NOMES_CAMP_POR_LIGA.get(f.leagueId),
       data: dataBrParaTexto(f.matchDate),
-      rodada: (f.matchRound || '').replace(/^Regular Season - /i, 'Rodada '),
+      rodada: formatarRodada(f.matchRound),
       local: f.matchStadium || '',
       casa: casaCorrigido,
       vis: visCorrigido,
