@@ -173,8 +173,9 @@ function computeFutebolTimes(busca, camp, local){
   if(buscaLower) nomes = nomes.filter(n=>n.toLowerCase().includes(buscaLower));
   nomes = sortNatural(nomes);
 
-  const linhasGols   = [0.5,1.5,2.5,3.5,4.5];
-  const linhasCantos = [7.5,8.5,9.5,10.5];
+  const linhasGols    = [0.5,1.5,2.5,3.5,4.5];
+  const linhasCantos  = [6.5,7.5,8.5,9.5,10.5,11.5];
+  const linhasCartoes = [1.5,2.5,3.5,4.5,5.5,6.5];
 
   const linhas = nomes.map(nome=>{
     const jogosTime = base.filter(j=>{
@@ -193,6 +194,9 @@ function computeFutebolTimes(busca, camp, local){
       return Math.round((bateu/n)*1000)/10;
     });
 
+    const bttsBateu = jogosTime.filter(j=>(j.gC||0)>0 && (j.gV||0)>0).length;
+    const pctBTTS = Math.round((bttsBateu/n)*1000)/10;
+
     const jogosComCantos = jogosTime.filter(j=>j.escanteiosC!=null && j.escanteiosV!=null);
     const nc = jogosComCantos.length;
     const pctCantos = linhasCantos.map(l=>{
@@ -201,7 +205,15 @@ function computeFutebolTimes(busca, camp, local){
       return Math.round((bateu/nc)*1000)/10;
     });
 
-    return { nome, n, pctGols, pctCantos };
+    const jogosComCartoes = jogosTime.filter(j=>j.amarelosC!=null && j.amarelosV!=null);
+    const ncart = jogosComCartoes.length;
+    const pctCartoes = linhasCartoes.map(l=>{
+      if(!ncart) return null;
+      const bateu = jogosComCartoes.filter(j=>((j.amarelosC||0)+(j.amarelosV||0)+(j.vermelhosC||0)+(j.vermelhosV||0))>l).length;
+      return Math.round((bateu/ncart)*1000)/10;
+    });
+
+    return { nome, n, pctGols, pctBTTS, pctCantos, nCantos: nc, pctCartoes, nCartoes: ncart };
   }).filter(Boolean);
 
   return { temJogosCadastrados: jogosCache.length>0, linhas };
@@ -220,8 +232,9 @@ function computeFutebolLigas(busca, filtroCamp){
   if(buscaLower) camps = camps.filter(c=>c.toLowerCase().includes(buscaLower));
   camps = sortNatural(camps);
 
-  const linhasGols   = [0.5,1.5,2.5,3.5,4.5];
-  const linhasCantos = [7.5,8.5,9.5,10.5];
+  const linhasGols    = [0.5,1.5,2.5,3.5,4.5];
+  const linhasCantos  = [6.5,7.5,8.5,9.5,10.5,11.5];
+  const linhasCartoes = [1.5,2.5,3.5,4.5,5.5,6.5];
 
   const linhas = camps.map(camp=>{
     const jogosLiga = jogosCache.filter(j=>j.camp===camp);
@@ -233,6 +246,9 @@ function computeFutebolLigas(busca, filtroCamp){
       return Math.round((bateu/n)*1000)/10;
     });
 
+    const bttsBateu = jogosLiga.filter(j=>(j.gC||0)>0 && (j.gV||0)>0).length;
+    const pctBTTS = Math.round((bttsBateu/n)*1000)/10;
+
     const jogosComCantos = jogosLiga.filter(j=>j.escanteiosC!=null && j.escanteiosV!=null);
     const nc = jogosComCantos.length;
     const pctCantos = linhasCantos.map(l=>{
@@ -241,7 +257,15 @@ function computeFutebolLigas(busca, filtroCamp){
       return Math.round((bateu/nc)*1000)/10;
     });
 
-    return { nome: camp, n, pctGols, pctCantos };
+    const jogosComCartoes = jogosLiga.filter(j=>j.amarelosC!=null && j.amarelosV!=null);
+    const ncart = jogosComCartoes.length;
+    const pctCartoes = linhasCartoes.map(l=>{
+      if(!ncart) return null;
+      const bateu = jogosComCartoes.filter(j=>((j.amarelosC||0)+(j.amarelosV||0)+(j.vermelhosC||0)+(j.vermelhosV||0))>l).length;
+      return Math.round((bateu/ncart)*1000)/10;
+    });
+
+    return { nome: camp, n, pctGols, pctBTTS, pctCantos, nCantos: nc, pctCartoes, nCartoes: ncart };
   }).filter(Boolean);
 
   return { temJogosCadastrados: jogosCache.length>0, linhas };

@@ -49,10 +49,10 @@ function atualizarResumoEntrada(){
     return;
   }
   const linhas = [
-    liga    ? `🏆 ${liga}` : null,
-    times   ? `⚽ ${times}` : null,
-    mercado ? `📈 ${mercado}` : null,
-    tipo==='live' ? `🔴 Ao vivo${minuto?' • '+minuto+"'":''}` : `🔵 Pré-live`,
+    liga    ? `Liga: ${liga}` : null,
+    times   ? `Times: ${times}` : null,
+    mercado ? `Mercado: ${mercado}` : null,
+    tipo==='live' ? `Ao vivo${minuto?' • '+minuto+"'":''}` : `Pré-live`,
   ].filter(Boolean);
   el.innerHTML = linhas.map(l=>`<div>${l}</div>`).join('');
 }
@@ -72,11 +72,43 @@ function setValorStake(valorStr){
   const d = bpLoad();
   const tot = d.saldo||0;
   const valor = parseFloat(valorStr);
-  document.querySelectorAll('.btn-pct').forEach(b=>b.classList.remove('ativo')); // valor digitado não é nenhum dos fixos
-  if(!tot || !valor){ document.getElementById('ePct').value=''; calcEntrada(); return; }
+  if(!tot || !valor){
+    document.getElementById('ePct').value='';
+    const ganhoEl = document.getElementById('eGanhoDireto');
+    if(ganhoEl && ganhoEl.value) setGanhoDireto(ganhoEl.value); else calcEntrada();
+    return;
+  }
   const pct = Math.round((valor/tot*100)*100)/100; // 2 casas decimais
   document.getElementById('ePct').value = pct;
+  // Se a pessoa já tinha digitado os Ganhos, recalcula a odd com o novo Stake.
+  const ganhoEl = document.getElementById('eGanhoDireto');
+  if(ganhoEl && ganhoEl.value) setGanhoDireto(ganhoEl.value); else calcEntrada();
+}
+
+// Ganhos digitados direto (R$) — em vez de a pessoa calcular a odd de cabeça, ela digita
+// quanto ganhou e o sistema descobre a odd equivalente a partir do Stake já preenchido
+// (guardada em #eOdd, que é o que o resto do sistema já usa por baixo dos panos).
+function setGanhoDireto(valorStr){
+  const ganho = parseFloat(valorStr);
+  const oddEl = document.getElementById('eOdd');
+  const d = bpLoad();
+  const tot = d.saldo||0;
+  const pct = parseFloat(document.getElementById('ePct').value);
+  const stake = tot && pct ? Math.round(tot*pct/100*100)/100 : 0;
+  if(!stake || isNaN(ganho) || valorStr===''){
+    if(oddEl){ oddEl.readOnly = tipoAposta!=='simples' ? true : false; oddEl.style.opacity = tipoAposta!=='simples' ? '.7' : '1'; }
+    calcEntrada();
+    return;
+  }
+  const odd = Math.round(((stake+ganho)/stake)*100)/100;
+  if(oddEl){ oddEl.value = odd; oddEl.readOnly = true; oddEl.style.opacity = '.7'; }
   calcEntrada();
+}
+
+// Se a pessoa volta a editar a Odd na mão, o valor digitado em Ganhos perde a validade.
+function limparGanhoDireto(){
+  const gEl = document.getElementById('eGanhoDireto');
+  if(gEl && gEl.value) gEl.value = '';
 }
 
 function calcEntrada(){
@@ -94,16 +126,20 @@ function calcEntrada(){
   const tot = d.saldo||0;
   const pct = parseFloat(document.getElementById('ePct').value);
   const odd = parseFloat(document.getElementById('eOdd').value);
+  const ganhoStr = document.getElementById('eGanhoDireto')?.value;
+  const ganhoDireto = ganhoStr!=='' && ganhoStr!=null ? parseFloat(ganhoStr) : NaN;
   const el  = document.getElementById('entradaPreview');
   if(!el) return;
-  if(!tot){ el.innerHTML='<span style="color:var(--perigo)">⚠️ Saldo da carteira zerado — faça um depósito na aba Banca</span>'; if(retornoEl) retornoEl.textContent='—'; return; }
-  if(!pct){ el.innerHTML='Selecione % da banca ou digite o Stake em R$'; if(retornoEl) retornoEl.textContent='—'; return; }
+  if(!tot){ el.innerHTML='<span style="color:var(--perigo)">Saldo da carteira zerado — faça um depósito na aba Banca</span>'; if(retornoEl) retornoEl.textContent='—'; return; }
+  if(!pct){ el.innerHTML='Preencha o Stake e a Odd (ou os Ganhos) para ver o resumo'; if(retornoEl) retornoEl.textContent='—'; return; }
   const stake = Math.round(tot*pct/100*100)/100;
-  const lucro = odd ? Math.round(stake*(odd-1)*100)/100 : null;
+  // Se a pessoa digitou os Ganhos direto, usa esse valor exato como Lucro (mais preciso do
+  // que voltar da odd arredondada); senão calcula pela odd, como sempre.
+  const lucro = !isNaN(ganhoDireto) ? Math.round(ganhoDireto*100)/100 : (odd ? Math.round(stake*(odd-1)*100)/100 : null);
   el.innerHTML=`<div style="display:flex;flex-direction:column;gap:9px">
-    <div style="display:flex;justify-content:space-between;align-items:center"><span style="color:var(--texto2)">Banca</span><strong style="color:var(--ouro)">R$ ${tot.toFixed(2)}</strong></div>
-    <div style="display:flex;justify-content:space-between;align-items:center"><span style="color:var(--texto2)">Stake (${pct}%)</span><strong>R$ ${stake.toFixed(2)}</strong></div>
-    ${lucro!=null?`<div style="display:flex;justify-content:space-between;align-items:center;padding-top:9px;border-top:1px solid var(--c3)"><span style="color:var(--texto2)">Lucro Pot.</span><strong style="color:#4dd87a">R$ ${lucro.toFixed(2)}</strong></div>`:''}
+    <div style="display:flex;justify-content:space-between;align-items:center"><span style="color:var(--texto2)">Lucro</span><strong style="color:#4dd87a">R$ ${lucro!=null?lucro.toFixed(2):'0,00'}</strong></div>
+    <div style="display:flex;justify-content:space-between;align-items:center"><span style="color:var(--texto2)">% Banca</span><strong>${pct}%</strong></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding-top:9px;border-top:1px solid var(--c3)"><span style="color:var(--texto2)">Retorno Total</span><strong style="color:var(--ouro)">R$ ${lucro!=null?(stake+lucro).toFixed(2):stake.toFixed(2)}</strong></div>
   </div>`;
   if(retornoEl) retornoEl.textContent = lucro!=null ? `R$ ${(stake+lucro).toFixed(2)}` : '—';
 }
@@ -159,14 +195,16 @@ function setTipoAposta(tipo){
   const blocoSistemaEl = document.getElementById('blocoSistema');
   if(blocoSistemaEl) blocoSistemaEl.style.display = tipo==='sistema' ? 'block' : 'none';
 
-  // Sistema pede o valor investido e o lucro direto — não usa % da banca, odd nem o card de Gestão
-  ['blocoPctBanca','blocoGestaoEntrada','blocoOddRetorno'].forEach(id=>{
+  // Sistema pede o valor investido e o lucro direto — não usa Stake/Odd, Ganhos, Retorno nem o Resumo da Operação
+  ['blocoPctBanca','blocoGestaoEntrada','blocoGanhoDireto','blocoRetornoEntrada'].forEach(id=>{
     const el = document.getElementById(id); if(el) el.style.display = tipo==='sistema' ? 'none' : '';
   });
 
   const eOddEl = document.getElementById('eOdd');
   eOddEl.readOnly = tipo!=='simples';
   eOddEl.style.opacity = tipo!=='simples' ? '.7' : '1';
+  const eGanhoEl = document.getElementById('eGanhoDireto');
+  if(eGanhoEl) eGanhoEl.value = '';
 
   if(tipo==='sistema'){
     document.getElementById('eMercado').value = 'Sistema';
@@ -212,7 +250,7 @@ function adicionarPerna(){
   atualizarCombinada();
 }
 function removerPerna(id){
-  if(pernas.length<=2){ toast('⚠️ Mínimo 2 mercados numa combinada'); return; }
+  if(pernas.length<=2){ toast('Mínimo 2 mercados numa combinada'); return; }
   pernas = pernas.filter(p=>p.id!==id);
   renderPernas();
   atualizarCombinada();
@@ -250,7 +288,7 @@ async function lancarEntrada(){
   const operacao = document.getElementById('eOperacao')?.value || 'bet';
   const desc     = mercado + (times?' · '+times:'') + (liga?' · '+liga:'');
   const res      = document.getElementById('eResultado').value;
-  if(!res)  { toast('⚠️ Selecione o resultado'); return; }
+  if(!res)  { toast('Selecione o resultado'); return; }
 
   // Sistema: valor investido e lucro são digitados direto, sem % da banca nem odd.
   // Os outros tipos continuam pelo fluxo de sempre (% da banca + odd).
@@ -258,16 +296,16 @@ async function lancarEntrada(){
   if(tipoAposta==='sistema'){
     stake = parseFloat(document.getElementById('eSistemaStake').value);
     lucroInformado = parseFloat(document.getElementById('eSistemaLucro').value) || 0;
-    if(!stake){ toast('⚠️ Informe o valor investido'); return; }
+    if(!stake){ toast('Informe o valor investido'); return; }
     const dPreview = bpLoad();
     pct = dPreview.saldo ? Math.round((stake/dPreview.saldo*100)*100)/100 : 0;
     odd = stake ? Math.round(((stake+lucroInformado)/stake)*100)/100 : null;
   } else {
-    if(!mercado){ toast('⚠️ Informe o mercado'); return; }
+    if(!mercado){ toast('Informe o mercado'); return; }
     pct = parseFloat(document.getElementById('ePct').value);
     odd = parseFloat(document.getElementById('eOdd').value);
-    if(!pct)  { toast('⚠️ Informe a % da banca ou o Stake'); return; }
-    if(!odd)  { toast('⚠️ Informe a odd'); return; }
+    if(!pct)  { toast('Informe a % da banca ou o Stake'); return; }
+    if(!odd)  { toast('Informe a odd'); return; }
   }
 
   // Confirmação final — modal customizado (evita bug de path no Android)
@@ -299,7 +337,7 @@ async function lancarEntrada(){
 
   const d = bpLoad();
   const tot = d.saldo||0;
-  if(tot<=0){ toast('⚠️ Saldo da carteira zerado — faça um depósito na aba Banca'); return; }
+  if(tot<=0){ toast('Saldo da carteira zerado — faça um depósito na aba Banca'); return; }
   if(tipoAposta!=='sistema') stake = Math.round(tot*pct/100*100)/100;
   const lucroB  = res==='green' ? (tipoAposta==='sistema' ? lucroInformado : Math.round(stake*(odd-1)*100)/100) : 0;
   const protecaoAtiva = d.protecaoAtiva!==false;
@@ -321,7 +359,7 @@ async function lancarEntrada(){
   });
   bpSave(d);
 
-  ['ePct','eValorStake','eOdd','eLiga','eMercado','eMinuto','eTimes','eTimesCombo','eSistemaStake','eSistemaLucro'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['ePct','eValorStake','eOdd','eGanhoDireto','eLiga','eMercado','eMinuto','eTimes','eTimesCombo','eSistemaStake','eSistemaLucro'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   const mjEl=document.getElementById('mesmoJogoCheck'); if(mjEl) mjEl.checked=false;
   const erEl=document.getElementById('eResultado'); if(erEl) erEl.value='';
   const selM=document.getElementById('eMandanteSel'); if(selM) selM.innerHTML='<option value="">Mandante</option>';
@@ -332,14 +370,14 @@ async function lancarEntrada(){
   pernas = [];
   setTipoAposta('simples');
   const eDataEl=document.getElementById('eDataEntrada'); if(eDataEl) eDataEl.value=hojeBR(); // corrigido pro fuso de Brasília (ver 04-utils.js)
-  const epEl=document.getElementById('entradaPreview'); if(epEl) epEl.innerHTML='Selecione % da banca ou digite o Stake em R$';
+  const epEl=document.getElementById('entradaPreview'); if(epEl) epEl.innerHTML='Preencha o Stake e a Odd (ou os Ganhos) para ver o resumo';
   const rdEl=document.getElementById('retornoDisplay'); if(rdEl) rdEl.textContent='—';
   document.querySelectorAll('.btn-pct').forEach(b=>b.classList.remove('ativo'));
   atualizarResumoEntrada();
 
   window.resolvidasRefresh?.();
   window.bancaRefresh?.();
-  toast(res==='green'?'✅ Green!':res==='red'?'❌ Red!':res==='void'?'↩️ Void!':'💰 Cash Out registrado');
+  toast(res==='green'?'Green!':res==='red'?'Red!':res==='void'?'Void!':'Cash Out registrado');
 }
 
 function excluirEntrada(id){
@@ -360,7 +398,7 @@ function excluirEntrada(id){
     bpSave(d);
     window.resolvidasRefresh?.();
     window.bancaRefresh?.();
-    toast('🗑️ Entrada removida');
+    toast('Entrada removida');
   };
   document.getElementById('modalExclusaoCancelar').onclick = () => {
     document.getElementById('modalConfirmarExclusao').classList.remove('open');
@@ -411,9 +449,9 @@ function salvarEdicaoEntrada(){
   const novoRes      = document.getElementById('editEResultado').value;
   const novaData     = document.getElementById('editEData').value || antiga.data;
 
-  if(!novoMercado){ toast('⚠️ Informe o mercado'); return; }
-  if(!novoOdd)     { toast('⚠️ Informe a odd'); return; }
-  if(!novoStakeInformado || novoStakeInformado<=0) { toast('⚠️ Informe o valor apostado'); return; }
+  if(!novoMercado){ toast('Informe o mercado'); return; }
+  if(!novoOdd)     { toast('Informe a odd'); return; }
+  if(!novoStakeInformado || novoStakeInformado<=0) { toast('Informe o valor apostado'); return; }
 
   // Reverte o efeito antigo na carteira/reserva e remove a entrada, pra recalcular do zero
   if(antiga.resultado==='green'){
@@ -449,7 +487,7 @@ function salvarEdicaoEntrada(){
   fecharModalEditarEntrada();
   window.resolvidasRefresh?.();
   window.bancaRefresh?.();
-  toast('✅ Entrada atualizada');
+  toast('Entrada atualizada');
 }
 
 // ══ RENDER HISTÓRICO ══
@@ -511,7 +549,7 @@ function renderTempoGol(){
     });
   });
 
-  tbody.innerHTML = linhasHtml || `<tr><td colspan="7"><div class="empty"><div class="icon">📐</div><p>Nenhum jogo com gols por minuto cadastrados bateu esses Overs ainda.</p></div></td></tr>`;
+  tbody.innerHTML = linhasHtml || `<tr><td colspan="7"><div class="empty"><div class="icon"></div><p>Nenhum jogo com gols por minuto cadastrados bateu esses Overs ainda.</p></div></td></tr>`;
 }
 
 // ══ ESTATÍSTICA POR LIGA (agrupa entradas da Calculadora) ══
@@ -526,7 +564,7 @@ function renderLigas(){
   if(filtroCamp) entradas = entradas.filter(e=>e.liga===filtroCamp);
 
   if(!entradas.length){
-    tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="icon">📈</div><p>Nenhuma entrada com Liga e Mercado preenchidos ainda. Lance entradas na Calculadora informando esses campos.</p></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="icon"></div><p>Nenhuma entrada com Liga e Mercado preenchidos ainda. Lance entradas na Calculadora informando esses campos.</p></div></td></tr>`;
     return;
   }
 
@@ -559,7 +597,7 @@ function renderLigas(){
     const cor = l.pctAcerto==null ? 'var(--texto2)' : l.pctAcerto>=70 ? '#4dd87a' : l.pctAcerto>=50 ? 'var(--ouro)' : '#f08060';
     return `<tr>
       <td style="color:var(--verde2);font-weight:600">${l.liga}</td>
-      <td>${l.tipo==='live'?'🔴 Live':'📋 Pré-live'}</td>
+      <td>${l.tipo==='live'?'Live':'Pré-live'}</td>
       <td>${l.mercado}</td>
       <td class="td-c">${l.minMedio!=null?l.minMedio+"'":'—'}</td>
       <td class="td-c">${l.oddMedia}</td>

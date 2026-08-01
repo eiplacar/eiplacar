@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Target, Dice5, Plus, Circle, TrendingUp, Wallet, CheckCircle2, CalendarDays, Trophy, Shield, ArrowLeftRight, Coins, ListFilter } from 'lucide-react';
+import { Target, Dice5, Plus, Circle, TrendingUp, Wallet, CheckCircle2, Trophy, Shield, ArrowLeftRight, Coins, ListFilter, PiggyBank } from 'lucide-react';
 import SeletorMercado from './SeletorMercado';
 
 // ══ Nova Entrada (sub-aba "Registrar Operação" dentro de Apostas) ══
@@ -69,12 +69,9 @@ export default function NovaEntrada() {
       <div id="resumoEntrada" style={{ background: 'var(--c1)', border: '1px solid var(--ouro)', borderRadius: 10, padding: '10px 12px', marginBottom: 14, fontSize: 11.5, color: 'var(--texto2)', lineHeight: 1.8 }}>
         Preencha os campos abaixo para montar o resumo da operação.
       </div>
-
-      {/* Data */}
-      <div style={{ marginBottom: 12 }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}><CalendarDays size={13} /> Data</label>
-        <input type="date" id="eDataEntrada" />
-      </div>
+      {/* Data não aparece mais no formulário — é registrada automaticamente com a
+          data de hoje (ver hojeBR() em lancarEntrada, 13-calculadora.js) */}
+      <input type="hidden" id="eDataEntrada" defaultValue="" />
 
       {/* Liga */}
       <div style={{ marginBottom: 12 }}>
@@ -98,10 +95,10 @@ export default function NovaEntrada() {
       {/* Tipo de Aposta (chips) */}
       <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}><Dice5 size={13} /> Tipo de Aposta</label>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
-        <button type="button" onClick={() => window.setTipoAposta?.('simples')} id="btnApostaSimples" style={{ flex: '0 0 auto', padding: '6px 16px', borderRadius: 20, border: '2px solid var(--verde2)', background: 'rgba(37,163,82,.15)', color: 'var(--verde2)', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>Simples</button>
-        <button type="button" onClick={() => window.setTipoAposta?.('dupla')} id="btnApostaDupla" style={{ flex: '0 0 auto', padding: '6px 16px', borderRadius: 20, border: '2px solid var(--c3)', background: 'var(--c1)', color: 'var(--texto2)', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>Dupla</button>
-        <button type="button" onClick={() => window.setTipoAposta?.('multipla')} id="btnApostaMultipla" style={{ flex: '0 0 auto', padding: '6px 16px', borderRadius: 20, border: '2px solid var(--c3)', background: 'var(--c1)', color: 'var(--texto2)', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>Múltipla</button>
-        <button type="button" onClick={() => window.setTipoAposta?.('sistema')} id="btnApostaSistema" style={{ flex: '0 0 auto', padding: '6px 16px', borderRadius: 20, border: '2px solid var(--c3)', background: 'var(--c1)', color: 'var(--texto2)', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>Sistema</button>
+        <button type="button" onClick={() => window.setTipoAposta?.('simples')} id="btnApostaSimples" style={{ flex: '0 0 auto', padding: '6px 16px', borderRadius: 20, border: '1px solid var(--verde2)', background: 'rgba(37,163,82,.15)', color: 'var(--verde2)', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>Simples</button>
+        <button type="button" onClick={() => window.setTipoAposta?.('dupla')} id="btnApostaDupla" style={{ flex: '0 0 auto', padding: '6px 16px', borderRadius: 20, border: '1px solid var(--c3)', background: 'var(--c1)', color: 'var(--texto2)', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>Dupla</button>
+        <button type="button" onClick={() => window.setTipoAposta?.('multipla')} id="btnApostaMultipla" style={{ flex: '0 0 auto', padding: '6px 16px', borderRadius: 20, border: '1px solid var(--c3)', background: 'var(--c1)', color: 'var(--texto2)', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>Múltipla</button>
+        <button type="button" onClick={() => window.setTipoAposta?.('sistema')} id="btnApostaSistema" style={{ flex: '0 0 auto', padding: '6px 16px', borderRadius: 20, border: '1px solid var(--c3)', background: 'var(--c1)', color: 'var(--texto2)', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>Sistema</button>
       </div>
 
       {/* Mercado (Simples) — por enquanto um campo simples, sem lógica extra (vem depois) */}
@@ -168,11 +165,11 @@ export default function NovaEntrada() {
       <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}><ArrowLeftRight size={13} /> Operação</label>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
         <button type="button" id="btnOperacaoBet" onClick={() => escolherOperacaoEAbrirSeletor('bet')}
-          style={{ padding: 10, borderRadius: 8, border: '2px solid var(--verde2)', background: 'rgba(37,163,82,.15)', color: 'var(--verde2)', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>
+          style={{ padding: 10, borderRadius: 8, border: '1px solid var(--verde2)', background: 'rgba(37,163,82,.15)', color: 'var(--verde2)', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>
           Bet
         </button>
         <button type="button" id="btnOperacaoExchange" onClick={() => escolherOperacaoEAbrirSeletor('exchange')}
-          style={{ padding: 10, borderRadius: 8, border: '2px solid var(--c3)', background: 'var(--c1)', color: 'var(--texto2)', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>
+          style={{ padding: 10, borderRadius: 8, border: '1px solid var(--c3)', background: 'var(--c1)', color: 'var(--texto2)', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>
           Exchange
         </button>
       </div>
@@ -189,11 +186,11 @@ export default function NovaEntrada() {
       <label style={{ marginBottom: 6 }}>Tipo de Entrada</label>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
         <button type="button" id="btnTipoPre" onClick={() => window.setTipoEntrada?.('prelive')}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: 8, borderRadius: 8, border: '2px solid var(--verde2)', background: 'rgba(37,163,82,.15)', color: 'var(--verde2)', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: 8, borderRadius: 8, border: '1px solid var(--verde2)', background: 'rgba(37,163,82,.15)', color: 'var(--verde2)', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>
           <Circle size={10} fill="currentColor" /> Pré-live
         </button>
         <button type="button" id="btnTipoLive" onClick={() => window.setTipoEntrada?.('live')}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: 8, borderRadius: 8, border: '2px solid var(--c3)', background: 'var(--c1)', color: 'var(--texto2)', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: 8, borderRadius: 8, border: '1px solid var(--c3)', background: 'var(--c1)', color: 'var(--texto2)', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>
           <Circle size={10} fill="currentColor" /> Ao Vivo
         </button>
       </div>
@@ -205,52 +202,55 @@ export default function NovaEntrada() {
         <input type="number" id="eMinuto" min="0" max="120" placeholder="Ex: 20" onInput={() => window.atualizarResumoEntrada?.()} />
       </div>
 
-      {/* % da Banca (não aparece no tipo Sistema, que já pede o valor direto) */}
-      <div id="blocoPctBanca">
-        <label>% da Banca</label>
-        <div style={{ display: 'flex', gap: 6, margin: '6px 0 10px' }}>
-          <button className="btn-pct" onClick={(e) => window.setPct?.(1, e)} style={{ flex: 1, padding: 10, borderRadius: 8, fontSize: 15, fontWeight: 900 }}>1%</button>
-          <button className="btn-pct" onClick={(e) => window.setPct?.(2, e)} style={{ flex: 1, padding: 10, borderRadius: 8, fontSize: 15, fontWeight: 900 }}>2%</button>
-          <button className="btn-pct" onClick={(e) => window.setPct?.(3, e)} style={{ flex: 1, padding: 10, borderRadius: 8, fontSize: 15, fontWeight: 900 }}>3%</button>
-          {/* Em vez de digitar a % na mão, a pessoa digita o valor em R$ que quer apostar (o "Stake") —
+      {/* Stake + Odd de Entrada (não aparece no tipo Sistema, que já pede o valor direto) */}
+      <div id="blocoPctBanca" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 4 }}>
+        <div>
+          {/* Em vez de escolher uma % fixa, a pessoa digita o valor em R$ que quer apostar (o "Stake") —
               o sistema calcula a % da banca correspondente sozinho (guardado por baixo dos
               panos em #ePct, que é o que o resto do código já usa pra tudo). */}
-          <input type="number" id="eValorStake" min="0" step="0.01" placeholder="Stake R$" title="Digite o valor em reais que você quer apostar" style={{ width: 74, textAlign: 'center', fontSize: 15, fontWeight: 800 }} onInput={(e) => window.setValorStake?.(e.target.value)} />
+          <label>Stake (R$)</label>
+          <input type="number" id="eValorStake" min="0" step="0.01" placeholder="Ex: 50,00" title="Digite o valor em reais que você quer apostar" onInput={(e) => window.setValorStake?.(e.target.value)} />
           <input type="hidden" id="ePct" defaultValue="" />
         </div>
-      </div>
-
-      {/* Gestão da Entrada (card único: banca / stake / lucro potencial) */}
-      <div id="blocoGestaoEntrada">
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}><Wallet size={13} /> Gestão da Entrada</label>
-        <div id="entradaPreview" style={{ background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 9, padding: 12, marginBottom: 14, fontSize: 12, color: 'var(--texto2)' }}>
-          Selecione % da banca ou digite o Stake em R$ para ver o resultado
-        </div>
-      </div>
-
-      {/* Odd de Entrada + Retorno */}
-      <div id="blocoOddRetorno" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 4 }}>
         <div>
           <label>Odd de Entrada</label>
-          <input type="number" id="eOdd" min="1.01" step="0.01" placeholder="1.80" onInput={() => { window.calcEntrada?.(); }} />
+          <input type="number" id="eOdd" min="1.01" step="0.01" placeholder="1.80" onInput={() => { window.limparGanhoDireto?.(); window.calcEntrada?.(); }} />
         </div>
-        <div>
+      </div>
+
+      {/* Ganhos (opcional) — em vez de calcular pela odd, a pessoa pode digitar direto quanto
+          ganhou (R$); o sistema descobre a odd e a % sozinho a partir do Stake acima. */}
+      <div id="blocoGanhoDireto" style={{ marginBottom: 4 }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Coins size={13} /> Ganhos (R$) — opcional</label>
+        <input type="number" id="eGanhoDireto" min="0" step="0.01" placeholder="Ex: 40,00" title="Digite quanto você ganhou, em reais, e o sistema calcula a odd e a % sozinho" onInput={(e) => window.setGanhoDireto?.(e.target.value)} />
+        <div style={{ fontSize: 9.5, color: 'var(--texto2)', marginTop: 4 }}>Preencha o Stake e, se quiser, digite direto quanto ganhou aqui — o sistema calcula a odd e a % da banca sozinho.</div>
+      </div>
+
+      {/* Retorno + Resultado */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 4 }}>
+        <div id="blocoRetornoEntrada">
           <label>Retorno</label>
           <div id="retornoDisplay" style={{ background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 8, padding: '10px 12px', fontSize: 14, fontWeight: 800, color: 'var(--branco, #fff)' }}>—</div>
+        </div>
+        <div>
+          <label>Resultado</label>
+          <select id="eResultado" defaultValue="">
+            <option value="" disabled>Selecione o resultado</option>
+            <option value="green">Green</option>
+            <option value="red">Red</option>
+            <option value="void">Void</option>
+            <option value="cashout">Cash Out</option>
+          </select>
         </div>
       </div>
       <div style={{ fontSize: 9.5, color: 'var(--texto2)', marginBottom: 12 }}>Retorno = Stake + Lucro potencial (o valor que volta se a aposta for Green)</div>
 
-      {/* Resultado */}
-      <div style={{ marginBottom: 14 }}>
-        <label>Resultado</label>
-        <select id="eResultado" defaultValue="">
-          <option value="" disabled>Selecione o resultado</option>
-          <option value="green">✅ Green</option>
-          <option value="red">❌ Red</option>
-          <option value="void">↩️ Void</option>
-          <option value="cashout">💰 Cash Out</option>
-        </select>
+      {/* Resumo da Operação (Lucro / % da Banca / Retorno Total) */}
+      <div id="blocoGestaoEntrada">
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}><PiggyBank size={13} /> Resumo da Operação</label>
+        <div id="entradaPreview" style={{ background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 9, padding: 12, marginBottom: 14, fontSize: 12, color: 'var(--texto2)' }}>
+          Preencha o Stake e a Odd (ou os Ganhos) para ver o resumo
+        </div>
       </div>
 
       <button className="btn-primary" onClick={() => window.lancarEntrada?.()} style={{ borderRadius: 10, padding: 14, fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>

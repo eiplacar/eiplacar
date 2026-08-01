@@ -52,6 +52,8 @@ export default function Estatistica() {
   const [fTimeFiltroLiga, setFTimeFiltroLiga] = useState('');
   const [fTimeFiltroLocal, setFTimeFiltroLocal] = useState('');
   const [fLigaBusca, setFLigaBusca] = useState('');
+  const [mercadoLigas, setMercadoLigas] = useState('gols');
+  const [mercadoTimes, setMercadoTimes] = useState('gols');
 
   useEffect(() => {
     window.estatisticaRefresh = () => setTick((t) => t + 1);
@@ -73,8 +75,50 @@ export default function Estatistica() {
     [fTimeBusca, fTimeFiltroLiga, fTimeFiltroLocal, jogosCache.length]
   );
 
-  const linhasGolsLbl = ['O0,5', 'O1,5', 'O2,5', 'O3,5', 'O4,5'];
-  const linhasCantosLbl = ['Cantos 7,5', 'Cantos 8,5', 'Cantos 9,5', 'Cantos 10,5'];
+  const linhasGolsLbl    = ['O0,5', 'O1,5', 'O2,5', 'O3,5', 'O4,5', 'Ambas Marcam'];
+  const linhasCantosLbl  = ['C6,5', 'C7,5', 'C8,5', 'C9,5', 'C10,5', 'C11,5'];
+  const linhasCartoesLbl = ['C1,5', 'C2,5', 'C3,5', 'C4,5', 'C5,5', 'C6,5'];
+
+  // Botões de opção (mesmo padrão visual das chips de "Tipo de Aposta" na aba Apostas):
+  // clicar troca qual mercado a tabela mostra — Gols, Escanteios ou Cartões, sem misturar.
+  function BotoesMercado({ valor, onChange }) {
+    const opcoes = [
+      { id: 'gols', label: 'Gols' },
+      { id: 'cantos', label: 'Escanteios' },
+      { id: 'cartoes', label: 'Cartões' },
+    ];
+    return (
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+        {opcoes.map((o) => (
+          <button
+            key={o.id}
+            type="button"
+            onClick={() => onChange(o.id)}
+            style={{
+              flex: '0 0 auto', padding: '6px 16px', borderRadius: 20,
+              border: `1px solid ${valor === o.id ? 'var(--verde2)' : 'var(--c3)'}`,
+              background: valor === o.id ? 'rgba(37,163,82,.15)' : 'var(--c1)',
+              color: valor === o.id ? 'var(--verde2)' : 'var(--texto2)',
+              fontSize: 11, fontWeight: 800, cursor: 'pointer',
+            }}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+    );
+  }
+
+  function colunasPor(mercado) {
+    if (mercado === 'cantos') return linhasCantosLbl;
+    if (mercado === 'cartoes') return linhasCartoesLbl;
+    return linhasGolsLbl;
+  }
+  function valoresPor(mercado, linha) {
+    if (mercado === 'cantos') return linha.pctCantos;
+    if (mercado === 'cartoes') return linha.pctCartoes;
+    return [...linha.pctGols, linha.pctBTTS];
+  }
 
   return (
     <>
@@ -96,31 +140,34 @@ export default function Estatistica() {
         </div>
 
         <div className="card">
-          <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><LineChart size={14} /> Ligas — Over de Gols e Cantos</div>
+          <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><LineChart size={14} /> Ligas — Over de Gols, Escanteios e Cartões</div>
+          <BotoesMercado valor={mercadoLigas} onChange={setMercadoLigas} />
           <div className="table-wrap">
             <table>
               <thead>
                 <tr>
                   <th>Liga</th><th className="td-c">Jogos</th>
-                  {linhasGolsLbl.map((l) => <th className="td-c" key={l}>{l}</th>)}
-                  {linhasCantosLbl.map((l) => <th className="td-c" key={l}>{l}</th>)}
+                  {colunasPor(mercadoLigas).map((l) => <th className="td-c" key={l}>{l}</th>)}
                 </tr>
               </thead>
               <tbody>
                 {linhasLigasOver.linhas.length === 0 ? (
-                  <tr><td colSpan={11} style={{ textAlign: 'center', color: 'var(--texto2)', padding: 16 }}>{linhasLigasOver.temJogosCadastrados ? 'Nenhuma liga encontrada nesse filtro.' : 'Nenhum jogo cadastrado ainda na Aba Dados.'}</td></tr>
+                  <tr><td colSpan={8} style={{ textAlign: 'center', color: 'var(--texto2)', padding: 16 }}>{linhasLigasOver.temJogosCadastrados ? 'Nenhuma liga encontrada nesse filtro.' : 'Nenhum jogo cadastrado ainda na Aba Dados.'}</td></tr>
                 ) : linhasLigasOver.linhas.map((l) => (
                   <tr key={l.nome}>
                     <td style={{ color: 'var(--verde2)', fontWeight: 600 }}>{l.nome}</td>
                     <td className="td-c" style={{ color: 'var(--texto2)' }}>{l.n}</td>
-                    {l.pctGols.map((p, i) => <td className="td-c" key={i} style={{ color: corPct(p), fontWeight: 700 }}>{p}%</td>)}
-                    {l.pctCantos.map((p, i) => <td className="td-c" key={i} style={p == null ? { color: 'var(--texto2)' } : { color: corPct(p), fontWeight: 700 }}>{p == null ? '—' : p + '%'}</td>)}
+                    {valoresPor(mercadoLigas, l).map((p, i) => <td className="td-c" key={i} style={p == null ? { color: 'var(--texto2)' } : { color: corPct(p), fontWeight: 700 }}>{p == null ? '—' : p + '%'}</td>)}
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <div style={{ fontSize: 10, color: 'var(--texto2)', marginTop: 6 }}>Over de Gols: baseado no total de gols da partida (mandante + visitante). Over de Cantos: baseado no total de escanteios da partida, só nos jogos com esse dado cadastrado.</div>
+          <div style={{ fontSize: 10, color: 'var(--texto2)', marginTop: 6 }}>
+            {mercadoLigas === 'gols' && 'Over de Gols: baseado no total de gols da partida (mandante + visitante). Ambas Marcam: os dois times balançaram as redes.'}
+            {mercadoLigas === 'cantos' && 'Over de Escanteios: baseado no total de escanteios da partida, só nos jogos com esse dado cadastrado.'}
+            {mercadoLigas === 'cartoes' && 'Over de Cartões: soma de amarelos e vermelhos dos dois times na partida, só nos jogos com esse dado cadastrado.'}
+          </div>
         </div>
       </div>
 
@@ -134,32 +181,31 @@ export default function Estatistica() {
             <CampeonatoOptions camps={camps} />
           </select>
           <select value={fTimeFiltroLocal} onChange={(e) => setFTimeFiltroLocal(e.target.value)}>
-            <option value="">📊 Geral (casa + fora)</option>
-            <option value="casa">🏠 Só como Mandante</option>
-            <option value="fora">✈️ Só como Visitante</option>
+            <option value="">Geral (casa + fora)</option>
+            <option value="casa">Só como Mandante</option>
+            <option value="fora">Só como Visitante</option>
           </select>
-          <div style={{ fontSize: 10, color: 'var(--texto2)', marginTop: 6 }}>Over de Gols: baseado nos gols que o próprio time marcou (não conta os gols do adversário). Over de Cantos: baseado no total de escanteios da partida (mandante + visitante), só nos jogos com esse dado cadastrado.</div>
+          <div style={{ fontSize: 10, color: 'var(--texto2)', marginTop: 6 }}>Over de Gols: baseado nos gols que o próprio time marcou (não conta os gols do adversário). Escanteios e Cartões: baseado no total da partida (mandante + visitante), só nos jogos com esse dado cadastrado.</div>
         </div>
         <div className="card">
-          <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Goal size={14} /> Times — Over de Gols e Cantos</div>
+          <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Goal size={14} /> Times — Over de Gols, Escanteios e Cartões</div>
+          <BotoesMercado valor={mercadoTimes} onChange={setMercadoTimes} />
           <div className="table-wrap">
             <table>
               <thead>
                 <tr>
                   <th>Time</th><th className="td-c">Jogos</th>
-                  {linhasGolsLbl.map((l) => <th className="td-c" key={l}>{l}</th>)}
-                  {linhasCantosLbl.map((l) => <th className="td-c" key={l}>{l}</th>)}
+                  {colunasPor(mercadoTimes).map((l) => <th className="td-c" key={l}>{l}</th>)}
                 </tr>
               </thead>
               <tbody>
                 {times.linhas.length === 0 ? (
-                  <tr><td colSpan={11} style={{ textAlign: 'center', color: 'var(--texto2)', padding: 16 }}>{times.temJogosCadastrados ? `Nenhum time com jogos ${fTimeFiltroLocal === 'casa' ? 'como mandante' : fTimeFiltroLocal === 'fora' ? 'como visitante' : 'cadastrados'} nesse filtro.` : 'Nenhum jogo cadastrado ainda na Aba Dados.'}</td></tr>
+                  <tr><td colSpan={8} style={{ textAlign: 'center', color: 'var(--texto2)', padding: 16 }}>{times.temJogosCadastrados ? `Nenhum time com jogos ${fTimeFiltroLocal === 'casa' ? 'como mandante' : fTimeFiltroLocal === 'fora' ? 'como visitante' : 'cadastrados'} nesse filtro.` : 'Nenhum jogo cadastrado ainda na Aba Dados.'}</td></tr>
                 ) : times.linhas.map((l) => (
                   <tr key={l.nome}>
                     <td><strong>{l.nome}</strong></td>
                     <td className="td-c" style={{ color: 'var(--texto2)' }}>{l.n}</td>
-                    {l.pctGols.map((p, i) => <td className="td-c" key={i} style={{ color: corPct(p), fontWeight: 700 }}>{p}%</td>)}
-                    {l.pctCantos.map((p, i) => <td className="td-c" key={i} style={p == null ? { color: 'var(--texto2)' } : { color: corPct(p), fontWeight: 700 }}>{p == null ? '—' : p + '%'}</td>)}
+                    {valoresPor(mercadoTimes, l).map((p, i) => <td className="td-c" key={i} style={p == null ? { color: 'var(--texto2)' } : { color: corPct(p), fontWeight: 700 }}>{p == null ? '—' : p + '%'}</td>)}
                   </tr>
                 ))}
               </tbody>
