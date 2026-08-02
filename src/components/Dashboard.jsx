@@ -41,7 +41,7 @@ export default function Dashboard() {
       {/* Resumo: Campeonatos / Partidas na Temporada (só das ligas com jogo hoje) / Jogos de hoje.
           Preenchido por renderGeral() em public/js/07-geral.js */}
       <div className="card" id="cardResumo" style={{ marginBottom: 14 }}>
-        <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><BarChart3 size={15} /> Resumo</div>
+        <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><BarChart3 size={20} /> Resumo</div>
         <div className="resumo-grid">
           <div className="resumo-box">
             <div className="resumo-ic"><Trophy size={17} color="var(--verde2)" /></div>
@@ -63,7 +63,7 @@ export default function Dashboard() {
 
       {/* Grade de campeonatos: ponto de entrada. Clicar num campeonato abre as estatísticas dele */}
       <div className="card" id="cardCamps">
-        <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Trophy size={15} /> Campeonatos</div>
+        <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Trophy size={20} /> Campeonatos</div>
         <div id="campList"><div className="empty"><div className="icon"><Trophy size={26} /></div><p>Sem campeonatos ainda.</p></div></div>
       </div>
 
