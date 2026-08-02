@@ -222,17 +222,24 @@ export const handler = async function (event) {
       return resposta(200, { ok: true, mensagem: 'A GOAL API não devolveu nenhum jogo pra Premier League.' });
     }
 
-    // Descobre quais desses jogos já estão salvos e completos no Supabase
-    // (mesma lógica da atualizar-jogos-finalizados.js), pra não gastar cota
-    // de novo — e pra essa função poder ser chamada várias vezes até
-    // terminar sem duplicar nem reprocessar o que já deu certo.
+    // Descobre quais desses jogos JÁ ESTÃO SALVOS no Supabase, pra não
+    // reprocessar (e não duplicar) — e pra essa função poder ser chamada
+    // várias vezes até terminar a temporada inteira.
+    //
+    // IMPORTANTE: diferente da atualizar-jogos-finalizados.js (que reprocessa
+    // jogo salvo sem estatística, pra tentar completar depois), aqui
+    // consideramos "importado" só de existir a linha — porque, na prática,
+    // uma boa parte dos jogos mais antigos da temporada não tem "chutes"/
+    // "escanteios" na GOAL API (o campo vem null mesmo, não é falha
+    // temporária), e ficar tentando de novo pra sempre nesses jogos trava a
+    // importação no mesmo lote, sem nunca avançar pros próximos.
     const todosIds = todosFixtures.map((f) => parseInt(f.apiId, 10)).filter((n) => !Number.isNaN(n));
-    const existentesCompletos = new Set();
+    const jaSalvos = new Set();
     // Consulta em blocos de 150 ids pra não estourar limite de tamanho de URL.
     for (let i = 0; i < todosIds.length; i += 150) {
       const bloco = todosIds.slice(i, i + 150);
       const resp = await fetch(
-        `${supaUrl}/rest/v1/jogos?select=fixture_id,chutesC,rankC,rankV,rank_indisponivel&fixture_id=in.(${bloco.join(',')})`,
+        `${supaUrl}/rest/v1/jogos?select=fixture_id&fixture_id=in.(${bloco.join(',')})`,
         { headers: { apikey: supaServiceKey, Authorization: `Bearer ${supaServiceKey}` } }
       );
       if (!resp.ok) {
@@ -240,18 +247,14 @@ export const handler = async function (event) {
         return resposta(500, { erro: 'Falha ao consultar jogos existentes no Supabase', detalhe: erro });
       }
       const linhas = await resp.json();
-      linhas.forEach((r) => {
-        const rankFaltando = (r.rankC === null || r.rankV === null) && !r.rank_indisponivel;
-        const incompleto = r.chutesC === null || rankFaltando;
-        if (!incompleto) existentesCompletos.add(r.fixture_id);
-      });
+      linhas.forEach((r) => jaSalvos.add(r.fixture_id));
     }
 
-    const pendentes = todosFixtures.filter((f) => !existentesCompletos.has(parseInt(f.apiId, 10)));
-    console.log('Jogos pendentes de importar/completar:', pendentes.length, 'de', todosFixtures.length, 'no total.');
+    const pendentes = todosFixtures.filter((f) => !jaSalvos.has(parseInt(f.apiId, 10)));
+    console.log('Jogos pendentes de importar:', pendentes.length, 'de', todosFixtures.length, 'no total.');
 
     if (pendentes.length === 0) {
-      return resposta(200, { ok: true, mensagem: 'Temporada inteira já estava importada e completa.', totalNaTemporada: todosFixtures.length });
+      return resposta(200, { ok: true, mensagem: 'Temporada inteira já estava importada.', totalNaTemporada: todosFixtures.length });
     }
 
     // Só processa um lote por execução (ver LOTE_POR_EXECUCAO no topo).
@@ -261,11 +264,13 @@ export const handler = async function (event) {
     const { mapa: ranks, indisponivel: rankIndisponivel } = await buscarRanksDaLiga(apiKey);
 
     const linhas = [];
+    let detalhesFalharam = 0;
     for (const f of loteAtual) {
       const finalizado = f.status === 'FINISHED';
       // Só busca o detalhe (estatísticas + eventos) pra jogo já finalizado —
       // jogo futuro/não jogado ainda não tem essa informação na API mesmo.
       const detalhe = finalizado ? await buscarDetalheDoJogo(apiKey, f.id) : null;
+      if (finalizado && !detalhe) detalhesFalharam += 1;
 
       const casaCorrigido = nomeDoTime(mapaClubes, f.homeTeamId, f.homeTeamName);
       const visCorrigido = nomeDoTime(mapaClubes, f.awayTeamId, f.awayTeamName);
@@ -324,9 +329,10 @@ export const handler = async function (event) {
       ok: true,
       totalNaTemporada: todosFixtures.length,
       salvosNessaChamada: linhas.length,
+      detalhesFalharam,
       faltam,
       mensagem: faltam > 0
-        ? `Salvos ${linhas.length} jogos. Faltam ${faltam} — chame essa mesma URL de novo pra continuar.`
+        ? `Salvos ${linhas.length} jogos (${detalhesFalharam} sem detalhe da API). Faltam ${faltam} — chame essa mesma URL de novo pra continuar.`
         : `Salvos ${linhas.length} jogos. Temporada 2025/2026 da Premier League importada por completo!`,
     });
   } catch (e) {
