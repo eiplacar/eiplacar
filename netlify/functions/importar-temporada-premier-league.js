@@ -182,26 +182,36 @@ async function buscarDetalheDoJogo(apiKey, fixtureId) {
   return json.success ? json.data : null;
 }
 
+// Helper de resposta — sempre com Cache-Control: no-store, pra garantir que
+// o navegador (ou qualquer CDN no meio do caminho) NUNCA sirva uma resposta
+// antiga quando a URL é chamada de novo (ex: apertando F5). Sem isso, o
+// navegador pode achar que é "a mesma pergunta, mesma resposta" e nem chegar
+// a chamar a função de novo.
+function resposta(statusCode, corpo) {
+  return {
+    statusCode,
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
+    },
+    body: JSON.stringify(corpo),
+  };
+}
+
 export const handler = async function (event) {
   const apiKey = process.env.GOAL_API_KEY;
   const supaUrl = process.env.SUPABASE_URL;
   const supaServiceKey = process.env.SUPABASE_SERVICE_KEY;
 
   if (!apiKey || !supaUrl || !supaServiceKey) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ erro: 'Faltam variáveis de ambiente (GOAL_API_KEY / SUPABASE_URL / SUPABASE_SERVICE_KEY) — as mesmas já usadas em atualizar-jogos-finalizados.js.' }),
-    };
+    return resposta(500, { erro: 'Faltam variáveis de ambiente (GOAL_API_KEY / SUPABASE_URL / SUPABASE_SERVICE_KEY) — as mesmas já usadas em atualizar-jogos-finalizados.js.' });
   }
 
   // Proteção simples pra não rodar sem querer (ex: um bot/crawler batendo
   // na URL). Precisa mandar ?confirmar=sim.
   const params = event.queryStringParameters || {};
   if (params.confirmar !== 'sim') {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ erro: 'Chame com ?confirmar=sim na URL pra rodar a importação da temporada.' }),
-    };
+    return resposta(400, { erro: 'Chame com ?confirmar=sim na URL pra rodar a importação da temporada.' });
   }
 
   try {
@@ -209,7 +219,7 @@ export const handler = async function (event) {
     console.log('Total de fixtures da Premier League recebidos da GOAL API:', todosFixtures.length);
 
     if (todosFixtures.length === 0) {
-      return { statusCode: 200, body: JSON.stringify({ ok: true, mensagem: 'A GOAL API não devolveu nenhum jogo pra Premier League.' }) };
+      return resposta(200, { ok: true, mensagem: 'A GOAL API não devolveu nenhum jogo pra Premier League.' });
     }
 
     // Descobre quais desses jogos já estão salvos e completos no Supabase
@@ -227,7 +237,7 @@ export const handler = async function (event) {
       );
       if (!resp.ok) {
         const erro = await resp.text();
-        return { statusCode: 500, body: JSON.stringify({ erro: 'Falha ao consultar jogos existentes no Supabase', detalhe: erro }) };
+        return resposta(500, { erro: 'Falha ao consultar jogos existentes no Supabase', detalhe: erro });
       }
       const linhas = await resp.json();
       linhas.forEach((r) => {
@@ -241,7 +251,7 @@ export const handler = async function (event) {
     console.log('Jogos pendentes de importar/completar:', pendentes.length, 'de', todosFixtures.length, 'no total.');
 
     if (pendentes.length === 0) {
-      return { statusCode: 200, body: JSON.stringify({ ok: true, mensagem: 'Temporada inteira já estava importada e completa.', totalNaTemporada: todosFixtures.length }) };
+      return resposta(200, { ok: true, mensagem: 'Temporada inteira já estava importada e completa.', totalNaTemporada: todosFixtures.length });
     }
 
     // Só processa um lote por execução (ver LOTE_POR_EXECUCAO no topo).
@@ -306,24 +316,21 @@ export const handler = async function (event) {
     if (!respSalvar.ok) {
       const erro = await respSalvar.text();
       console.log('ERRO ao salvar no Supabase:', erro);
-      return { statusCode: 500, body: JSON.stringify({ erro: 'Falha ao salvar no Supabase', detalhe: erro }) };
+      return resposta(500, { erro: 'Falha ao salvar no Supabase', detalhe: erro });
     }
 
     const faltam = pendentes.length - loteAtual.length;
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        ok: true,
-        totalNaTemporada: todosFixtures.length,
-        salvosNessaChamada: linhas.length,
-        faltam,
-        mensagem: faltam > 0
-          ? `Salvos ${linhas.length} jogos. Faltam ${faltam} — chame essa mesma URL de novo pra continuar.`
-          : `Salvos ${linhas.length} jogos. Temporada 2025/2026 da Premier League importada por completo!`,
-      }),
-    };
+    return resposta(200, {
+      ok: true,
+      totalNaTemporada: todosFixtures.length,
+      salvosNessaChamada: linhas.length,
+      faltam,
+      mensagem: faltam > 0
+        ? `Salvos ${linhas.length} jogos. Faltam ${faltam} — chame essa mesma URL de novo pra continuar.`
+        : `Salvos ${linhas.length} jogos. Temporada 2025/2026 da Premier League importada por completo!`,
+    });
   } catch (e) {
     console.log('ERRO na importação da temporada:', e);
-    return { statusCode: 500, body: JSON.stringify({ erro: 'Falha ao importar temporada', detalhe: String(e) }) };
+    return resposta(500, { erro: 'Falha ao importar temporada', detalhe: String(e) });
   }
 };
