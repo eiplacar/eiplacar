@@ -71,18 +71,15 @@ function setPct(pct, ev){
 function setValorStake(valorStr){
   const d = bpLoad();
   const tot = d.saldo||0;
-  const valor = parseFloat(valorStr);
+  const valor = numBR(valorStr);
   if(!tot || !valor){
     document.getElementById('ePct').value='';
-    const ganhoEl = document.getElementById('eGanhoDireto');
-    if(ganhoEl && ganhoEl.value) setGanhoDireto(ganhoEl.value); else calcEntrada();
+    calcEntrada();
     return;
   }
   const pct = Math.round((valor/tot*100)*100)/100; // 2 casas decimais
   document.getElementById('ePct').value = pct;
-  // Se a pessoa já tinha digitado os Ganhos, recalcula a odd com o novo Stake.
-  const ganhoEl = document.getElementById('eGanhoDireto');
-  if(ganhoEl && ganhoEl.value) setGanhoDireto(ganhoEl.value); else calcEntrada();
+  calcEntrada();
 }
 
 // Ganhos digitados direto (R$) — em vez de a pessoa calcular a odd de cabeça, ela digita
@@ -111,37 +108,64 @@ function limparGanhoDireto(){
   if(gEl && gEl.value) gEl.value = '';
 }
 
+// Fica true assim que a pessoa digita algo no campo Retorno (correção manual, ex: a casa
+// pagou um valor diferente do calculado pela odd). Enquanto for true, o Resumo usa o valor
+// que ela digitou; se ela apagar o campo, volta a calcular sozinho a partir de Stake × Odd.
+let retornoEditadoManualmente = false;
+
+// oninput do campo #eRetorno
+function editarRetorno(valorStr){
+  retornoEditadoManualmente = valorStr.trim() !== '';
+  calcEntrada();
+}
+
 function calcEntrada(){
-  const retornoEl = document.getElementById('retornoDisplay');
+  const retornoInputEl = document.getElementById('eRetorno');
 
   // Sistema: não usa % da banca nem odd — o Retorno vem direto de Stake + Lucro informados.
   if(tipoAposta==='sistema'){
-    const stake = parseFloat(document.getElementById('eSistemaStake')?.value) || 0;
-    const lucro = parseFloat(document.getElementById('eSistemaLucro')?.value) || 0;
-    if(retornoEl) retornoEl.textContent = (stake || lucro) ? `R$ ${(stake+lucro).toFixed(2)}` : '—';
+    const el = document.getElementById('entradaPreview');
+    if(!el) return;
+    const stake = numBR(document.getElementById('eSistemaStake')?.value) || 0;
+    const lucro = numBR(document.getElementById('eSistemaLucro')?.value) || 0;
+    if(!stake && !lucro){ el.innerHTML = 'Preencha o Valor Investido e o Lucro para ver o resumo'; return; }
+    const pctStake = stake ? Math.round((lucro/stake*100)*10)/10 : null;
+    el.innerHTML=`<div style="display:flex;flex-direction:column;gap:9px">
+      <div style="display:flex;justify-content:space-between;align-items:center"><span style="color:var(--texto2)">Lucro</span><strong style="color:#4dd87a">R$ ${lucro.toFixed(2).replace('.',',')}</strong></div>
+      <div style="display:flex;justify-content:space-between;align-items:center"><span style="color:var(--texto2)">% sobre a Stake</span><strong style="color:${pctStake!=null&&pctStake<0?'var(--perigo)':'#4dd87a'}">${pctStake!=null?pctStake.toFixed(1).replace('.',','):'0,0'}%</strong></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:9px;border-top:1px solid var(--c3)"><span style="color:var(--texto2)">Retorno Total</span><strong style="color:var(--ouro)">R$ ${(stake+lucro).toFixed(2).replace('.',',')}</strong></div>
+    </div>`;
     return;
   }
 
   const d = bpLoad();
   const tot = d.saldo||0;
   const pct = parseFloat(document.getElementById('ePct').value);
-  const odd = parseFloat(document.getElementById('eOdd').value);
-  const ganhoStr = document.getElementById('eGanhoDireto')?.value;
-  const ganhoDireto = ganhoStr!=='' && ganhoStr!=null ? parseFloat(ganhoStr) : NaN;
+  const odd = numBR(document.getElementById('eOdd')?.value);
   const el  = document.getElementById('entradaPreview');
   if(!el) return;
-  if(!tot){ el.innerHTML='<span style="color:var(--perigo)">Saldo da carteira zerado — faça um depósito na aba Banca</span>'; if(retornoEl) retornoEl.textContent='—'; return; }
-  if(!pct){ el.innerHTML='Preencha o Stake e a Odd (ou os Ganhos) para ver o resumo'; if(retornoEl) retornoEl.textContent='—'; return; }
+  if(!tot){ el.innerHTML='<span style="color:var(--perigo)">Saldo da carteira zerado — faça um depósito na aba Banca</span>'; return; }
+  if(!pct){ el.innerHTML='Preencha o Stake e a Odd para ver o resumo'; return; }
   const stake = Math.round(tot*pct/100*100)/100;
-  // Se a pessoa digitou os Ganhos direto, usa esse valor exato como Lucro (mais preciso do
-  // que voltar da odd arredondada); senão calcula pela odd, como sempre.
-  const lucro = !isNaN(ganhoDireto) ? Math.round(ganhoDireto*100)/100 : (odd ? Math.round(stake*(odd-1)*100)/100 : null);
+
+  // Retorno: se a pessoa corrigiu na mão (ex: viu que a casa pagou um valor diferente),
+  // usa esse valor exato; senão calcula sozinho a partir de Stake × Odd, igual sempre.
+  const retornoManualNum = numBR(retornoInputEl?.value);
+  const usandoManual = retornoEditadoManualmente && !isNaN(retornoManualNum);
+  const retorno = usandoManual ? Math.round(retornoManualNum*100)/100 : (odd && !isNaN(odd) ? Math.round(stake*odd*100)/100 : null);
+  const lucro = retorno!=null ? Math.round((retorno-stake)*100)/100 : null;
+  const pctStake = (lucro!=null && stake) ? Math.round((lucro/stake*100)*10)/10 : null;
+
+  // Preenche o campo Retorno sozinho — só quando NÃO é uma correção manual (senão apagaria
+  // o que a pessoa acabou de digitar enquanto ela ainda está no meio de editar o valor).
+  if(!usandoManual && retornoInputEl && retorno!=null) retornoInputEl.value = retorno.toFixed(2).replace('.',',');
+
   el.innerHTML=`<div style="display:flex;flex-direction:column;gap:9px">
-    <div style="display:flex;justify-content:space-between;align-items:center"><span style="color:var(--texto2)">Lucro</span><strong style="color:#4dd87a">R$ ${lucro!=null?lucro.toFixed(2):'0,00'}</strong></div>
+    <div style="display:flex;justify-content:space-between;align-items:center"><span style="color:var(--texto2)">Lucro</span><strong style="color:#4dd87a">R$ ${lucro!=null?lucro.toFixed(2).replace('.',','):'0,00'}</strong></div>
+    <div style="display:flex;justify-content:space-between;align-items:center"><span style="color:var(--texto2)">% sobre a Stake</span><strong style="color:${pctStake!=null&&pctStake<0?'var(--perigo)':'#4dd87a'}">${pctStake!=null?pctStake.toFixed(1).replace('.',','):'0,0'}%</strong></div>
     <div style="display:flex;justify-content:space-between;align-items:center"><span style="color:var(--texto2)">% Banca</span><strong>${pct}%</strong></div>
-    <div style="display:flex;justify-content:space-between;align-items:center;padding-top:9px;border-top:1px solid var(--c3)"><span style="color:var(--texto2)">Retorno Total</span><strong style="color:var(--ouro)">R$ ${lucro!=null?(stake+lucro).toFixed(2):stake.toFixed(2)}</strong></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding-top:9px;border-top:1px solid var(--c3)"><span style="color:var(--texto2)">Retorno Total</span><strong style="color:var(--ouro)">R$ ${retorno!=null?retorno.toFixed(2).replace('.',','):stake.toFixed(2).replace('.',',')}</strong></div>
   </div>`;
-  if(retornoEl) retornoEl.textContent = lucro!=null ? `R$ ${(stake+lucro).toFixed(2)}` : '—';
 }
 
 function setTipoEntrada(tipo){
@@ -294,8 +318,8 @@ async function lancarEntrada(){
   // Os outros tipos continuam pelo fluxo de sempre (% da banca + odd).
   let pct, odd, stake, lucroInformado = 0;
   if(tipoAposta==='sistema'){
-    stake = parseFloat(document.getElementById('eSistemaStake').value);
-    lucroInformado = parseFloat(document.getElementById('eSistemaLucro').value) || 0;
+    stake = numBR(document.getElementById('eSistemaStake').value);
+    lucroInformado = numBR(document.getElementById('eSistemaLucro').value) || 0;
     if(!stake){ toast('Informe o valor investido'); return; }
     const dPreview = bpLoad();
     pct = dPreview.saldo ? Math.round((stake/dPreview.saldo*100)*100)/100 : 0;
@@ -303,7 +327,7 @@ async function lancarEntrada(){
   } else {
     if(!mercado){ toast('Informe o mercado'); return; }
     pct = parseFloat(document.getElementById('ePct').value);
-    odd = parseFloat(document.getElementById('eOdd').value);
+    odd = numBR(document.getElementById('eOdd').value);
     if(!pct)  { toast('Informe a % da banca ou o Stake'); return; }
     if(!odd)  { toast('Informe a odd'); return; }
   }
@@ -359,7 +383,8 @@ async function lancarEntrada(){
   });
   bpSave(d);
 
-  ['ePct','eValorStake','eOdd','eGanhoDireto','eLiga','eMercado','eMinuto','eTimes','eTimesCombo','eSistemaStake','eSistemaLucro'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['ePct','eValorStake','eOdd','eRetorno','eGanhoDireto','eLiga','eMercado','eMinuto','eTimes','eTimesCombo','eSistemaStake','eSistemaLucro'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  retornoEditadoManualmente = false;
   const mjEl=document.getElementById('mesmoJogoCheck'); if(mjEl) mjEl.checked=false;
   const erEl=document.getElementById('eResultado'); if(erEl) erEl.value='';
   const selM=document.getElementById('eMandanteSel'); if(selM) selM.innerHTML='<option value="">Mandante</option>';
@@ -370,7 +395,7 @@ async function lancarEntrada(){
   pernas = [];
   setTipoAposta('simples');
   const eDataEl=document.getElementById('eDataEntrada'); if(eDataEl) eDataEl.value=hojeBR(); // corrigido pro fuso de Brasília (ver 04-utils.js)
-  const epEl=document.getElementById('entradaPreview'); if(epEl) epEl.innerHTML='Preencha o Stake e a Odd (ou os Ganhos) para ver o resumo';
+  const epEl=document.getElementById('entradaPreview'); if(epEl) epEl.innerHTML='Preencha o Stake e a Odd para ver o resumo';
   const rdEl=document.getElementById('retornoDisplay'); if(rdEl) rdEl.textContent='—';
   document.querySelectorAll('.btn-pct').forEach(b=>b.classList.remove('ativo'));
   atualizarResumoEntrada();
@@ -444,8 +469,8 @@ function salvarEdicaoEntrada(){
   const novoTimes    = document.getElementById('editETimes').value.trim();
   const novoTipo     = document.getElementById('editETipo').value;
   const novoMinuto   = novoTipo==='live' ? (parseInt(document.getElementById('editEMinuto').value)||null) : null;
-  const novoOdd      = parseFloat(document.getElementById('editEOdd').value);
-  const novoStakeInformado = parseFloat(document.getElementById('editEStake').value);
+  const novoOdd      = numBR(document.getElementById('editEOdd').value);
+  const novoStakeInformado = numBR(document.getElementById('editEStake').value);
   const novoRes      = document.getElementById('editEResultado').value;
   const novaData     = document.getElementById('editEData').value || antiga.data;
 

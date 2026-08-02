@@ -137,11 +137,11 @@ export default function NovaEntrada() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           <div>
             <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Wallet size={13} /> Valor Investido (R$)</label>
-            <input type="number" id="eSistemaStake" min="0" step="0.01" placeholder="Ex: 50,00" onInput={() => { window.calcEntrada?.(); window.atualizarResumoEntrada?.(); }} />
+            <input type="text" inputMode="decimal" id="eSistemaStake" placeholder="Ex: 50,00" onInput={() => { window.calcEntrada?.(); window.atualizarResumoEntrada?.(); }} />
           </div>
           <div>
             <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Coins size={13} /> Lucro (R$)</label>
-            <input type="number" id="eSistemaLucro" min="0" step="0.01" placeholder="Ex: 15,00" onInput={() => { window.calcEntrada?.(); window.atualizarResumoEntrada?.(); }} />
+            <input type="text" inputMode="decimal" id="eSistemaLucro" placeholder="Ex: 15,00" onInput={() => { window.calcEntrada?.(); window.atualizarResumoEntrada?.(); }} />
           </div>
         </div>
       </div>
@@ -200,28 +200,30 @@ export default function NovaEntrada() {
         <input type="number" id="eMinuto" min="0" max="120" placeholder="Ex: 20" onInput={() => window.atualizarResumoEntrada?.()} />
       </div>
 
-      {/* Stake + Retorno — a pessoa digita os dois na mão (não aparece no tipo Sistema,
-          que já pede o valor investido e o lucro direto) */}
-      <div id="blocoPctBanca" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 4 }}>
+      {/* Stake + Odd de Entrada */}
+      <div id="blocoPctBanca" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
         <div>
           {/* Em vez de escolher uma % fixa, a pessoa digita o valor em R$ que quer apostar (o "Stake") —
               o sistema calcula a % da banca correspondente sozinho (guardado por baixo dos
-              panos em #ePct, que é o que o resto do código já usa pra tudo). */}
+              panos em #ePct, que é o que o resto do código já usa pra tudo).
+              type="text" + inputMode="decimal" (em vez de type="number"): campos number rejeitam
+              vírgula em vários teclados Android — a pessoa digitava "1,10" e o valor sumia. */}
           <label>Stake (R$)</label>
-          <input type="number" id="eValorStake" min="0" step="0.01" placeholder="Ex: 10,00" title="Digite o valor em reais que você quer apostar" onInput={(e) => window.setValorStake?.(e.target.value)} />
+          <input type="text" inputMode="decimal" id="eValorStake" placeholder="Ex: 10,00" title="Digite o valor em reais que você quer apostar" onInput={(e) => window.setValorStake?.(e.target.value)} />
           <input type="hidden" id="ePct" defaultValue="" />
         </div>
-        <div id="blocoRetornoEntrada">
-          <label>Retorno (R$)</label>
-          <input type="number" id="eRetorno" min="0" step="0.01" placeholder="Ex: 18,10" title="Digite quanto volta se a aposta for Green (stake + lucro)" onInput={() => window.calcEntrada?.()} />
+        <div>
+          <label>Odd de Entrada</label>
+          <input type="text" inputMode="decimal" id="eOdd" placeholder="Ex: 1,90" onInput={() => window.calcEntrada?.()} />
         </div>
       </div>
 
-      {/* Odd de Entrada + Resultado */}
+      {/* Retorno (calculado sozinho, mas editável — se a casa pagou diferente do calculado,
+          é só corrigir aqui que o Resumo já usa o valor certo) + Resultado */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
-        <div>
-          <label>Odd de Entrada</label>
-          <input type="number" id="eOdd" min="1.01" step="0.01" placeholder="1.85" />
+        <div id="blocoRetornoEntrada">
+          <label>Retorno (R$)</label>
+          <input type="text" inputMode="decimal" id="eRetorno" placeholder="Ex: 18,10" title="Calculado sozinho a partir do Stake e da Odd — se a casa pagou um valor diferente, corrija aqui" onInput={(e) => window.editarRetorno?.(e.target.value)} />
         </div>
         <div>
           <label>Resultado</label>

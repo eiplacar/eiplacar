@@ -65,6 +65,16 @@ function optionsCampeonato(camps, selecionado){
   return html;
 }
 
+// Converte texto digitado no padrão brasileiro (vírgula decimal, ex: "1,10") pra número.
+// Necessário porque os campos de Stake/Odd/Retorno usam type="text" (não "number") —
+// campos type="number" REJEITAM vírgula em vários teclados Android (só aceitam ponto),
+// fazendo o valor "sumir" silenciosamente quando a pessoa digita do jeito brasileiro normal.
+function numBR(str){
+  if (str === null || str === undefined) return NaN;
+  const limpo = String(str).trim().replace(',', '.');
+  return limpo === '' ? NaN : parseFloat(limpo);
+}
+
 let _toastTimeoutId = null;
 function toast(msg, erro=false) {
   const t=document.getElementById('toast');

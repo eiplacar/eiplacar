@@ -72,7 +72,6 @@ export default function Classificacao() {
             ? <option value="">Nenhum campeonato com classificação ainda</option>
             : <CampeonatoOptions camps={camps} />}
         </select>
-        <div style={{ fontSize: 10, color: 'var(--texto2)', marginTop: 6 }}>No Brasileirão (Série A/B), a posição é calculada automaticamente pelos critérios oficiais da CBF (pontos, vitórias, saldo de gols, gols marcados, confronto direto, cartões). Nas demais ligas, usa o Ranking informado em cada jogo, ou o cálculo por pontos quando não houver ranking.</div>
       </div>
 
       <div className="card">
@@ -85,7 +84,7 @@ export default function Classificacao() {
                 <tr><td colSpan={10} style={{ textAlign: 'center', color: 'var(--texto2)', padding: 16 }}>{campAtivo} não tem classificação (mata-mata/amistoso).</td></tr>
               )}
               {(data.estado === 'sem-jogos' || data.estado === 'sem-jogos-liga') && (
-                <tr><td colSpan={10} style={{ textAlign: 'center', color: 'var(--texto2)', padding: 16 }}>{jogosCache.length ? 'Nenhum jogo dessa liga na Aba Dados ainda.' : 'Nenhum jogo cadastrado ainda na Aba Dados.'}</td></tr>
+                <tr><td colSpan={10} style={{ textAlign: 'center', color: 'var(--texto2)', padding: 16 }}>{jogosCache.length ? 'Nenhum jogo dessa liga ainda.' : 'Nenhum jogo cadastrado ainda.'}</td></tr>
               )}
               {data.estado === 'ok' && data.linhas.map((l) => (
                 <tr key={l.nome}>

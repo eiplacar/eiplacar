@@ -120,16 +120,19 @@ function LinhaMercado({ linha, onChange, onRemover }) {
 
 export default function CalculadoraEV() {
   const [linhas, setLinhas] = useState([
-    { id: Date.now(), mercado: 'Casa Vence', prob: '', odd: '' },
+    { id: Date.now(), mercado: 'Casa Vence', prob: '', odd: '', origem: 'manual' },
   ]);
   const [mercadoSelecionado, setMercadoSelecionado] = useState('');
+  // Assinatura (casa × vis) da análise que gerou os mercados importados atualmente na tela —
+  // usada só pra detectar quando uma análise NOVA e DIFERENTE chega (ver useEffect abaixo).
+  const [assinaturaAnalise, setAssinaturaAnalise] = useState(null);
 
   function atualizarLinha(id, campo, valor) {
     setLinhas((prev) => prev.map((l) => (l.id === id ? { ...l, [campo]: valor } : l)));
   }
 
   function adicionarLinha() {
-    setLinhas((prev) => [...prev, { id: Date.now() + Math.random(), mercado: '', prob: '', odd: '' }]);
+    setLinhas((prev) => [...prev, { id: Date.now() + Math.random(), mercado: '', prob: '', odd: '', origem: 'manual' }]);
   }
 
   function removerLinha(id) {
@@ -146,9 +149,9 @@ export default function CalculadoraEV() {
 
     setLinhas((prev) => {
       if (prev.length === 1 && !prev[0].mercado && !prev[0].prob && !prev[0].odd) {
-        return [{ id: Date.now() + Math.random(), mercado: m.nome, prob: m.prob, odd: '' }];
+        return [{ id: Date.now() + Math.random(), mercado: m.nome, prob: m.prob, odd: '', origem: 'analise' }];
       }
-      return [...prev, { id: Date.now() + Math.random(), mercado: m.nome, prob: m.prob, odd: '' }];
+      return [...prev, { id: Date.now() + Math.random(), mercado: m.nome, prob: m.prob, odd: '', origem: 'analise' }];
     });
 
     setMercadoSelecionado('');
@@ -156,6 +159,18 @@ export default function CalculadoraEV() {
   }
 
   const ultimaAnalise = window.ultimaAnalise;
+  const assinaturaAtual = ultimaAnalise ? `${ultimaAnalise.casa}|||${ultimaAnalise.vis}` : null;
+
+  // Chegou uma análise NOVA e DIFERENTE da que gerou os mercados que já estão na tela?
+  // Limpa os importados antigos (que não têm mais nada a ver com o jogo atual) — os
+  // mercados que a pessoa digitou na mão continuam intactos.
+  if (assinaturaAtual && assinaturaAtual !== assinaturaAnalise) {
+    setAssinaturaAnalise(assinaturaAtual);
+    setLinhas((prev) => {
+      const manuais = prev.filter((l) => l.origem !== 'analise');
+      return manuais.length ? manuais : [{ id: Date.now() + Math.random(), mercado: '', prob: '', odd: '', origem: 'manual' }];
+    });
+  }
 
   return (
     <div style={{ background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 14, padding: 16, marginBottom: 14 }}>

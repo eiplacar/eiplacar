@@ -136,7 +136,6 @@ export default function Estatistica() {
             <option value="">Todos os campeonatos</option>
             <CampeonatoOptions camps={camps.filter((c) => c.toLowerCase().includes(fLigaBusca.toLowerCase()))} />
           </select>
-          <div style={{ fontSize: 10, color: 'var(--texto2)', marginTop: 6 }}>Filtra as duas tabelas abaixo de uma vez. Deixe em "Todos" pra ver tudo.</div>
         </div>
 
         <div className="card">
@@ -152,7 +151,7 @@ export default function Estatistica() {
               </thead>
               <tbody>
                 {linhasLigasOver.linhas.length === 0 ? (
-                  <tr><td colSpan={8} style={{ textAlign: 'center', color: 'var(--texto2)', padding: 16 }}>{linhasLigasOver.temJogosCadastrados ? 'Nenhuma liga encontrada nesse filtro.' : 'Nenhum jogo cadastrado ainda na Aba Dados.'}</td></tr>
+                  <tr><td colSpan={8} style={{ textAlign: 'center', color: 'var(--texto2)', padding: 16 }}>{linhasLigasOver.temJogosCadastrados ? 'Nenhuma liga encontrada nesse filtro.' : 'Nenhum jogo cadastrado ainda.'}</td></tr>
                 ) : linhasLigasOver.linhas.map((l) => (
                   <tr key={l.nome}>
                     <td style={{ color: 'var(--verde2)', fontWeight: 600 }}>{l.nome}</td>
@@ -185,7 +184,6 @@ export default function Estatistica() {
             <option value="casa">Só como Mandante</option>
             <option value="fora">Só como Visitante</option>
           </select>
-          <div style={{ fontSize: 10, color: 'var(--texto2)', marginTop: 6 }}>Over de Gols: baseado nos gols que o próprio time marcou (não conta os gols do adversário). Escanteios e Cartões: baseado no total da partida (mandante + visitante), só nos jogos com esse dado cadastrado.</div>
         </div>
         <div className="card">
           <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Goal size={14} /> Times — Over de Gols, Escanteios e Cartões</div>
@@ -200,7 +198,7 @@ export default function Estatistica() {
               </thead>
               <tbody>
                 {times.linhas.length === 0 ? (
-                  <tr><td colSpan={8} style={{ textAlign: 'center', color: 'var(--texto2)', padding: 16 }}>{times.temJogosCadastrados ? `Nenhum time com jogos ${fTimeFiltroLocal === 'casa' ? 'como mandante' : fTimeFiltroLocal === 'fora' ? 'como visitante' : 'cadastrados'} nesse filtro.` : 'Nenhum jogo cadastrado ainda na Aba Dados.'}</td></tr>
+                  <tr><td colSpan={8} style={{ textAlign: 'center', color: 'var(--texto2)', padding: 16 }}>{times.temJogosCadastrados ? `Nenhum time com jogos ${fTimeFiltroLocal === 'casa' ? 'como mandante' : fTimeFiltroLocal === 'fora' ? 'como visitante' : 'cadastrados'} nesse filtro.` : 'Nenhum jogo cadastrado ainda.'}</td></tr>
                 ) : times.linhas.map((l) => (
                   <tr key={l.nome}>
                     <td><strong>{l.nome}</strong></td>
@@ -210,6 +208,11 @@ export default function Estatistica() {
                 ))}
               </tbody>
             </table>
+          </div>
+          <div style={{ fontSize: 10, color: 'var(--texto2)', marginTop: 6 }}>
+            {mercadoTimes === 'gols' && 'Over de Gols: baseado nos gols que o próprio time marcou.'}
+            {mercadoTimes === 'cantos' && 'Over de Escanteios: baseado no total de escanteios da partida (mandante + visitante).'}
+            {mercadoTimes === 'cartoes' && 'Over de Cartões: soma de amarelos e vermelhos dos dois times na partida.'}
           </div>
         </div>
       </div>

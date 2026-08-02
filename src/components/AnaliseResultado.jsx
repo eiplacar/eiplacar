@@ -94,17 +94,15 @@ export default function AnaliseResultado() {
             <div style={{ flex: 1, background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 8, padding: '8px 12px', fontSize: 12 }}>
               <span style={{ color: '#4dd87a', fontWeight: 800 }}>{casa}</span><br />
               <span style={{ color: 'var(--texto2)' }}>{localLbl(filtro.casa.local)} · {sC.nt} jogo(s)</span><br />
-              <span style={{ color: 'var(--texto2)' }}>λ simples: {sC.lambda}</span><br />
-              <span style={{ color: 'var(--ouro)', fontWeight: 700 }}>λ ajustado: {sC.lambdaAjustado}</span>
+              <span style={{ color: 'var(--ouro)', fontWeight: 700, fontSize: 15 }}>λ {sC.lambdaAjustado}</span>
             </div>
             <div style={{ flex: 1, background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 8, padding: '8px 12px', fontSize: 12 }}>
               <span style={{ color: '#f08060', fontWeight: 800 }}>{vis}</span><br />
               <span style={{ color: 'var(--texto2)' }}>{localLbl(filtro.vis.local)} · {sV.nt} jogo(s)</span><br />
-              <span style={{ color: 'var(--texto2)' }}>λ simples: {sV.lambda}</span><br />
-              <span style={{ color: 'var(--ouro)', fontWeight: 700 }}>λ ajustado: {sV.lambdaAjustado}</span>
+              <span style={{ color: 'var(--ouro)', fontWeight: 700, fontSize: 15 }}>λ {sV.lambdaAjustado}</span>
             </div>
           </div>
-          <div style={{ fontSize: 10, color: 'var(--texto2)', marginTop: 6 }}>λ ajustado pondera os gols pela força do adversário em cada jogo (ranking). É o valor usado nas probabilidades abaixo.</div>
+          <div style={{ fontSize: 10, color: 'var(--texto2)', marginTop: 6 }}>Gols pela força do adversário em cada jogo (ranking).</div>
         </div>
 
         <div className="sec">
@@ -122,9 +120,14 @@ export default function AnaliseResultado() {
 
         <div className="sec">
           <div className="sec-title"><Scale size={14} style={{ marginRight: 4 }} />Índice de Força (Ofensivo)</div>
-          <div style={{ fontSize: 10, color: 'var(--texto2)', marginBottom: 10, lineHeight: 1.6 }}>
-            Combina Gols (50%), Chutes no Alvo (25%), Cantos (15%), Chutes Total (5%) e penalidade por Cartões Vermelhos (-10%), comparado à média do(s) campeonato(s). 1.00 = média da liga.
-          </div>
+          <details style={{ marginBottom: 10 }}>
+            <summary style={{ cursor: 'pointer', fontSize: 10, fontWeight: 700, color: 'var(--texto2)', listStyle: 'none', display: 'flex', alignItems: 'center', gap: 5 }}>
+              <AlertTriangle size={11} /> Como é calculado?
+            </summary>
+            <div style={{ fontSize: 10, color: 'var(--texto2)', lineHeight: 1.6, marginTop: 6 }}>
+              Combina Gols (50%), Chutes no Alvo (25%), Cantos (15%), Chutes Total (5%) e penalidade por Cartões Vermelhos (-10%), comparado à média do(s) campeonato(s). 1.00 = média da liga.
+            </div>
+          </details>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <div className="stat-extra-box" style={{ flex: 1, minWidth: 140 }}>
               <div className="seb-label">{casa}</div>
@@ -229,7 +232,10 @@ export default function AnaliseResultado() {
               );
             })}
           </div>
-          <div className="lambda-note" style={{ display: 'flex', alignItems: 'center', gap: 4 }}><BarChart3 size={11} /> Distribuição de Poisson · λ {casa}={lambdaC} · λ {vis}={lambdaV}</div>
+          <details>
+            <summary className="lambda-note" style={{ cursor: 'pointer', listStyle: 'none', display: 'flex', alignItems: 'center', gap: 4 }}><BarChart3 size={11} /> Ver detalhes técnicos</summary>
+            <div className="lambda-note" style={{ marginTop: 4 }}>Distribuição de Poisson · λ {casa}={lambdaC} · λ {vis}={lambdaV}</div>
+          </details>
         </div>
       </div>
 

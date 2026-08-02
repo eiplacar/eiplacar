@@ -378,7 +378,6 @@ export default function Estrategias() {
             <option value="4.5">Over 4.5</option>
             <option value="btts">Ambas Marcam</option>
           </select>
-          <div style={{ fontSize: 10, color: 'var(--texto2)', marginTop: 6 }}>Calculado a partir dos jogos e gols por minuto cadastrados na Aba Dados. "Últimos N jogos" filtra por liga, do mais recente pro mais antigo.</div>
         </div>
 
         <TabelaJanela titulo="Janela de Entrada — 1º Tempo" icon={<Clock size={14} />} linhas={janela.t1} />
@@ -410,7 +409,6 @@ export default function Estrategias() {
           <select value={placarC} onChange={(e) => setPlacarC(e.target.value)}>
             {PLACARES_CENARIO.map((p) => <option key={p} value={p}>{p}</option>)}
           </select>
-          <div style={{ fontSize: 10, color: 'var(--texto2)', marginTop: 6 }}>Mostra, entre os jogos que chegaram nesse placar até esse minuto, quantos % confirmaram cada linha de Over até o fim. Só entram jogos com a cronologia de gols completa (Aba Dados).</div>
         </div>
 
         <TabelaFaixa linhas={faixa} />
@@ -447,7 +445,7 @@ export default function Estrategias() {
           <div className="card">
             <div className="empty">
               <div className="icon"><ShieldHalf size={24} /></div>
-              <p>Sem jogos suficientes desses dois times na Aba Dados ainda.</p>
+              <p>Sem jogos suficientes desses dois times ainda.</p>
             </div>
           </div>
         ) : (
