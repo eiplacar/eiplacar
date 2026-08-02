@@ -33,6 +33,12 @@ const GOAL_API_URL = 'https://api.goal-api.com/v1';
 const PREMIER_LEAGUE_ID = 'cmr77dvkr005nrx06lp7rvp49';
 const NOME_CAMPEONATO = 'Premier League';
 
+// Janela de datas da temporada 2025/2026 (com folga de um mês pra cada lado,
+// pra não cortar jogo nenhum por causa de fuso/pré-temporada/prorrogação de
+// calendário). A Premier League 2025/26 foi de agosto/2025 a maio/2026.
+const TEMPORADA_INICIO = '2025-07-01';
+const TEMPORADA_FIM = '2026-06-30';
+
 // Quantos jogos (que ainda não estão completos no banco) processar por
 // chamada. Cada um custa 1 chamada de detalhe (+1 de standings, cacheada
 // por liga). Número baixo o suficiente pra não estourar o tempo limite da
@@ -75,23 +81,31 @@ function extrairGols(eventos, nomeCasa, nomeVis) {
     .sort((a, b) => a.min - b.min);
 }
 
-// Busca TODOS os fixtures da Premier League (a GOAL API já devolve a
-// temporada atual automaticamente, sem precisar mandar o ano — mesmo
-// comportamento observado em buscarRanksDaLiga da atualizar-jogos-
-// finalizados.js). Pagina em blocos de 100 até acabar.
+// Busca os fixtures FINALIZADOS da Premier League dentro da janela da
+// temporada 2025/2026.
+//
+// IMPORTANTE (descoberto na primeira tentativa): buscar por leagueId "puro"
+// (sem status) devolve TODAS as temporadas da história da liga, não só a
+// atual — bateu no teto de 1000 jogos na primeira tentativa. Por isso aqui
+// usamos o filtro "status=FINISHED", que é o mesmo já usado com sucesso em
+// atualizar-jogos-finalizados.js e que, segundo o comentário original
+// daquele arquivo, devolve os jogos "do mais novo pro mais antigo" (ordem
+// decrescente por data). Aproveitamos essa ordem pra parar de paginar assim
+// que aparecer um jogo anterior à temporada 2025/2026 — tudo que vier
+// depois vai ser ainda mais antigo.
 async function buscarTodosFixturesDaLiga(apiKey) {
   const LIMITE_POR_PAGINA = 100;
-  const MAX_PAGINAS = 10; // trava de segurança: até 1000 jogos
+  const MAX_PAGINAS = 20; // trava de segurança: até 2000 jogos finalizados
   let todos = [];
   let offset = 0;
 
   for (let pagina = 0; pagina < MAX_PAGINAS; pagina++) {
     const resp = await fetch(
-      `${GOAL_API_URL}/fixtures?leagueId=${PREMIER_LEAGUE_ID}&limit=${LIMITE_POR_PAGINA}&offset=${offset}`,
+      `${GOAL_API_URL}/fixtures?leagueId=${PREMIER_LEAGUE_ID}&status=FINISHED&limit=${LIMITE_POR_PAGINA}&offset=${offset}`,
       { headers: { Authorization: `Bearer ${apiKey}` } }
     );
     const json = await resp.json();
-    console.log(`Resposta GOAL API (fixtures liga=${PREMIER_LEAGUE_ID}, offset=${offset}):`, {
+    console.log(`Resposta GOAL API (fixtures FINISHED liga=${PREMIER_LEAGUE_ID}, offset=${offset}):`, {
       httpStatus: resp.status, success: json.success, recebidos: (json.data || []).length,
     });
 
@@ -99,7 +113,23 @@ async function buscarTodosFixturesDaLiga(apiKey) {
       throw new Error(json.message || `GOAL API respondeu com erro ${resp.status}`);
     }
 
-    todos = todos.concat(json.data || []);
+    const paginaDados = json.data || [];
+
+    // Só guarda os que caem dentro da janela da temporada 2025/2026 —
+    // descarta os de fora (temporadas mais antigas).
+    const dentroDaTemporada = paginaDados.filter(
+      (f) => f.matchDate >= TEMPORADA_INICIO && f.matchDate <= TEMPORADA_FIM
+    );
+    todos = todos.concat(dentroDaTemporada);
+
+    // Assim que aparecer, nessa página, algum jogo ANTERIOR à temporada
+    // 2025/2026, já pode parar — como a ordem é do mais novo pro mais
+    // antigo, tudo daqui pra frente vai ser ainda mais velho.
+    const achouJogoAntigo = paginaDados.some((f) => f.matchDate < TEMPORADA_INICIO);
+    if (achouJogoAntigo) {
+      console.log('Encontrado jogo anterior à temporada 2025/2026 — parando paginação.');
+      break;
+    }
 
     if (!json.pagination?.hasMore) break;
     offset += LIMITE_POR_PAGINA;
