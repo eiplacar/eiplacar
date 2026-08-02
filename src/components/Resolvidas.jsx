@@ -14,7 +14,7 @@ import { CheckCircle2, XCircle, Undo2, Coins, Pencil, Trash2, Calendar, Target }
 // lançada/editada/excluída, ou quando a aba é reaberta.
 
 const ROTULO_APOSTA = { simples: 'Simples', dupla: 'Dupla', multipla: 'Múltipla', sistema: 'Sistema' };
-const COR_APOSTA = { dupla: 'var(--ouro)', multipla: '#f08060', sistema: '#8b7ae8' };
+const COR_APOSTA = { dupla: 'var(--ouro)', multipla: 'var(--perigo)', sistema: '#8b7ae8' };
 
 export default function Resolvidas() {
   const [, setTick] = useState(0);
@@ -67,7 +67,7 @@ export default function Resolvidas() {
           <div className="empty"><div className="icon"><Target size={22} /></div><p>{resumo ? 'Nenhuma entrada nesse filtro.' : 'Nenhuma entrada ainda.'}</p></div>
         ) : entradas.map((e) => {
           const Icone = e.resultado === 'green' ? CheckCircle2 : e.resultado === 'red' ? XCircle : e.resultado === 'void' ? Undo2 : Coins;
-          const cor = e.resultado === 'green' ? '#4dd87a' : e.resultado === 'red' ? '#f08060' : e.resultado === 'void' ? 'var(--texto2)' : 'var(--ouro)';
+          const cor = e.resultado === 'green' ? 'var(--verde2)' : e.resultado === 'red' ? 'var(--perigo)' : e.resultado === 'void' ? 'var(--texto2)' : 'var(--ouro)';
           const val = e.resultado === 'green' ? `+R$ ${(e.ganhoCarteira || 0).toFixed(2)}` : e.resultado === 'red' ? `-R$ ${(e.stake || 0).toFixed(2)}` : e.resultado === 'void' ? 'Void' : 'Cash Out';
           const rotuloAposta = ROTULO_APOSTA[e.tipoAposta] || 'Simples';
           const corAposta = COR_APOSTA[e.tipoAposta] || 'var(--texto2)';

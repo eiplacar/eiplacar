@@ -49,7 +49,7 @@ export default function Dashboard() {
             <div className="resumo-lbl">Campeonatos</div>
           </div>
           <div className="resumo-box">
-            <div className="resumo-ic"><Goal size={17} color="var(--azul, #3a8ee0)" /></div>
+            <div className="resumo-ic"><Goal size={17} color="var(--texto2)" /></div>
             <div className="resumo-num" id="resumoPartidasTemporada">0</div>
             <div className="resumo-lbl">Partidas na temporada</div>
           </div>

@@ -39,7 +39,7 @@ function CampeonatoOptions({ camps }) {
   );
 }
 
-function corPct(p) { return p == null ? 'var(--texto2)' : p >= 50 ? '#4dd87a' : p >= 25 ? 'var(--ouro)' : '#f08060'; }
+function corPct(p) { return p == null ? 'var(--texto2)' : p >= 50 ? 'var(--verde2)' : p >= 25 ? 'var(--ouro)' : 'var(--perigo)'; }
 
 function TabelaJanela({ titulo, icon, linhas }) {
   return (
@@ -118,7 +118,7 @@ const FAIXAS_SCORE = [
   { min: 21, max: 40, nome: 'Fraco', cor: '#f0a83c' },
   { min: 41, max: 60, nome: 'Neutro', cor: '#e0d83c' },
   { min: 61, max: 80, nome: 'Favorável', cor: '#8bd84d' },
-  { min: 81, max: 100, nome: 'Excelente', cor: '#4dd87a' },
+  { min: 81, max: 100, nome: 'Excelente', cor: 'var(--verde2)' },
 ];
 
 function ScoreGauge({ score }) {
@@ -157,7 +157,7 @@ function ScoreGauge({ score }) {
 // Barra de progresso de um critério do Score (0 a 20 pts)
 function CriterioBar({ label, valor }) {
   const pct = Math.max(0, Math.min(100, (valor / 20) * 100));
-  const cor = pct >= 75 ? '#4dd87a' : pct >= 50 ? '#c9d84d' : pct >= 25 ? '#e0a53c' : '#f08060';
+  const cor = pct >= 75 ? 'var(--verde2)' : pct >= 50 ? '#c9d84d' : pct >= 25 ? '#e0a53c' : 'var(--perigo)';
   return (
     <div style={{ marginBottom: 10 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
@@ -226,7 +226,7 @@ function MiniBars({ serie }) {
     <svg viewBox="0 0 100 26" width="100%" height="22" preserveAspectRatio="none">
       {serie.map((v, i) => {
         const h = Math.max(1.5, (v / 100) * 24);
-        const cor = v >= 50 ? 'var(--verde2)' : v >= 25 ? 'var(--ouro)' : '#f08060';
+        const cor = v >= 50 ? 'var(--verde2)' : v >= 25 ? 'var(--ouro)' : 'var(--perigo)';
         return <rect key={i} x={i * w + w * 0.18} y={26 - h} width={w * 0.64} height={h} rx="1" fill={cor} opacity={0.55 + (i / n) * 0.45} />;
       })}
     </svg>

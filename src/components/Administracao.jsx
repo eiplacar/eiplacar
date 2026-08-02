@@ -30,16 +30,16 @@ function diasRestantes(vencimento) {
   return Math.ceil((new Date(vencimento + 'T00:00:00') - new Date(new Date().toDateString())) / 86400000);
 }
 function statusUsuario(u) {
-  if (u.status === 'pendente') return { cor: '#e0b23c', texto: 'Pendente de aprovação' };
-  if (u.status === 'rejeitado') return { cor: '#8a8a8a', texto: 'Cadastro rejeitado' };
-  if (u.bloqueado) return { cor: '#8a8a8a', texto: 'Bloqueado' };
+  if (u.status === 'pendente') return { cor: 'var(--ouro)', texto: 'Pendente de aprovação' };
+  if (u.status === 'rejeitado') return { cor: 'var(--texto3)', texto: 'Cadastro rejeitado' };
+  if (u.bloqueado) return { cor: 'var(--texto3)', texto: 'Bloqueado' };
   const dias = diasRestantes(u.assinatura_vencimento);
   const nomePlano = u.plano ? (PLANOS_BASE.find((p) => p.id === u.plano)?.nome || u.plano) : 'Teste';
-  if (u.assinatura_status === 'cancelado') return { cor: '#f08060', texto: `Plano: Cancelado` };
-  if (dias == null) return { cor: '#4dd87a', texto: `Plano: ${nomePlano}` };
-  if (dias < 0) return { cor: '#f08060', texto: `Plano: Expirado`, linha: `Venceu: ${fdBr(u.assinatura_vencimento)}` };
+  if (u.assinatura_status === 'cancelado') return { cor: 'var(--perigo)', texto: `Plano: Cancelado` };
+  if (dias == null) return { cor: 'var(--verde2)', texto: `Plano: ${nomePlano}` };
+  if (dias < 0) return { cor: 'var(--perigo)', texto: `Plano: Expirado`, linha: `Venceu: ${fdBr(u.assinatura_vencimento)}` };
   const linha = (!u.plano || u.plano === '') ? `Restam: ${dias} dias` : `Vence: ${fdBr(u.assinatura_vencimento)}`;
-  return { cor: '#4dd87a', texto: `Plano: ${nomePlano}`, linha };
+  return { cor: 'var(--verde2)', texto: `Plano: ${nomePlano}`, linha };
 }
 function StatusDot({ cor, size = 10 }) {
   return <Circle size={size} fill={cor} color={cor} style={{ flexShrink: 0 }} />;

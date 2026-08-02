@@ -97,7 +97,7 @@ export default function Classificacao() {
                   <td>{l.d}</td>
                   <td>{l.gp}</td>
                   <td>{l.gc}</td>
-                  <td style={{ color: l.sg >= 0 ? '#4dd87a' : '#f08060' }}>{l.sg >= 0 ? '+' : ''}{l.sg}</td>
+                  <td style={{ color: l.sg >= 0 ? 'var(--verde2)' : 'var(--perigo)' }}>{l.sg >= 0 ? '+' : ''}{l.sg}</td>
                 </tr>
               ))}
             </tbody>

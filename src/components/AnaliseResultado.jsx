@@ -67,18 +67,18 @@ export default function AnaliseResultado() {
   const barraConfianca = window.barraConfianca || (() => '');
 
   const golsHT = temHT ? [
-    { l: 'Mais de 0.5 gols no HT', p: o05HT, c: '#4dd87a' },
-    { l: 'Menos de 0.5 gols no HT', p: 100 - o05HT, c: '#f08060' },
-    { l: 'Mais de 1.5 gols no HT', p: o15HT, c: '#4dd87a' },
-    { l: 'Menos de 1.5 gols no HT', p: 100 - o15HT, c: '#f08060' },
+    { l: 'Mais de 0.5 gols no HT', p: o05HT, c: 'var(--verde2)' },
+    { l: 'Menos de 0.5 gols no HT', p: 100 - o05HT, c: 'var(--perigo)' },
+    { l: 'Mais de 1.5 gols no HT', p: o15HT, c: 'var(--verde2)' },
+    { l: 'Menos de 1.5 gols no HT', p: 100 - o15HT, c: 'var(--perigo)' },
   ] : [];
   const golsFT = [
-    { l: 'Mais de 1.5 gols', p: o15, c: '#4dd87a' }, { l: 'Menos de 1.5 gols', p: 100 - o15, c: '#f08060' },
-    { l: 'Mais de 2.5 gols', p: o25, c: '#4dd87a' }, { l: 'Menos de 2.5 gols', p: 100 - o25, c: '#f08060' },
-    { l: 'Mais de 3.5 gols', p: o35, c: '#4dd87a' }, { l: 'Menos de 3.5 gols', p: 100 - o35, c: '#f08060' },
-    { l: 'Mais de 4.5 gols', p: o45, c: '#4dd87a' }, { l: 'Menos de 4.5 gols', p: 100 - o45, c: '#f08060' },
+    { l: 'Mais de 1.5 gols', p: o15, c: 'var(--verde2)' }, { l: 'Menos de 1.5 gols', p: 100 - o15, c: 'var(--perigo)' },
+    { l: 'Mais de 2.5 gols', p: o25, c: 'var(--verde2)' }, { l: 'Menos de 2.5 gols', p: 100 - o25, c: 'var(--perigo)' },
+    { l: 'Mais de 3.5 gols', p: o35, c: 'var(--verde2)' }, { l: 'Menos de 3.5 gols', p: 100 - o35, c: 'var(--perigo)' },
+    { l: 'Mais de 4.5 gols', p: o45, c: 'var(--verde2)' }, { l: 'Menos de 4.5 gols', p: 100 - o45, c: 'var(--perigo)' },
   ];
-  const times = [{ s: sC, nome: casa, cor: '#4dd87a', Ico: Home }, { s: sV, nome: vis, cor: '#f08060', Ico: Plane }];
+  const times = [{ s: sC, nome: casa, cor: 'var(--verde2)', Ico: Home }, { s: sV, nome: vis, cor: 'var(--perigo)', Ico: Plane }];
 
   return (
     <>
@@ -92,12 +92,12 @@ export default function AnaliseResultado() {
           <div className="sec-title"><MapPin size={14} style={{ marginRight: 4 }} />Base da análise</div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <div style={{ flex: 1, background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 8, padding: '8px 12px', fontSize: 12 }}>
-              <span style={{ color: '#4dd87a', fontWeight: 800 }}>{casa}</span><br />
+              <span style={{ color: 'var(--verde2)', fontWeight: 800 }}>{casa}</span><br />
               <span style={{ color: 'var(--texto2)' }}>{localLbl(filtro.casa.local)} · {sC.nt} jogo(s)</span><br />
               <span style={{ color: 'var(--ouro)', fontWeight: 700, fontSize: 15 }}>λ {sC.lambdaAjustado}</span>
             </div>
             <div style={{ flex: 1, background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 8, padding: '8px 12px', fontSize: 12 }}>
-              <span style={{ color: '#f08060', fontWeight: 800 }}>{vis}</span><br />
+              <span style={{ color: 'var(--perigo)', fontWeight: 800 }}>{vis}</span><br />
               <span style={{ color: 'var(--texto2)' }}>{localLbl(filtro.vis.local)} · {sV.nt} jogo(s)</span><br />
               <span style={{ color: 'var(--ouro)', fontWeight: 700, fontSize: 15 }}>λ {sV.lambdaAjustado}</span>
             </div>
@@ -108,9 +108,9 @@ export default function AnaliseResultado() {
         <div className="sec">
           <div className="sec-title"><Trophy size={14} style={{ marginRight: 4 }} />Resultado Provável</div>
           <div className="prob-resultado">
-            <div className="prob-box"><div className="pb-label">{casa}</div><div className="pb-pct" style={{ color: '#4dd87a' }}>{pVit}%</div><div className="pb-sub">VITÓRIA</div></div>
+            <div className="prob-box"><div className="pb-label">{casa}</div><div className="pb-pct" style={{ color: 'var(--verde2)' }}>{pVit}%</div><div className="pb-sub">VITÓRIA</div></div>
             <div className="prob-box"><div className="pb-label">Empate</div><div className="pb-pct" style={{ color: 'var(--ouro)' }}>{pEmp}%</div><div className="pb-sub">EMPATE</div></div>
-            <div className="prob-box"><div className="pb-label">{vis}</div><div className="pb-pct" style={{ color: '#f08060' }}>{pDer}%</div><div className="pb-sub">VITÓRIA</div></div>
+            <div className="prob-box"><div className="pb-label">{vis}</div><div className="pb-pct" style={{ color: 'var(--perigo)' }}>{pDer}%</div><div className="pb-sub">VITÓRIA</div></div>
           </div>
           <div className="bar-wrap">
             <div className="bar-labels"><span>{casa} {pVit}%</span><span>Empate {pEmp}%</span><span>{vis} {pDer}%</span></div>
@@ -131,12 +131,12 @@ export default function AnaliseResultado() {
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <div className="stat-extra-box" style={{ flex: 1, minWidth: 140 }}>
               <div className="seb-label">{casa}</div>
-              <div className="seb-val" style={{ color: sC.indiceForca >= 1 ? '#4dd87a' : '#f08060' }}>{sC.indiceForca?.toFixed(2) ?? '—'}</div>
+              <div className="seb-val" style={{ color: sC.indiceForca >= 1 ? 'var(--verde2)' : 'var(--perigo)' }}>{sC.indiceForca?.toFixed(2) ?? '—'}</div>
               <div className="seb-sub">≈ {sC.lambdaIndice} gols esperados/jogo</div>
             </div>
             <div className="stat-extra-box" style={{ flex: 1, minWidth: 140 }}>
               <div className="seb-label">{vis}</div>
-              <div className="seb-val" style={{ color: sV.indiceForca >= 1 ? '#4dd87a' : '#f08060' }}>{sV.indiceForca?.toFixed(2) ?? '—'}</div>
+              <div className="seb-val" style={{ color: sV.indiceForca >= 1 ? 'var(--verde2)' : 'var(--perigo)' }}>{sV.indiceForca?.toFixed(2) ?? '—'}</div>
               <div className="seb-sub">≈ {sV.lambdaIndice} gols esperados/jogo</div>
             </div>
           </div>
@@ -155,8 +155,8 @@ export default function AnaliseResultado() {
         <div className="sec">
           <div className="sec-title"><Handshake size={14} style={{ marginRight: 4 }} />Ambas Marcam</div>
           <div className="btts-row">
-            <div className="btts-box"><div className="bb-lbl">Sim</div><div className="bb-pct" style={{ color: '#4dd87a' }}>{pBtts}%</div></div>
-            <div className="btts-box"><div className="bb-lbl">Não</div><div className="bb-pct" style={{ color: '#f08060' }}>{100 - pBtts}%</div></div>
+            <div className="btts-box"><div className="bb-lbl">Sim</div><div className="bb-pct" style={{ color: 'var(--verde2)' }}>{pBtts}%</div></div>
+            <div className="btts-box"><div className="bb-lbl">Não</div><div className="bb-pct" style={{ color: 'var(--perigo)' }}>{100 - pBtts}%</div></div>
           </div>
           <div className="lambda-note">λ {casa}: {lambdaC} · λ {vis}: {lambdaV}</div>
         </div>
@@ -167,8 +167,8 @@ export default function AnaliseResultado() {
             <>
               {mcc.cantos.map((c) => (
                 <div key={c.linha}>
-                  <GolRow label={`Mais de ${c.linha} cantos`} pct={c.over} cor="#4dd87a" />
-                  <GolRow label={`Menos de ${c.linha} cantos`} pct={100 - c.over} cor="#f08060" />
+                  <GolRow label={`Mais de ${c.linha} cantos`} pct={c.over} cor="var(--verde2)" />
+                  <GolRow label={`Menos de ${c.linha} cantos`} pct={100 - c.over} cor="var(--perigo)" />
                 </div>
               ))}
               <div className="lambda-note">Total esperado: {mcc.lambdaCantos} cantos/jogo ({casa}+{vis})</div>
@@ -183,8 +183,8 @@ export default function AnaliseResultado() {
             <>
               {mcc.cartoes.map((c) => (
                 <div key={c.linha}>
-                  <GolRow label={`Mais de ${c.linha} cartões`} pct={c.over} cor="#4dd87a" />
-                  <GolRow label={`Menos de ${c.linha} cartões`} pct={100 - c.over} cor="#f08060" />
+                  <GolRow label={`Mais de ${c.linha} cartões`} pct={c.over} cor="var(--verde2)" />
+                  <GolRow label={`Menos de ${c.linha} cartões`} pct={100 - c.over} cor="var(--perigo)" />
                 </div>
               ))}
               <div className="lambda-note">Total esperado: {mcc.lambdaCartoes} cartões/jogo (amarelos + vermelhos, {casa}+{vis})</div>
@@ -221,7 +221,7 @@ export default function AnaliseResultado() {
             {top10.map((p, i) => {
               const pp = Math.round(p.p * 1000) / 10;
               const venc = p.g1 > p.g2 ? casa : p.g1 < p.g2 ? vis : 'Empate';
-              const cor = p.g1 > p.g2 ? '#4dd87a' : p.g1 < p.g2 ? '#f08060' : 'var(--ouro)';
+              const cor = p.g1 > p.g2 ? 'var(--verde2)' : p.g1 < p.g2 ? 'var(--perigo)' : 'var(--ouro)';
               return (
                 <div key={i} className="pe-item">
                   <div className="pe-placar">{p.g1} – {p.g2}</div>
@@ -244,12 +244,12 @@ export default function AnaliseResultado() {
           <div className="sec-title"><MapPin size={14} style={{ marginRight: 4 }} />Adversário Médio</div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <div style={{ flex: 1, background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 8, padding: 10, textAlign: 'center' }}>
-              <div style={{ fontSize: 12, color: '#4dd87a', fontWeight: 700, marginBottom: 4 }}>{casa}</div>
+              <div style={{ fontSize: 12, color: 'var(--verde2)', fontWeight: 700, marginBottom: 4 }}>{casa}</div>
               <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--ouro)' }}>#{sC.rankMedAdv ?? '—'}</div>
               <div style={{ fontSize: 10, color: 'var(--texto2)' }}>{sC.nt} jogo(s)</div>
             </div>
             <div style={{ flex: 1, background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 8, padding: 10, textAlign: 'center' }}>
-              <div style={{ fontSize: 12, color: '#f08060', fontWeight: 700, marginBottom: 4 }}>{vis}</div>
+              <div style={{ fontSize: 12, color: 'var(--perigo)', fontWeight: 700, marginBottom: 4 }}>{vis}</div>
               <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--ouro)' }}>#{sV.rankMedAdv ?? '—'}</div>
               <div style={{ fontSize: 10, color: 'var(--texto2)' }}>{sV.nt} jogo(s)</div>
             </div>
@@ -265,17 +265,17 @@ export default function AnaliseResultado() {
                 <div className="forca-box">
                   <div className="fb-label">Em Casa ({s.nc} Jogos)</div>
                   <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: 4 }}>
-                    <div style={{ textAlign: 'center' }}><div style={{ fontSize: 15, fontWeight: 800, color: '#4dd87a' }}>{s.vedCasa.v}</div><div style={{ fontSize: 9, color: 'var(--texto2)' }}>Vitória</div></div>
+                    <div style={{ textAlign: 'center' }}><div style={{ fontSize: 15, fontWeight: 800, color: 'var(--verde2)' }}>{s.vedCasa.v}</div><div style={{ fontSize: 9, color: 'var(--texto2)' }}>Vitória</div></div>
                     <div style={{ textAlign: 'center' }}><div style={{ fontSize: 15, fontWeight: 800, color: 'var(--ouro)' }}>{s.vedCasa.e}</div><div style={{ fontSize: 9, color: 'var(--texto2)' }}>Empate</div></div>
-                    <div style={{ textAlign: 'center' }}><div style={{ fontSize: 15, fontWeight: 800, color: '#f08060' }}>{s.vedCasa.d}</div><div style={{ fontSize: 9, color: 'var(--texto2)' }}>Derrota</div></div>
+                    <div style={{ textAlign: 'center' }}><div style={{ fontSize: 15, fontWeight: 800, color: 'var(--perigo)' }}>{s.vedCasa.d}</div><div style={{ fontSize: 9, color: 'var(--texto2)' }}>Derrota</div></div>
                   </div>
                 </div>
                 <div className="forca-box">
                   <div className="fb-label">Fora ({s.nv} Jogos)</div>
                   <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: 4 }}>
-                    <div style={{ textAlign: 'center' }}><div style={{ fontSize: 15, fontWeight: 800, color: '#4dd87a' }}>{s.vedFora.v}</div><div style={{ fontSize: 9, color: 'var(--texto2)' }}>Vitória</div></div>
+                    <div style={{ textAlign: 'center' }}><div style={{ fontSize: 15, fontWeight: 800, color: 'var(--verde2)' }}>{s.vedFora.v}</div><div style={{ fontSize: 9, color: 'var(--texto2)' }}>Vitória</div></div>
                     <div style={{ textAlign: 'center' }}><div style={{ fontSize: 15, fontWeight: 800, color: 'var(--ouro)' }}>{s.vedFora.e}</div><div style={{ fontSize: 9, color: 'var(--texto2)' }}>Empate</div></div>
-                    <div style={{ textAlign: 'center' }}><div style={{ fontSize: 15, fontWeight: 800, color: '#f08060' }}>{s.vedFora.d}</div><div style={{ fontSize: 9, color: 'var(--texto2)' }}>Derrota</div></div>
+                    <div style={{ textAlign: 'center' }}><div style={{ fontSize: 15, fontWeight: 800, color: 'var(--perigo)' }}>{s.vedFora.d}</div><div style={{ fontSize: 9, color: 'var(--texto2)' }}>Derrota</div></div>
                   </div>
                 </div>
               </div>
@@ -361,7 +361,7 @@ export default function AnaliseResultado() {
                 <div className="fb-stat"><span className="fb-val">{jogoSel.chutesGolC ?? '—'}</span> <Goal size={11} style={{ verticalAlign: -2 }} /> no gol</div>
                 <div className="fb-stat"><span className="fb-val">{jogoSel.escanteiosC ?? '—'}</span> <Flag size={11} style={{ verticalAlign: -2 }} /> escanteios</div>
                 <div className="fb-stat"><span className="fb-val">{jogoSel.amarelosC ?? '—'}</span> <Square size={11} style={{ verticalAlign: -2, color: 'var(--ouro)' }} /> amarelos</div>
-                <div className="fb-stat"><span className="fb-val">{jogoSel.vermelhosC ?? '—'}</span> <Square size={11} style={{ verticalAlign: -2, color: '#f08060' }} /> vermelhos</div>
+                <div className="fb-stat"><span className="fb-val">{jogoSel.vermelhosC ?? '—'}</span> <Square size={11} style={{ verticalAlign: -2, color: 'var(--perigo)' }} /> vermelhos</div>
               </div>
               <div className="forca-box">
                 <div className="fb-label">{jogoSel.visNome}</div>
@@ -369,7 +369,7 @@ export default function AnaliseResultado() {
                 <div className="fb-stat"><span className="fb-val">{jogoSel.chutesGolV ?? '—'}</span> <Goal size={11} style={{ verticalAlign: -2 }} /> no gol</div>
                 <div className="fb-stat"><span className="fb-val">{jogoSel.escanteiosV ?? '—'}</span> <Flag size={11} style={{ verticalAlign: -2 }} /> escanteios</div>
                 <div className="fb-stat"><span className="fb-val">{jogoSel.amarelosV ?? '—'}</span> <Square size={11} style={{ verticalAlign: -2, color: 'var(--ouro)' }} /> amarelos</div>
-                <div className="fb-stat"><span className="fb-val">{jogoSel.vermelhosV ?? '—'}</span> <Square size={11} style={{ verticalAlign: -2, color: '#f08060' }} /> vermelhos</div>
+                <div className="fb-stat"><span className="fb-val">{jogoSel.vermelhosV ?? '—'}</span> <Square size={11} style={{ verticalAlign: -2, color: 'var(--perigo)' }} /> vermelhos</div>
               </div>
             </div>
 

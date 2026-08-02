@@ -144,10 +144,10 @@ function AbaPerfil() {
           <>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--texto2)' }}>Plano</span><strong>Teste Gratuito</strong></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--texto2)' }}>Status</span><strong style={{ color: '#4dd87a', display: 'inline-flex', alignItems: 'center', gap: 4 }}><CheckCircle2 size={13} /> Ativo</strong></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--texto2)' }}>Status</span><strong style={{ color: 'var(--verde2)', display: 'inline-flex', alignItems: 'center', gap: 4 }}><CheckCircle2 size={13} /> Ativo</strong></div>
               {perfil.assinatura_inicio && <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--texto2)' }}>Início</span><strong>{fdBr(perfil.assinatura_inicio)}</strong></div>}
               {perfil.assinatura_vencimento && <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--texto2)' }}>Vencimento</span><strong>{fdBr(perfil.assinatura_vencimento)}</strong></div>}
-              {dias != null && <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--texto2)' }}>Dias restantes</span><strong style={{ color: dias <= 7 ? '#f08060' : 'var(--ouro)' }}>{dias}</strong></div>}
+              {dias != null && <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--texto2)' }}>Dias restantes</span><strong style={{ color: dias <= 7 ? 'var(--perigo)' : 'var(--ouro)' }}>{dias}</strong></div>}
             </div>
             <button className="btn-primary" style={{ marginTop: 12 }} onClick={() => setVerPlanos((v) => !v)}>Renovar Assinatura</button>
           </>

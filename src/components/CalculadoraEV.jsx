@@ -10,8 +10,8 @@ import { BarChart3, Download, CheckCircle2, XCircle, AlertTriangle, Plus, X } fr
 //   - window.ultimaAnalise  → preenchido pela aba Análise ao calcular
 //   - window.toast(msg)     → aviso flutuante já usado no resto do app
 
-const VERDE = '#4dd87a';
-const VERMELHO = '#f08060';
+const VERDE = 'var(--verde2)';
+const VERMELHO = 'var(--perigo)';
 const AMARELO = 'var(--ouro)';
 
 function calcEV(prob, odd) {

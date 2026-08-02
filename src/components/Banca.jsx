@@ -34,8 +34,8 @@ function rotuloDia(dataStr) {
 }
 
 const ROTULOS_MOV = {
-  deposito: { label: 'Depósito', icone: ArrowDownCircle, cor: '#4dd87a', sinal: '+' },
-  retirada: { label: 'Retirada', icone: ArrowUpCircle, cor: '#f08060', sinal: '-' },
+  deposito: { label: 'Depósito', icone: ArrowDownCircle, cor: 'var(--verde2)', sinal: '+' },
+  retirada: { label: 'Retirada', icone: ArrowUpCircle, cor: 'var(--perigo)', sinal: '-' },
   carteira_reserva: { label: 'Carteira → Reserva', icone: ShieldPlus, cor: 'var(--ouro)', sinal: '-' },
   reserva_carteira: { label: 'Reserva → Carteira', icone: Undo2, cor: 'var(--ouro)', sinal: '+' },
 };
@@ -86,7 +86,7 @@ function AbaCarteira() {
     <>
       <div style={{ background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 12, padding: 16, textAlign: 'center', marginBottom: 10 }}>
         <div style={{ fontSize: 10, color: 'var(--texto2)', textTransform: 'uppercase', letterSpacing: '.8px', marginBottom: 4 }}><Wallet size={12} style={{ verticalAlign: -2, marginRight: 4 }} />Saldo da Banca</div>
-        <div style={{ fontSize: 30, fontWeight: 900, color: '#4dd87a' }}>R$ {c.saldo.toFixed(2)}</div>
+        <div style={{ fontSize: 30, fontWeight: 900, color: 'var(--verde2)' }}>R$ {c.saldo.toFixed(2)}</div>
       </div>
       <div style={{ background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 12, padding: 14, textAlign: 'center', marginBottom: 14 }}>
         <div style={{ fontSize: 10, color: 'var(--texto2)', textTransform: 'uppercase', letterSpacing: '.8px', marginBottom: 4 }}><ShieldHalf size={12} style={{ verticalAlign: -2, marginRight: 4 }} />Reserva da Banca</div>
@@ -94,20 +94,20 @@ function AbaCarteira() {
       </div>
 
       <Grupo titulo={<><ArrowLeftRight size={11} /> Depósitos / Retiradas</>}>
-        <StatBoxSeta icone={ArrowDown} val={'R$ ' + c.depositos.toFixed(2)} lbl="Depósitos" cor="#4dd87a" />
-        <StatBoxSeta icone={ArrowUp} val={'R$ ' + c.retiradas.toFixed(2)} lbl="Retiradas" cor="#f08060" />
+        <StatBoxSeta icone={ArrowDown} val={'R$ ' + c.depositos.toFixed(2)} lbl="Depósitos" cor="var(--verde2)" />
+        <StatBoxSeta icone={ArrowUp} val={'R$ ' + c.retiradas.toFixed(2)} lbl="Retiradas" cor="var(--perigo)" />
       </Grupo>
 
       <Grupo titulo={<><BarChart3 size={11} /> Performance</>}>
-        <StatBox val={(c.pl >= 0 ? '+' : '') + 'R$ ' + c.pl.toFixed(2)} lbl="P&L" cor={c.pl >= 0 ? '#4dd87a' : '#f08060'} />
-        <StatBox val={(c.roi >= 0 ? '+' : '') + c.roi + '%'} lbl="ROI" cor={c.roi >= 0 ? '#4dd87a' : '#f08060'} />
+        <StatBox val={(c.pl >= 0 ? '+' : '') + 'R$ ' + c.pl.toFixed(2)} lbl="P&L" cor={c.pl >= 0 ? 'var(--verde2)' : 'var(--perigo)'} />
+        <StatBox val={(c.roi >= 0 ? '+' : '') + c.roi + '%'} lbl="ROI" cor={c.roi >= 0 ? 'var(--verde2)' : 'var(--perigo)'} />
         <StatBox val={c.taxaAcerto + '%'} lbl="Taxa de Acerto" />
       </Grupo>
 
       <Grupo titulo={<><Target size={11} /> Atividade</>}>
         <StatBox val={c.entradas} lbl="Entradas" />
-        <StatBox val={c.greens} lbl="Greens" cor="#4dd87a" />
-        <StatBox val={c.reds} lbl="Reds" cor="#f08060" />
+        <StatBox val={c.greens} lbl="Greens" cor="var(--verde2)" />
+        <StatBox val={c.reds} lbl="Reds" cor="var(--perigo)" />
       </Grupo>
 
       <Grupo titulo={<><Lightbulb size={11} /> Stake Recomendada</>}>
@@ -163,8 +163,8 @@ function AbaMovimentacoes() {
   });
 
   const acoes = [
-    { tipo: 'deposito', label: 'Depositar', icone: ArrowDownCircle, cor: '#4dd87a' },
-    { tipo: 'retirada', label: 'Retirar', icone: ArrowUpCircle, cor: '#f08060' },
+    { tipo: 'deposito', label: 'Depositar', icone: ArrowDownCircle, cor: 'var(--verde2)' },
+    { tipo: 'retirada', label: 'Retirar', icone: ArrowUpCircle, cor: 'var(--perigo)' },
     { tipo: 'carteira_reserva', label: 'Carteira → Reserva', icone: ShieldPlus, cor: 'var(--ouro)' },
     { tipo: 'reserva_carteira', label: 'Reserva → Carteira', icone: Undo2, cor: 'var(--ouro)' },
   ];
@@ -340,13 +340,13 @@ function AbaEvolucao() {
       <div className="grid2-resp">
         <GraficoLinha
           pontos={ev.pontosSaldo}
-          cor={atualSaldo >= iniSaldo ? '#4dd87a' : '#f08060'}
+          cor={atualSaldo >= iniSaldo ? 'var(--verde2)' : 'var(--perigo)'}
           titulo={<span style={{ fontSize: 11 }}><TrendingUp size={13} style={{ verticalAlign: -2, marginRight: 4 }} />Evolução da Banca</span>}
-          badge={{ texto: `${pctSaldo >= 0 ? '↑' : '↓'} ${Math.abs(pctSaldo).toFixed(2)}%`, cor: atualSaldo >= iniSaldo ? '#4dd87a' : '#f08060' }}
+          badge={{ texto: `${pctSaldo >= 0 ? '↑' : '↓'} ${Math.abs(pctSaldo).toFixed(2)}%`, cor: atualSaldo >= iniSaldo ? 'var(--verde2)' : 'var(--perigo)' }}
           rodape={[
             { label: 'Início', valor: 'R$ ' + iniSaldo.toFixed(2) },
-            { label: 'Lucro Total', valor: (atualSaldo - iniSaldo >= 0 ? '+' : '') + 'R$ ' + (atualSaldo - iniSaldo).toFixed(2), cor: atualSaldo >= iniSaldo ? '#4dd87a' : '#f08060' },
-            { label: 'Atual', valor: 'R$ ' + atualSaldo.toFixed(2), cor: '#4dd87a' },
+            { label: 'Lucro Total', valor: (atualSaldo - iniSaldo >= 0 ? '+' : '') + 'R$ ' + (atualSaldo - iniSaldo).toFixed(2), cor: atualSaldo >= iniSaldo ? 'var(--verde2)' : 'var(--perigo)' },
+            { label: 'Atual', valor: 'R$ ' + atualSaldo.toFixed(2), cor: 'var(--verde2)' },
           ]}
         />
         <GraficoLinha
@@ -369,13 +369,13 @@ function AbaEvolucao() {
 
       <div className="grid2-resp">
         <div className="card" style={{ marginBottom: 0 }}>
-          <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11 }}><Target size={13} color="#4dd87a" />Meta Diária</div>
+          <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11 }}><Target size={13} color="var(--verde2)" />Meta Diária</div>
           {r.metaDiaria > 0 ? (
             <>
               <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
                 <div style={{ flex: 1, background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 8, padding: '8px 6px', textAlign: 'center' }}>
                   <div style={{ fontSize: 9, color: 'var(--texto2)', textTransform: 'uppercase' }}>Lucro Atual</div>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: r.plHoje >= 0 ? '#4dd87a' : '#f08060' }}>{r.plHoje >= 0 ? '+' : ''}R$ {r.plHoje.toFixed(2)}</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: r.plHoje >= 0 ? 'var(--verde2)' : 'var(--perigo)' }}>{r.plHoje >= 0 ? '+' : ''}R$ {r.plHoje.toFixed(2)}</div>
                 </div>
                 <div style={{ flex: 1, background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 8, padding: '8px 6px', textAlign: 'center' }}>
                   <div style={{ fontSize: 9, color: 'var(--texto2)', textTransform: 'uppercase' }}>Meta</div>
@@ -384,10 +384,10 @@ function AbaEvolucao() {
               </div>
               <div style={{ fontSize: 9, color: 'var(--texto2)', textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: 2 }}>Progresso</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ flex: 1 }}><BarraProgresso pct={r.progressoMeta} cor="#4dd87a" /></div>
-                <strong style={{ color: '#4dd87a', fontSize: 13 }}>{r.progressoMeta}%</strong>
+                <div style={{ flex: 1 }}><BarraProgresso pct={r.progressoMeta} cor="var(--verde2)" /></div>
+                <strong style={{ color: 'var(--verde2)', fontSize: 13 }}>{r.progressoMeta}%</strong>
               </div>
-              <div style={{ marginTop: 8, fontSize: 11, fontWeight: 600, color: r.metaBatida ? '#4dd87a' : 'var(--texto2)' }}>
+              <div style={{ marginTop: 8, fontSize: 11, fontWeight: 600, color: r.metaBatida ? 'var(--verde2)' : 'var(--texto2)' }}>
                 {r.metaBatida ? '🎯 Meta do dia batida!' : `Falta R$ ${r.faltaMeta.toFixed(2)} para bater sua meta`}
               </div>
             </>
@@ -397,17 +397,17 @@ function AbaEvolucao() {
         </div>
 
         <div className="card" style={{ marginBottom: 0 }}>
-          <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11 }}><ShieldAlert size={13} color="#f08060" />Controle de Stop</div>
+          <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11 }}><ShieldAlert size={13} color="var(--perigo)" />Controle de Stop</div>
           {(r.stopGain > 0 || r.stopLoss > 0) ? (
             <>
               {r.stopGain > 0 && (
-                <LinhaStop titulo="Stop Gain" cor="#4dd87a" atingido={r.stopGainAtingido}
+                <LinhaStop titulo="Stop Gain" cor="var(--verde2)" atingido={r.stopGainAtingido}
                   valorLabel="Meta" valor={'R$ ' + r.stopGain.toFixed(2)}
                   faltaLabel="Falta" falta={'R$ ' + r.faltaStopGain.toFixed(2)} />
               )}
               {r.stopLoss > 0 && (
                 <div style={{ marginBottom: 0, paddingBottom: 0, borderBottom: 'none' }}>
-                  <LinhaStop titulo="Stop Loss" cor="#f08060" atingido={r.stopLossAtingido}
+                  <LinhaStop titulo="Stop Loss" cor="var(--perigo)" atingido={r.stopLossAtingido}
                     valorLabel="Limite" valor={'-R$ ' + r.stopLoss.toFixed(2)}
                     faltaLabel="Falta" falta={'R$ ' + r.faltaStopLoss.toFixed(2)} />
                 </div>
@@ -426,14 +426,14 @@ function AbaEvolucao() {
             <span style={{ fontSize: 10.5, color: 'var(--texto2)', fontWeight: 700 }}>Hoje</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
-            <StatBox val={r.entradasHoje} lbl="Entradas" cor="#4d9dd8" />
-            <StatBox val={r.greensHoje} lbl="Greens" cor="#4dd87a" />
-            <StatBox val={r.redsHoje} lbl="Reds" cor="#f08060" />
-            <StatBox val={(r.plHoje >= 0 ? '+' : '') + 'R$ ' + r.plHoje.toFixed(2)} lbl="P&L do Dia" cor={r.plHoje >= 0 ? '#4dd87a' : '#f08060'} />
+            <StatBox val={r.entradasHoje} lbl="Entradas" cor="var(--texto2)" />
+            <StatBox val={r.greensHoje} lbl="Greens" cor="var(--verde2)" />
+            <StatBox val={r.redsHoje} lbl="Reds" cor="var(--perigo)" />
+            <StatBox val={(r.plHoje >= 0 ? '+' : '') + 'R$ ' + r.plHoje.toFixed(2)} lbl="P&L do Dia" cor={r.plHoje >= 0 ? 'var(--verde2)' : 'var(--perigo)'} />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 10, borderTop: '1px solid var(--c3)' }}>
             <span style={{ fontSize: 11, color: 'var(--texto2)' }}>Taxa de acerto<br />do dia</span>
-            <AnelProgresso pct={r.taxaAcertoHoje} cor="#4dd87a" />
+            <AnelProgresso pct={r.taxaAcertoHoje} cor="var(--verde2)" />
           </div>
         </div>
 
@@ -443,8 +443,8 @@ function AbaEvolucao() {
             <span style={{ fontSize: 10.5, color: 'var(--texto2)', fontWeight: 700 }}>{mesLabelAtual()}</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            <StatBox val={(r.plMes >= 0 ? '+' : '') + 'R$ ' + r.plMes.toFixed(2)} lbl="Lucro" cor={r.plMes >= 0 ? '#4dd87a' : '#f08060'} />
-            <StatBox val={(r.roiMes >= 0 ? '+' : '') + r.roiMes + '%'} lbl="ROI" cor={r.roiMes >= 0 ? '#4dd87a' : '#f08060'} />
+            <StatBox val={(r.plMes >= 0 ? '+' : '') + 'R$ ' + r.plMes.toFixed(2)} lbl="Lucro" cor={r.plMes >= 0 ? 'var(--verde2)' : 'var(--perigo)'} />
+            <StatBox val={(r.roiMes >= 0 ? '+' : '') + r.roiMes + '%'} lbl="ROI" cor={r.roiMes >= 0 ? 'var(--verde2)' : 'var(--perigo)'} />
             <StatBox val={r.taxaAcertoMes + '%'} lbl="Taxa de Acerto" />
             <StatBox val={r.entradasMes} lbl="Entradas" />
           </div>
@@ -454,15 +454,15 @@ function AbaEvolucao() {
       <div className="card">
         <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Trophy size={14} />Recordes</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          <StatBox val={ev.melhorSequencia} lbl="Melhor Sequência · Greens" cor="#4dd87a" />
-          <StatBox val={ev.piorSequencia} lbl="Pior Sequência · Reds" cor="#f08060" />
+          <StatBox val={ev.melhorSequencia} lbl="Melhor Sequência · Greens" cor="var(--verde2)" />
+          <StatBox val={ev.piorSequencia} lbl="Pior Sequência · Reds" cor="var(--perigo)" />
           <div style={{ background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 8, padding: '14px 10px', textAlign: 'center' }}>
-            <div style={{ fontSize: 16, fontWeight: 800, color: '#4dd87a' }}>{r.maiorLucroDia ? '+R$ ' + r.maiorLucroDia.valor.toFixed(2) : '—'}</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--verde2)' }}>{r.maiorLucroDia ? '+R$ ' + r.maiorLucroDia.valor.toFixed(2) : '—'}</div>
             <div style={{ fontSize: 9, color: 'var(--texto2)', textTransform: 'uppercase', marginTop: 4 }}>Maior Lucro em um Dia</div>
             {r.maiorLucroDia && <div style={{ fontSize: 9, color: 'var(--texto2)', marginTop: 3 }}>{window.fd ? window.fd(r.maiorLucroDia.data) : r.maiorLucroDia.data}</div>}
           </div>
           <div style={{ background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 8, padding: '14px 10px', textAlign: 'center' }}>
-            <div style={{ fontSize: 16, fontWeight: 800, color: '#f08060' }}>{r.maiorPrejuizoDia ? 'R$ ' + r.maiorPrejuizoDia.valor.toFixed(2) : '—'}</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--perigo)' }}>{r.maiorPrejuizoDia ? 'R$ ' + r.maiorPrejuizoDia.valor.toFixed(2) : '—'}</div>
             <div style={{ fontSize: 9, color: 'var(--texto2)', textTransform: 'uppercase', marginTop: 4 }}>Maior Prejuízo em um Dia</div>
             {r.maiorPrejuizoDia && <div style={{ fontSize: 9, color: 'var(--texto2)', marginTop: 3 }}>{window.fd ? window.fd(r.maiorPrejuizoDia.data) : r.maiorPrejuizoDia.data}</div>}
           </div>
@@ -493,7 +493,7 @@ function CrescimentoMensal({ dados }) {
           {visiveis.map((m) => (
             <div key={m.mes} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid var(--c3)' }}>
               <span style={{ color: 'var(--texto2)', fontSize: 12 }}>{m.mes}</span>
-              <strong style={{ color: m.pl >= 0 ? '#4dd87a' : '#f08060' }}>{m.pl >= 0 ? '+' : ''}R$ {m.pl.toFixed(2)}</strong>
+              <strong style={{ color: m.pl >= 0 ? 'var(--verde2)' : 'var(--perigo)' }}>{m.pl >= 0 ? '+' : ''}R$ {m.pl.toFixed(2)}</strong>
             </div>
           ))}
           {temMais && (

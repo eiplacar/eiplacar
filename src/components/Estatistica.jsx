@@ -42,7 +42,7 @@ function CampeonatoOptions({ camps }) {
   );
 }
 
-function corPct(p) { return p >= 70 ? '#4dd87a' : p >= 50 ? 'var(--ouro)' : '#f08060'; }
+function corPct(p) { return p >= 70 ? 'var(--verde2)' : p >= 50 ? 'var(--ouro)' : 'var(--perigo)'; }
 
 export default function Estatistica() {
   const [, setTick] = useState(0);

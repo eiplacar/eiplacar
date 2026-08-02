@@ -121,7 +121,7 @@ export default function SeletorAnalise() {
           <button
             onClick={() => window.compartilhar?.()}
             title="Compartilhar análise"
-            style={{ flexShrink: 0, background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 8, width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--azul)', cursor: 'pointer' }}
+            style={{ flexShrink: 0, background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 8, width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--texto2)', cursor: 'pointer' }}
           >
             <Share2 size={14} />
           </button>

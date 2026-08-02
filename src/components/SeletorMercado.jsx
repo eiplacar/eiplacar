@@ -172,7 +172,7 @@ export default function SeletorMercado({ aberto, operacao = 'bet', onFechar, onS
                     Mais de {linha}
                   </button>
                   <button type="button" onClick={() => finalizar(`${prefixoTempo()}Menos de ${linha} ${NOME_UNIDADE[categoria]}`)}
-                    style={{ padding: '10px 8px', borderRadius: 8, border: '1px solid #e05555', background: 'rgba(224,85,85,.12)', color: '#e05555', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>
+                    style={{ padding: '10px 8px', borderRadius: 8, border: '1px solid var(--perigo)', background: 'rgba(224,85,85,.12)', color: 'var(--perigo)', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>
                     Menos de {linha}
                   </button>
                 </Fragment>
@@ -188,7 +188,7 @@ export default function SeletorMercado({ aberto, operacao = 'bet', onFechar, onS
                     Ambas Marcam
                   </button>
                   <button type="button" onClick={() => finalizar(`${prefixoTempo()}Não Marcam`)}
-                    style={{ padding: '10px 8px', borderRadius: 8, border: '1px solid #e05555', background: 'rgba(224,85,85,.12)', color: '#e05555', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>
+                    style={{ padding: '10px 8px', borderRadius: 8, border: '1px solid var(--perigo)', background: 'rgba(224,85,85,.12)', color: 'var(--perigo)', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>
                     Não Marcam
                   </button>
                 </div>
@@ -227,7 +227,7 @@ export default function SeletorMercado({ aberto, operacao = 'bet', onFechar, onS
                 A Favor (Back)
               </button>
               <button type="button" onClick={() => finalizarComBackLay('lay')}
-                style={{ padding: 14, borderRadius: 10, border: '2px solid #4d90d8', background: 'rgba(77,144,216,.15)', color: '#4d90d8', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>
+                style={{ padding: 14, borderRadius: 10, border: '2px solid var(--texto2)', background: 'rgba(209,213,219,.15)', color: 'var(--texto2)', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>
                 Contra (Lay)
               </button>
             </div>

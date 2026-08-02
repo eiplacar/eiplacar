@@ -29,8 +29,8 @@ function celulaMinutos(j) {
 function celulaCartoes(j) {
   const tem = j.amarelosC != null || j.amarelosV != null || j.vermelhosC != null || j.vermelhosV != null;
   if (!tem) return '—';
-  const icoAmarelo = '<svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="#e0c23c" stroke="#e0c23c" stroke-width="2" rx="3" style="vertical-align:-1px;margin-right:3px"><rect width="16" height="22" x="4" y="1" rx="2.5"/></svg>';
-  const icoVermelho = '<svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="#f08060" stroke="#f08060" stroke-width="2" style="vertical-align:-1px;margin-right:3px"><rect width="16" height="22" x="4" y="1" rx="2.5"/></svg>';
+  const icoAmarelo = '<svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="var(--ouro)" stroke="var(--ouro)" stroke-width="2" rx="3" style="vertical-align:-1px;margin-right:3px"><rect width="16" height="22" x="4" y="1" rx="2.5"/></svg>';
+  const icoVermelho = '<svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="var(--perigo)" stroke="var(--perigo)" stroke-width="2" style="vertical-align:-1px;margin-right:3px"><rect width="16" height="22" x="4" y="1" rx="2.5"/></svg>';
   return `<div style="white-space:nowrap">${icoAmarelo} ${j.amarelosC ?? 0} × ${j.amarelosV ?? 0}</div><div style="white-space:nowrap">${icoVermelho} ${j.vermelhosC ?? 0} × ${j.vermelhosV ?? 0}</div>`;
 }
 
