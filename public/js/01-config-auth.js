@@ -55,6 +55,40 @@ function authGetSessao(){
 function authSaveSessao(s){ localStorage.setItem(AUTH_KEY, JSON.stringify(s)); }
 function authClearSessao(){ localStorage.removeItem(AUTH_KEY); }
 
+// ── Renovação automática de sessão ──
+// Antes disso, o app pegava o token no login e nunca trocava por um novo — depois de
+// ~1h (validade padrão do Supabase) toda chamada passava a falhar com "JWT expired"
+// pra sempre, e a única saída era sair e entrar de novo. Agora: 1) confere de tempos
+// em tempos se falta pouco pra expirar e renova sozinho em segundo plano (o normal é
+// a pessoa nunca ver esse erro); 2) se mesmo assim uma chamada falhar por token
+// vencido, tenta renovar e repetir na hora — só pede login de novo se o refresh_token
+// (validade de dias, não horas) também já tiver expirado.
+async function authRefreshSessao(){
+  const sessao = authGetSessao();
+  if(!sessao?.refresh_token) return false;
+  try {
+    const res = await fetch(authUrl('/token?grant_type=refresh_token'), {
+      method: 'POST', headers: authHeadersBase(),
+      body: JSON.stringify({ refresh_token: sessao.refresh_token })
+    });
+    const data = await res.json();
+    if(!res.ok || !data.access_token) return false;
+    authSaveSessao(data);
+    return true;
+  } catch(e){ return false; }
+}
+async function authRenovarSeNecessario(){
+  const sessao = authGetSessao();
+  if(!sessao?.access_token || !sessao?.expires_at) return;
+  const faltamSegundos = sessao.expires_at - Math.floor(Date.now()/1000);
+  if(faltamSegundos < 300) await authRefreshSessao(); // menos de 5min pra vencer: renova já
+}
+setInterval(authRenovarSeNecessario, 4*60*1000); // confere a cada 4 minutos
+
+// Erro de token vencido que "escapou" da renovação automática (ex: celular ficou
+// horas com a tela apagada) — reconhece pela mensagem que o Supabase manda.
+function ehErroSessaoExpirada(msg){ return /jwt expired|pgrst303/i.test(msg||''); }
+
 function authMostrarMsg(texto, tipo){
   const el = document.getElementById('authMsg');
   el.textContent = texto;
@@ -508,7 +542,13 @@ function sbUrl(filtros) {
 function setSyncStatus(estado, msg) {
   const dot = document.getElementById('syncDot');
   const msgEl = document.getElementById('syncMsg');
+  const bar = document.querySelector('.sync-bar');
   dot.className = 'sync-dot ' + estado;
   msgEl.textContent = msg;
+  const clicavel = estado === 'erro' && /sessão expirada/i.test(msg + ''); // só a mensagem de sessão expirada é clicável
+  if(bar){
+    bar.style.cursor = clicavel ? 'pointer' : '';
+    bar.onclick = clicavel ? () => { authClearSessao(); location.reload(); } : null;
+  }
 }
 

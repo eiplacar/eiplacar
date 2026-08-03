@@ -34,6 +34,36 @@ function comEspeciaisPorUltimo(camps){
   return [...normais, ...especiais];
 }
 
+// ── País de cada campeonato — FALLBACK só pra jogos antigos que ainda não têm o
+// campo `pais` preenchido no banco (ver supabase/09-adicionar-coluna-pais.sql).
+// Todo jogo novo já vem com país real, digitado no cadastro — não precisa mais
+// adivinhar pelo nome. Esse dicionário deixa de ser necessário assim que todos
+// os jogos antigos forem migrados; mantido aqui só como rede de segurança.
+const PAIS_CAMPEONATO = {
+  'Série A': 'Brasil', 'Série B': 'Brasil', 'Série C': 'Brasil', 'Série D': 'Brasil',
+  'Copa do Brasil': 'Brasil', 'Carioca': 'Brasil', 'Paulista': 'Brasil', 'Mineiro': 'Brasil', 'Gaúcho': 'Brasil',
+  'Serie A': 'Itália', 'Serie B': 'Itália', 'Coppa Italia': 'Itália',
+  'Premier League': 'Inglaterra', 'Championship': 'Inglaterra', 'FA Cup': 'Inglaterra', 'EFL Cup': 'Inglaterra',
+  'La Liga': 'Espanha', 'La Liga 2': 'Espanha', 'Copa del Rey': 'Espanha',
+  'Bundesliga': 'Alemanha', '2. Bundesliga': 'Alemanha', 'DFB Pokal': 'Alemanha',
+  'Ligue 1': 'França', 'Ligue 2': 'França',
+  'Primeira Liga': 'Portugal',
+  'Eredivisie': 'Holanda',
+  'Liga Profesional': 'Argentina', 'Copa Argentina': 'Argentina',
+  'Liga MX': 'México',
+  'MLS': 'Estados Unidos',
+  'Champions League': 'Europa', 'Europa League': 'Europa', 'Conference League': 'Europa',
+  'Libertadores': 'América do Sul', 'Sul-Americana': 'América do Sul',
+  'Copa do Mundo': 'Mundial',
+};
+function paisDoCampeonato(nomeCamp){
+  if(!nomeCamp) return '';
+  if(PAIS_CAMPEONATO[nomeCamp]) return PAIS_CAMPEONATO[nomeCamp];
+  // Tenta pelo nome-base (ex: "Bundesliga 2" cai no mesmo país de "Bundesliga")
+  const base = nomeCamp.replace(/\s+([A-Z]|[0-9]+|I{1,3}|IV|V)$/i, '').trim();
+  return PAIS_CAMPEONATO[base] || '';
+}
+
 // Agrupa campeonatos com o mesmo nome base (ex: "Brasileirão A" e "Brasileirão B" → grupo "Brasileirão").
 // Detecta sufixo de letra (A, B...), número (2, 3...) ou romano (II, III...) no final do nome.
 function gruposCampeonato(camps){
@@ -48,21 +78,11 @@ function gruposCampeonato(camps){
     .map(base => ({ base, itens: sortNatural(grupos[base]) }));
 }
 
-// Monta as <option>/<optgroup> de uma lista de campeonatos, agrupando quando há mais de uma variante do mesmo nome base.
-// Ligas sem variante (só 1 com aquele nome) ficam juntas no grupo "Outras Ligas", ao final.
+// Monta as <option> de uma lista de campeonatos: lista simples e ordenada,
+// sem agrupar por liga/optgroup (amistoso e Copa do Mundo ficam por último).
 function optionsCampeonato(camps, selecionado){
-  const grupos = gruposCampeonato(camps);
-  const comVariante = grupos.filter(g=>g.itens.length>=2);
-  const soltas = grupos.filter(g=>g.itens.length<2).flatMap(g=>g.itens);
-
-  let html = comVariante.map(g=>
-    `<optgroup label="${g.base}">${g.itens.map(c=>`<option value="${c}" ${c===selecionado?'selected':''}>${c}</option>`).join('')}</optgroup>`
-  ).join('');
-
-  if(soltas.length){
-    html += `<optgroup label="Outras Ligas">${sortNatural(soltas).map(c=>`<option value="${c}" ${c===selecionado?'selected':''}>${c}</option>`).join('')}</optgroup>`;
-  }
-  return html;
+  const ordenados = comEspeciaisPorUltimo(gruposCampeonato(camps).flatMap(g=>g.itens));
+  return ordenados.map(c=>`<option value="${c}" ${c===selecionado?'selected':''}>${c}</option>`).join('');
 }
 
 // Converte texto digitado no padrão brasileiro (vírgula decimal, ex: "1,10") pra número.

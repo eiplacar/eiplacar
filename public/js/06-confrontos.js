@@ -5,6 +5,7 @@
 async function salvarJogo() {
   if (!temConfig()) { toast('⚠️ Sem conexão com o banco de dados', true); return; }
   const camp=document.getElementById('iCamp').value.trim();
+  const pais=document.getElementById('iPais').value.trim();
   const casa=document.getElementById('iCasa').value.trim();
   const vis=document.getElementById('iVis').value.trim();
   const data=document.getElementById('iData').value;
@@ -12,18 +13,25 @@ async function salvarJogo() {
 
   // Validações obrigatórias
   if(!camp)   { toast('⚠️ Informe o campeonato!'); document.getElementById('iCamp').focus(); return; }
+  if(!pais)   { toast('⚠️ Informe o país!'); document.getElementById('iPais').focus(); return; }
   if(!data)   { toast('⚠️ Informe a data do jogo!'); document.getElementById('iData').focus(); return; }
   if(!casa)   { toast('⚠️ Informe o time mandante!'); document.getElementById('iCasa').focus(); return; }
   if(!vis)    { toast('⚠️ Informe o time visitante!'); document.getElementById('iVis').focus(); return; }
   if(!rodada) { toast('⚠️ Informe a rodada/fase!'); document.getElementById('iRodada').focus(); return; }
   if(casa===vis){ toast('⚠️ Mandante e visitante não podem ser o mesmo time!'); return; }
 
+  // Bloqueia se esse nome de campeonato já existe cadastrado com OUTRO país — evita
+  // misturar duas ligas homônimas (ex: "Série A" do Brasil x "Série A" da Itália)
+  // nas Estatísticas, já que o nome do campeonato é a chave usada em todo o app.
+  const conflitoPais = jogosCache.find(j=>j.camp===camp && j.pais && j.pais!==pais);
+  if(conflitoPais){ toast(`⚠️ "${camp}" já está cadastrado como ${conflitoPais.pais}. Use um nome diferente pra este campeonato (ex: "${camp} (${pais})")`, true); return; }
+
   // Verificar duplicado
   const dup=jogosCache.find(j=>j.camp===camp&&j.casa===casa&&j.vis===vis&&j.data===data);
   if(dup){ toast('⚠️ Este jogo já está registrado nessa data!'); return; }
 
   const jogo = {
-    camp, data:document.getElementById('iData').value,
+    camp, pais, data:document.getElementById('iData').value,
     rodada:document.getElementById('iRodada').value.trim(),
     local:document.getElementById('iLocal').value.trim(),
     casa, vis,
@@ -45,7 +53,7 @@ async function salvarJogo() {
   if (!salvo) return;
 
   jogosCache.unshift({ ...salvo, gols: salvo.gols || [] });
-  ['iCamp','iRodada','iLocal','iCasa','iVis','iRC','iRV','iHTC','iHTV','iChutesC','iChutesV','iChutesGolC','iChutesGolV','iEscanteiosC','iEscanteiosV','iAmarelosC','iAmarelosV','iVermelhosC','iVermelhosV'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  ['iCamp','iPais','iRodada','iLocal','iCasa','iVis','iRC','iRV','iHTC','iHTV','iChutesC','iChutesV','iChutesGolC','iChutesGolV','iEscanteiosC','iEscanteiosV','iAmarelosC','iAmarelosV','iVermelhosC','iVermelhosV'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('iGC').value=0; document.getElementById('iGV').value=0;
   golsTemp=[]; syncNomes(); renderCampo(); renderGolsLista();
   sugCamp(); onCampInput(); atualizarHeader(); renderGeral();

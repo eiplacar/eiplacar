@@ -38,6 +38,12 @@
   --texto3:  #6B7280;
 }
 :root[data-theme="light"] body { color-scheme: light; }
+/* O menu lateral (.sidebar) usa var(--gramado) como fundo, que é sempre escuro
+   independente do tema. Sem isso, no modo claro o texto do menu herdava as
+   variáveis invertidas (--texto/--texto2/--branco) e ficava escuro sobre um
+   fundo também escuro, ficando ilegível. Aqui travamos essas variáveis dentro
+   do sidebar para continuarem claras mesmo com o tema claro ativo. */
+:root[data-theme="light"] .sidebar { --texto: #FFFFFF; --texto2: #D1D5DB; --texto3: #9CA3AF; --branco: #FFFFFF; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: var(--fonte-texto); background: var(--c1); color: var(--texto); min-height: 100vh; display: flex; flex-direction: column; color-scheme: dark; }
 
@@ -46,11 +52,11 @@ body { font-family: var(--fonte-texto); background: var(--c1); color: var(--text
 .card-title, .sec-title, .sel-card-title { font-family: var(--fonte-titulo); }
 .stat-box .num, .pb-pct, .seb-val, .fb-val, .num, .mb-pct, .pe-pct { font-family: var(--fonte-stat); }
 
-/* ── Escala tipográfica padrão EI Placar ──
-   Título da tela: 24px Semibold | Título das seções: 20px Bold |
-   Nome do campeonato: 18px Semibold | Números principais: 36px Bold |
-   Texto dos cards: 15px Regular | Menu lateral: 18px Medium |
-   Barra inferior: 15px Medium | Rodapé: 14px */
+/* ── Escala tipográfica padrão EI Placar (ajuste final) ──
+   Logo: 30px | Título das seções: 16px | Ícone do título: 20px |
+   Nome do campeonato: 15px | País: 12px | Números principais: 24-26px |
+   Texto dos cards: 12px | Menu lateral: 15px | Categorias do menu: 11px |
+   Barra inferior: 13px | Rodapé: 14px */
 .screen-title { font-family: var(--fonte-titulo); font-size: 24px; font-weight: 600; color: var(--texto); }
 
 /* HEADER */
@@ -152,24 +158,22 @@ main { flex: 1; padding: 16px; max-width: 900px; width: 100%; margin: 0 auto; pa
 /* GRADE DE CAMPEONATOS (Geral) — cartões em 2 colunas: ícone+nome, número grande de
    partidas disputadas na temporada e um selo (verde se tem jogo hoje, cinza se não tem) */
 .camp-list { display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; }
-.camp-row { background: var(--c1); border: 1px solid var(--c3); border-radius: 16px; padding: 12px; text-align: left; cursor: pointer; transition: all .15s; display: flex; flex-direction: column; gap: 6px; }
+.camp-row { background: var(--c1); border: 1px solid var(--c3); border-radius: 14px; padding: 12px; text-align: left; cursor: pointer; transition: all .15s; display: flex; flex-direction: column; }
 .camp-row:hover, .camp-row:active { border-color: var(--ouro); background: rgba(244,194,13,.06); }
-.camp-top { display: flex; align-items: center; gap: 6px; }
-.camp-ic { font-size: 18px; flex-shrink: 0; }
-.camp-nome { font-weight: 600; font-size: 15px; line-height: 1.25; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-.camp-bottom { display: flex; align-items: flex-end; justify-content: space-between; gap: 6px; }
-.camp-num { font-size: 26px; font-weight: 700; font-family: var(--fonte-stat); line-height: 1; }
-.camp-cap { font-size: 12px; font-weight: 400; color: var(--texto2); margin-top: 2px; }
-.camp-badge { flex-shrink: 0; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 20px; background: var(--c2-dest); color: var(--texto); white-space: nowrap; }
-.camp-badge.tem-jogo { background: rgba(34,197,94,.16); color: var(--verde2); }
+.camp-pais { font-size: 12px; font-weight: 500; color: var(--texto3); line-height: 1.2; }
+.camp-nome { font-weight: 600; font-size: 15px; color: var(--texto); line-height: 1.25; margin-top: 1px; margin-bottom: 10px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.camp-num { font-size: 25px; font-weight: 700; font-family: var(--fonte-stat); color: var(--texto); line-height: 1; }
+.camp-cap { font-size: 12px; font-weight: 400; color: var(--texto2); margin-top: 2px; margin-bottom: 8px; }
+.camp-badge { font-size: 11px; font-weight: 600; color: var(--texto2); }
+.camp-badge.tem-jogo { color: var(--verde2); }
 
 /* RESUMO (Geral) — 3 caixinhas: campeonatos / partidas na temporada (só das ligas com jogo
    hoje) / jogos de hoje. Altura reduzida (~15-20%) em relação à versão anterior. */
 .resumo-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
-.resumo-box { background: var(--c1); border: 1px solid var(--c3); border-radius: 16px; padding: 10px 8px; text-align: center; }
-.resumo-ic { font-size: 18px; margin-bottom: 4px; }
-.resumo-num { font-size: 26px; font-weight: 700; font-family: var(--fonte-stat); line-height: 1; }
-.resumo-lbl { font-size: 12px; font-weight: 400; color: var(--texto2); margin-top: 4px; }
+.resumo-box { background: var(--c1); border: 1px solid var(--c3); border-radius: 14px; padding: 12px 8px; text-align: center; }
+.resumo-ic { font-size: 16px; margin-bottom: 3px; }
+.resumo-num { font-size: 24px; font-weight: 700; font-family: var(--fonte-stat); line-height: 1; }
+.resumo-lbl { font-size: 12px; font-weight: 400; color: var(--texto2); margin-top: 3px; }
 
 @media(max-width:479px){
   .stat-box { padding: 12px 10px; }
@@ -450,12 +454,6 @@ tr:hover td { background: rgba(255,255,255,.03); }
 .tt-fill { height: 100%; background: var(--verde2); border-radius: 3px; }
 .tt-val  { font-size: 12px; font-weight: 700; color: var(--ouro); min-width: 28px; text-align: right; }
 
-/* CALCULADORA */
-.calc-linha { background: var(--c1); border: 1px solid var(--c3); border-radius: 16px; padding: 12px; margin-bottom: 12px; }
-.calc-linha-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-.calc-mercado-input { flex: 1; background: var(--c2); border: 1px solid var(--c3); border-radius: 7px; padding: 7px 10px; color: var(--texto); font-size: 13px; font-weight: 700; outline: none; }
-.calc-mercado-input:focus { border-color: var(--verde2); }
-.calc-del { background: none; border: none; color: var(--c3); font-size: 16px; cursor: pointer; padding: 4px; }
 .calc-del:hover { color: var(--perigo); }
 .calc-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .calc-field label { display: block; font-size: 10px; color: var(--texto2); margin-bottom: 4px; font-weight: 700; text-transform: uppercase; }
@@ -499,7 +497,7 @@ tr:hover td { background: rgba(255,255,255,.03); }
 .ei-val.pos { color:#4dd87a; }
 .ei-val.neg { color:#f08060; }
 
-#toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--verde2); color: #fff; padding: 11px 22px; border-radius: 30px; font-size: 13px; font-weight: 600; z-index: 999; transition: transform .3s; pointer-events: none; }
+#toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--verde2); color: #fff; padding: 11px 20px; border-radius: 14px; font-size: 13px; font-weight: 600; line-height: 1.35; text-align: center; max-width: min(88vw, 360px); z-index: 999; transition: transform .3s; pointer-events: none; }
 #toast.show { transform: translateX(-50%) translateY(0); }
 #toast.erro { background: var(--perigo); }
 footer { background: var(--c2); border-top: 1px solid var(--c3); text-align: center; padding: 10px; font-size: 14px; color: var(--texto2); margin-bottom: 58px; }

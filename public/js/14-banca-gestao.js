@@ -227,6 +227,11 @@ window.computeEvolucao = computeEvolucao;
 function sugCamp(){
   const camps=sortNatural([...new Set(jogosCache.map(j=>j.camp))]);
   document.getElementById('campSug').innerHTML=camps.map(c=>`<option value="${c}">`).join('');
+  const paisSugEl=document.getElementById('paisSug');
+  if(paisSugEl){
+    const paises=sortNatural([...new Set(jogosCache.map(j=>j.pais).filter(Boolean))]);
+    paisSugEl.innerHTML=paises.map(p=>`<option value="${p}">`).join('');
+  }
 }
 
 function onCampInput(){
@@ -241,7 +246,35 @@ function onCampInput(){
   // Sugerir rodadas do campeonato
   const rodadas=[...new Set(jogosDoCamp.map(j=>j.rodada).filter(Boolean))].sort();
   document.getElementById('rodadasSug').innerHTML=rodadas.map(r=>`<option value="${r}">`).join('');
+  // Auto-preencher país: se esse campeonato já foi cadastrado antes com um país,
+  // usa o mesmo — assim ninguém precisa redigitar (nem errar) o país toda vez.
+  const iPaisEl=document.getElementById('iPais');
+  if(iPaisEl && !iPaisEl.value){
+    const jaCadastrado = jogosDoCamp.find(j=>j.pais);
+    if(jaCadastrado) iPaisEl.value = jaCadastrado.pais;
+  }
+  verificarCampPaisDivergente();
   verificarDuplicado();
+}
+
+// Avisa se o campeonato digitado já existe no banco com um PAÍS DIFERENTE do que
+// está no campo agora — isso pega o caso de duas ligas com o mesmo nome (ex: "Série A"
+// do Brasil e "Série A" da Itália), que senão ficariam misturadas nas Estatísticas,
+// já que o nome do campeonato é a chave usada em todo o app pra agrupar os jogos.
+function verificarCampPaisDivergente(){
+  const el = document.getElementById('alertaCampPaisDivergente');
+  const txt = document.getElementById('alertaCampPaisDivergenteTexto');
+  if(!el || !txt) return;
+  const camp = document.getElementById('iCamp')?.value.trim();
+  const pais = document.getElementById('iPais')?.value.trim();
+  if(!camp || !pais){ el.style.display='none'; return; }
+  const outroPais = jogosCache.find(j=>j.camp===camp && j.pais && j.pais!==pais);
+  if(outroPais){
+    txt.textContent = `Já existe "${camp}" cadastrado como ${outroPais.pais}. Se for outro campeonato (outro país), use um nome diferente pra não misturar os dois nas estatísticas — ex: "${camp} (${pais})".`;
+    el.style.display='flex';
+  } else {
+    el.style.display='none';
+  }
 }
 
 function onTimeInput(){

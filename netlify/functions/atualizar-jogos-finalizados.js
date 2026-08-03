@@ -20,16 +20,32 @@ const GOAL_API_URL = 'https://api.goal-api.com/v1';
 // IDs das ligas na GOAL API → nome do campeonato que aparece no app.
 // Mesma lista de 10 ligas usada em jogos-do-dia.js.
 const NOMES_CAMP_POR_LIGA = new Map([
-  ['cmr77dvww00bfrx061thkr8z4', 'Brasileirão Série A'],
-  ['cmr77dvww00bgrx06cb9fmnv0', 'Brasileirão Série B'],
+  ['cmr77dvww00bfrx061thkr8z4', 'Série A'],
+  ['cmr77dvww00bgrx06cb9fmnv0', 'Série B'],
   ['cmr77dvkr005nrx06lp7rvp49', 'Premier League'],
   ['cmr77dvnt006nrx063v3w622e', 'La Liga'],
   ['cmr77dvgm0002rx06rt2uqxii', 'Bundesliga'],
   ['cmr77dvgm0001rx060h6ivt4p', 'Bundesliga 2'],
-  ['cmr77dvpd006yrx06zig7907g', 'Serie A (Itália)'],
+  ['cmr77dvpd006yrx06zig7907g', 'Serie A'],
   ['cmr77dvqg007crx06q1kaceyo', 'Ligue 1'],
   ['cmr77dvrh007vrx0664phtxs5', 'Eredivisie'],
   ['cmr77dw3900f5rx06j05wgzv4', 'UEFA Champions League'],
+]);
+
+// País de cada liga — mapeado pelo ID (não pelo nome), então não tem como dar
+// ambiguidade entre "Série A" do Brasil e "Serie A" da Itália: são IDs diferentes
+// na API, cada um com o país já sabido de antemão (ver comentário acima).
+const PAIS_POR_LIGA = new Map([
+  ['cmr77dvww00bfrx061thkr8z4', 'Brasil'],
+  ['cmr77dvww00bgrx06cb9fmnv0', 'Brasil'],
+  ['cmr77dvkr005nrx06lp7rvp49', 'Inglaterra'],
+  ['cmr77dvnt006nrx063v3w622e', 'Espanha'],
+  ['cmr77dvgm0002rx06rt2uqxii', 'Alemanha'],
+  ['cmr77dvgm0001rx060h6ivt4p', 'Alemanha'],
+  ['cmr77dvpd006yrx06zig7907g', 'Itália'],
+  ['cmr77dvqg007crx06q1kaceyo', 'França'],
+  ['cmr77dvrh007vrx0664phtxs5', 'Holanda'],
+  ['cmr77dw3900f5rx06j05wgzv4', 'Europa'],
 ]);
 
 function dataHojeSaoPaulo() {
@@ -258,6 +274,7 @@ export const handler = async function () {
       fixture_id: parseInt(f.apiId, 10),
       origem: 'goal-api',
       camp: NOMES_CAMP_POR_LIGA.get(f.leagueId),
+      pais: PAIS_POR_LIGA.get(f.leagueId),
       data: dataBrParaTexto(f.matchDate),
       rodada: formatarRodada(f.matchRound),
       local: f.matchStadium || '',

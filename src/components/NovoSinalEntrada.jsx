@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trophy, Swords, Flag, Clock, TrendingUp, Timer, DollarSign, CircleDot, FileText, Lightbulb, Eye, Plus, Shield, BarChart3 } from 'lucide-react';
+import { Trophy, Swords, Flag, Clock, TrendingUp, Timer, DollarSign, CircleDot, FileText, Lightbulb, Eye, Plus, Shield, BarChart3, Calendar } from 'lucide-react';
 
 // ══ Novo Sinal de Entrada (sub-aba dentro de Partidas) — quinto módulo migrado para React ══
 //
@@ -48,6 +48,7 @@ export default function NovoSinalEntrada() {
   const [casa, setCasa] = useState('');
   const [vis, setVis] = useState('');
   const [rodada, setRodada] = useState('');
+  const [data, setData] = useState(window.hojeBR ? window.hojeBR() : new Date().toISOString().slice(0, 10));
   const [hora, setHora] = useState('');
   const [min, setMin] = useState('');
   const [mercado, setMercado] = useState('');
@@ -64,17 +65,15 @@ export default function NovoSinalEntrada() {
   const [jogosApi, setJogosApi] = useState(null); // null = ainda não buscou
   const [extra, setExtra] = useState({ camp: '', casa: '', vis: '' }); // times/campeonato vindos da API que ainda não existem no histórico
 
-  async function buscarJogosDeHoje() {
+  async function buscarJogos() {
     setBuscandoApi(true);
     setJogosApi(null);
     try {
-      const hoje = new Date();
-      const dataStr = hoje.getFullYear() + '-' + String(hoje.getMonth() + 1).padStart(2, '0') + '-' + String(hoje.getDate()).padStart(2, '0');
-      const resp = await fetch(`/.netlify/functions/jogos-do-dia?data=${dataStr}`);
+      const resp = await fetch(`/.netlify/functions/jogos-do-dia?data=${data}`);
       const json = await resp.json();
       if (json.erro) { window.toast?.('⚠️ ' + json.erro); setJogosApi([]); return; }
       setJogosApi(json.jogos || []);
-      if (!json.jogos?.length) window.toast?.('Nenhum jogo encontrado pra hoje nas ligas configuradas');
+      if (!json.jogos?.length) window.toast?.('Nenhum jogo encontrado nessa data, nas ligas configuradas');
     } catch (e) {
       window.toast?.('⚠️ Erro ao buscar jogos da API');
       setJogosApi([]);
@@ -96,7 +95,6 @@ export default function NovoSinalEntrada() {
     setJogosApi(null);
     window.toast?.('⚽ Jogo preenchido a partir da API-Football!');
   }
-
   const jogosCache = window.jogosCache || [];
   const sortNatural = window.sortNatural || ((arr) => [...arr].sort());
   const gruposCampeonato = window.gruposCampeonato || ((camps) => camps.map((c) => ({ base: c, itens: [c] })));
@@ -162,20 +160,21 @@ export default function NovoSinalEntrada() {
 
     const lista = ophLoad();
     lista.push({
-      id: Date.now(), camp, casa, vis, rodada: rodada.trim(), horario,
+      id: Date.now(), camp, casa, vis, rodada: rodada.trim(), data, horario,
       mercado: mercado.trim(), minuto: minutoEntrada, odd, status,
       placar: placar.trim(), analise: analise.trim(), criadoEm: new Date().toISOString(),
     });
     ophSave(lista);
 
-    // Limpa o formulário pra montar o próximo sinal
+    // Limpa o formulário pra montar o próximo sinal — mantém campeonato e data
+    // (comum adicionar vários jogos seguidos do mesmo campeonato/dia)
     setRodada(''); setHora(''); setMin(''); setCasa(''); setVis('');
     setMercado(''); setMinutoEntrada(''); setOdd(''); setStatus('aguardando');
     setPlacar(''); setAnalise(''); setMostrarSugestoes(false);
 
     window.ophRenderLista?.();
     window.renderGeral?.();
-    window.toast?.('✅ Jogo adicionado à lista de hoje');
+    window.toast?.(data === (window.hojeBR?.() || data) ? '✅ Jogo adicionado à lista de hoje' : `✅ Jogo agendado para ${window.fd ? window.fd(data) : data}`);
   }
 
   const escudoCasaHtml = window.escudoImgOuIcone ? window.escudoImgOuIcone(casa) : null;
@@ -190,6 +189,7 @@ export default function NovoSinalEntrada() {
       camp ? `🏆 Campeonato: ${camp}` : null,
       casa || vis ? `⚽ ${casa || '—'} 🆚 ${vis || '—'}` : null,
       rodada ? `🏟️ Rodada: ${rodada}` : null,
+      data ? `📅 Data: ${window.fd ? window.fd(data) : data}` : null,
       horario ? `🕒 Horário: ${horario}` : null,
       mercado ? `📈 Mercado: ${mercado}` : null,
       minutoEntrada ? `⏱ Entrada: ${minutoEntrada}'` : null,
@@ -208,15 +208,26 @@ export default function NovoSinalEntrada() {
       {/* O título "Oportunidade" já aparece na sub-aba logo acima — não precisa repetir aqui dentro */}
 
       <div style={{ marginBottom: 14 }}>
+        <SectionLabel icon={Calendar}>Data</SectionLabel>
+        <input
+          type="date"
+          value={data}
+          onChange={(e) => setData(e.target.value)}
+          style={{ marginBottom: 8 }}
+        />
         <button
           type="button"
-          onClick={buscarJogosDeHoje}
+          onClick={buscarJogos}
           disabled={buscandoApi}
           className="btn"
           style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
         >
           <Swords size={13} />
-          {buscandoApi ? 'Buscando jogos de hoje…' : 'Buscar jogos de hoje (API-Football)'}
+          {buscandoApi
+            ? 'Buscando jogos…'
+            : data === (window.hojeBR ? window.hojeBR() : data)
+              ? 'Buscar jogos de hoje'
+              : `Buscar jogos de ${window.fd ? window.fd(data) : data}`}
         </button>
 
         {jogosApi && jogosApi.length > 0 && (

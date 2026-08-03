@@ -213,23 +213,17 @@ function StatCard({ icon, valor, label, caption, cor }) {
   );
 }
 
-// Barras de evolução real do cenário — cada barra é o % de confirmação
-// acumulado até aquele jogo (em ordem cronológica), calculado pelo backend
-// em cenarioLiga(). Mostra como a taxa foi se firmando com mais jogos.
-function MiniBars({ serie }) {
-  if (!serie || serie.length < 2) {
-    return <div style={{ height: 22, fontSize: 9, color: 'var(--texto2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Sem histórico suficiente pra evolução</div>;
+// Barra de progresso simples do % de confirmação do cenário (substitui as
+// antigas "barrinhas de evolução" — mais direto de ler.
+function BarraProgressoCenario({ pct }) {
+  if (pct == null) {
+    return <div style={{ height: 22, fontSize: 9, color: 'var(--texto2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Sem histórico suficiente</div>;
   }
-  const n = serie.length;
-  const w = 100 / n;
+  const cor = pct >= 50 ? 'var(--verde2)' : pct >= 25 ? 'var(--ouro)' : 'var(--perigo)';
   return (
-    <svg viewBox="0 0 100 26" width="100%" height="22" preserveAspectRatio="none">
-      {serie.map((v, i) => {
-        const h = Math.max(1.5, (v / 100) * 24);
-        const cor = v >= 50 ? 'var(--verde2)' : v >= 25 ? 'var(--ouro)' : 'var(--perigo)';
-        return <rect key={i} x={i * w + w * 0.18} y={26 - h} width={w * 0.64} height={h} rx="1" fill={cor} opacity={0.55 + (i / n) * 0.45} />;
-      })}
-    </svg>
+    <div style={{ background: 'var(--fundo3, #1c2426)', borderRadius: 4, height: 6, overflow: 'hidden', marginTop: 6 }}>
+      <div style={{ width: `${pct}%`, background: cor, height: '100%', borderRadius: 4 }} />
+    </div>
   );
 }
 
@@ -479,19 +473,17 @@ export default function Estrategias() {
               <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Timer size={14} /> Cenários de Entrada</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 {cenariosE.map((c, i) => {
-                  const dado = resultado.cenarios[i] || { pct: null, jogos: 0, serie: [] };
+                  const dado = resultado.cenarios[i] || { pct: null, jogos: 0 };
                   return (
                     <div key={c.id} className="sel-card" style={{ padding: '10px 8px', textAlign: 'center' }}>
                       <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>{c.placar} aos {c.minuto}'</div>
                       <div style={{ fontSize: 20, fontWeight: 800, color: corPct(dado.pct) }}>{dado.pct != null ? dado.pct + '%' : '—'}</div>
                       <div style={{ fontSize: 9.5, color: 'var(--texto2)', marginBottom: 6 }}>Confirmaram {mercadoLabel} ({dado.jogos} jogos)</div>
-                      <div style={{ fontSize: 9, color: 'var(--texto2)', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 3 }}>Evolução</div>
-                      <MiniBars serie={dado.serie} />
+                      <BarraProgressoCenario pct={dado.pct} />
                     </div>
                   );
                 })}
               </div>
-              <div style={{ fontSize: 10, color: 'var(--texto2)', marginTop: 8 }}>Placar e minuto de cada cenário são editados nos Filtros Avançados — dá pra filtrar tanto por 1º quanto por 2º tempo.</div>
             </div>
 
             {/* CRITÉRIOS DO SCORE */}

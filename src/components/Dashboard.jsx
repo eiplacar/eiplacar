@@ -24,7 +24,7 @@ export default function Dashboard() {
       <div className="card" id="ophListaCardDash" style={{ marginBottom: 14, display: 'none' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 12 }}>
           <div className="card-title" id="ophListaTituloDash" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <CalendarDays size={14} /> Jogos de Hoje (0)
+            <CalendarDays size={14} /> Jogos Agendados (0)
           </div>
           <button
             id="ophBtnCompartilharDash"

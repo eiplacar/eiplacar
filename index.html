@@ -311,11 +311,15 @@
     <h2>✏️ Editar Jogo</h2>
     <div class="fg fg2">
       <div><label>Campeonato</label><input type="text" id="eCamp"></div>
-      <div><label>Data</label><input type="date" id="eData"></div>
+      <div><label>País</label><input type="text" id="ePais"></div>
     </div>
     <div class="fg fg2">
+      <div><label>Data</label><input type="date" id="eData"></div>
       <div><label>Rodada / Fase</label><input type="text" id="eRodada"></div>
+    </div>
+    <div class="fg fg2">
       <div><label>Local / Estádio</label><input type="text" id="eLocal"></div>
+      <div></div>
     </div>
     <div class="fg fg2">
       <div><label>Time Mandante</label><input type="text" id="eCasa" oninput="syncNomesEdicao()"></div>
@@ -410,9 +414,8 @@
     <button class="nav-tab"        onclick="goTo('classificacao')" id="tab-classificacao"><span class="nav-ic" data-ic="medal"></span><span>Classificação</span></button>
 
     <div class="nav-group-title"><span data-ic="dollarSign" data-ic-size="13"></span>Ferramentas</div>
-    <button class="nav-tab"        onclick="goTo('calculadora')" id="tab-calculadora"><span class="nav-ic" data-ic="calculator"></span><span>Calculadora</span></button>
-    <button class="nav-tab" onclick="goTo('apostas')" id="tab-apostas"><span class="nav-ic" data-ic="target"></span><span>Apostas</span></button>
-    <button class="nav-tab"        onclick="goTo('banca')"     id="tab-banca"><span class="nav-ic" data-ic="wallet"></span><span>Banca</span></button>
+    <button class="nav-tab" onclick="goTo('apostas')" id="tab-apostas"><span class="nav-ic" data-ic="target"></span><span>Operações</span></button>
+    <button class="nav-tab"        onclick="goTo('banca')"     id="tab-banca"><span class="nav-ic" data-ic="wallet"></span><span>Capital</span></button>
     <button class="nav-tab"        onclick="goTo('estrategias')" id="tab-estrategias"><span class="nav-ic" data-ic="lightbulb"></span><span>Estratégias</span></button>
 
     <div class="nav-group-title"><span data-ic="star" data-ic-size="13"></span>Descubra</div>
@@ -420,7 +423,6 @@
     <button class="nav-tab" onclick="convidarAmigo();toggleSidebar(false)"><span class="nav-ic" data-ic="userPlus"></span><span>Convide um Amigo</span></button>
 
     <div class="nav-group-title"><span data-ic="messageCircle" data-ic-size="13"></span>Comunidade</div>
-    <button class="nav-tab" disabled title="Em breve" style="opacity:.4;cursor:default"><span class="nav-ic" data-ic="send"></span><span>Telegram</span></button>
     <button class="nav-tab" onclick="abrirEmail('suporte@eiplacar.com.br','Suporte - EI PLACAR');toggleSidebar(false)"><span class="nav-ic" data-ic="lifeBuoy"></span><span>Suporte</span></button>
     <button class="nav-tab" onclick="abrirEmail('sugestoes@eiplacar.com.br','Sugestão - EI PLACAR');toggleSidebar(false)"><span class="nav-ic" data-ic="messageSquare"></span><span>Sugestões e Feedback</span></button>
   </nav>
@@ -488,14 +490,6 @@
   <div id="analise-resultado-root"></div>
 </div>
 
-<!-- ══ CALCULADORA ══ -->
-<div class="page" id="page-calculadora">
-
-  <!-- Card 1: Calculadora de EV — componente React (src/components/CalculadoraEV.jsx) -->
-  <div id="calc-root"></div>
-
-</div>
-
 <!-- ══ APOSTAS ══ -->
 <div class="page" id="page-apostas">
   <div class="sub-nav" style="margin-bottom:14px">
@@ -561,7 +555,7 @@
   <button class="quicknav-btn active" id="qnav-geral"  onclick="irParaInicio()"><span data-ic="home" data-ic-size="18"></span><span>Início</span></button>
   <button class="quicknav-btn"        id="qnav-analise" onclick="goTo('analise')"><span data-ic="search" data-ic-size="18"></span><span>Análise</span></button>
   <button class="quicknav-btn"        id="qnav-futebol" onclick="goTo('futebol')"><span data-ic="trendingUp" data-ic-size="18"></span><span>Estatística</span></button>
-  <button class="quicknav-btn" id="qnav-apostas" onclick="goTo('apostas')"><span data-ic="target" data-ic-size="18"></span><span>Apostas</span></button>
+  <button class="quicknav-btn" id="qnav-apostas" onclick="goTo('apostas')"><span data-ic="target" data-ic-size="18"></span><span>Operações</span></button>
 </nav>
 
 <div id="toast"></div>

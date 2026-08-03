@@ -54,11 +54,24 @@ export default function AdicionarPartida() {
     <div className="card">
       {/* O título "Adicionar Partida" já aparece na sub-aba logo acima — não precisa repetir aqui dentro */}
 
-      {/* Campeonato */}
-      <div style={{ marginBottom: 12 }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Trophy size={13} /> Campeonato <span style={{ color: 'var(--perigo)' }}>*</span></label>
-        <input type="text" id="iCamp" placeholder="Ex: Brasileirão" list="campSug" onInput={() => window.onCampInput?.()} />
-        <datalist id="campSug"></datalist>
+      {/* Campeonato + País — país garante que "Série A" (Brasil) nunca se confunda
+          com "Serie A" (Itália) ou qualquer outro nome parecido de outro país */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+        <div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Trophy size={13} /> Campeonato <span style={{ color: 'var(--perigo)' }}>*</span></label>
+          <input type="text" id="iCamp" placeholder="Ex: Série A" list="campSug" onInput={() => window.onCampInput?.()} />
+          <datalist id="campSug"></datalist>
+        </div>
+        <div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Flag size={13} /> País <span style={{ color: 'var(--perigo)' }}>*</span></label>
+          <input type="text" id="iPais" placeholder="Ex: Brasil" list="paisSug" onInput={() => window.verificarCampPaisDivergente?.()} />
+          <datalist id="paisSug"></datalist>
+        </div>
+      </div>
+      {/* Alerta: mesmo nome de campeonato já usado antes com outro país */}
+      <div id="alertaCampPaisDivergente" style={{ display: 'none', alignItems: 'center', gap: 6, background: 'rgba(224,92,58,.15)', border: '1px solid var(--perigo)', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: 'var(--perigo)', marginBottom: 12 }}>
+        <AlertTriangle size={14} style={{ flexShrink: 0 }} />
+        <span id="alertaCampPaisDivergenteTexto" />
       </div>
 
       {/* Confronto — nome dos times + escudo aparece só aqui */}

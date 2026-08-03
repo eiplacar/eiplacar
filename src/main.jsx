@@ -1,6 +1,5 @@
 import { createRoot } from 'react-dom/client';
 import Dashboard from './components/Dashboard.jsx';
-import CalculadoraEV from './components/CalculadoraEV.jsx';
 import ListaPartidas from './components/ListaPartidas.jsx';
 import SeletorAnalise from './components/SeletorAnalise.jsx';
 import AnaliseResultado from './components/AnaliseResultado.jsx';
@@ -22,11 +21,6 @@ import Estrategias from './components/Estrategias.jsx';
 const dashboardRoot = document.getElementById('dashboard-root');
 if (dashboardRoot) {
   createRoot(dashboardRoot).render(<Dashboard />);
-}
-
-const calcRoot = document.getElementById('calc-root');
-if (calcRoot) {
-  createRoot(calcRoot).render(<CalculadoraEV />);
 }
 
 const dadosRoot = document.getElementById('dados-root');

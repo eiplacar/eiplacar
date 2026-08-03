@@ -15,8 +15,17 @@ function ophExpirado(j){
   if(!j.horario) return false;
   const [h,m] = j.horario.split(':').map(Number);
   if(isNaN(h)||isNaN(m)) return false;
-  const criado = j.criadoEm ? new Date(j.criadoEm) : new Date();
-  const base = new Date(criado.getFullYear(), criado.getMonth(), criado.getDate(), h, m, 0, 0);
+  // Usa a data real do jogo (j.data, "AAAA-MM-DD") quando existir — permite jogos
+  // agendados pra dias futuros. Itens antigos, salvos antes desse campo existir,
+  // caem no fallback de sempre (data em que foram adicionados = hoje).
+  let base;
+  if(j.data){
+    const [y,mo,d] = j.data.split('-').map(Number);
+    base = new Date(y, mo-1, d, h, m, 0, 0);
+  } else {
+    const criado = j.criadoEm ? new Date(j.criadoEm) : new Date();
+    base = new Date(criado.getFullYear(), criado.getMonth(), criado.getDate(), h, m, 0, 0);
+  }
   const limite = new Date(base.getTime() + 4*60*60*1000); // 4h depois do horário do jogo
   return new Date() > limite;
 }
@@ -51,17 +60,21 @@ function ophRenderLista(){
   const antes = lista.length;
   lista = lista.filter(j=>!ophExpirado(j)); // some sozinho 4h depois do horário
   if(lista.length !== antes) ophSave(lista);
-  lista.sort((a,b)=>(a.horario||'99:99').localeCompare(b.horario||'99:99'));
+  lista.sort((a,b)=>((a.data||'')+(a.horario||'99:99')).localeCompare((b.data||'')+(b.horario||'99:99')));
 
   // Limpa seleção de jogos que não existem mais (removidos ou expirados)
   const idsAtuais = new Set(lista.map(j=>j.id));
   [...ophSelecionados].forEach(id=>{ if(!idsAtuais.has(id)) ophSelecionados.delete(id); });
 
+  const hoje = window.hojeBR ? window.hojeBR() : null;
   const html = lista.map(j=>{
     const sel = ophSelecionados.has(j.id);
+    const foraDeHoje = j.data && hoje && j.data!==hoje;
+    const dataFmt = foraDeHoje ? (window.fd ? window.fd(j.data) : j.data) : null;
     return `
     <div onclick="ophToggleSelecao(${j.id})" style="flex:0 0 auto;width:140px;background:var(--c2);border:2px solid ${sel?'var(--verde2)':'var(--c3)'};border-radius:10px;padding:10px;text-align:center;position:relative;cursor:pointer">
       ${sel?'<div style="position:absolute;top:4px;left:4px;width:16px;height:16px;border-radius:50%;background:var(--verde2);color:#fff;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;line-height:1">✓</div>':''}
+      ${foraDeHoje?`<div style="position:absolute;top:4px;right:20px;background:var(--c2-dest);color:var(--ouro);font-size:8px;font-weight:700;padding:2px 5px;border-radius:8px">${dataFmt}</div>`:''}
       <button onclick="event.stopPropagation();ophRemover(${j.id})" style="position:absolute;top:2px;right:4px;background:none;border:none;color:var(--texto2);font-size:13px;cursor:pointer;padding:2px 4px">✕</button>
       <div style="width:30px;height:30px;margin:0 auto">${escudoImgOuIcone(j.casa)}</div>
       <div style="font-size:10.5px;font-weight:700;line-height:1.2;margin-top:2px">${j.casa||'—'}</div>
@@ -80,7 +93,9 @@ function ophRenderLista(){
   });
   ['ophListaTituloDash'].forEach(id=>{
     const el = document.getElementById(id);
-    if(el) el.textContent = `📋 Jogos de Hoje (${lista.length})`;
+    if(!el) return;
+    // "Jogos Agendados" porque a lista já pode ter jogos de dias futuros, não só hoje
+    el.textContent = `📋 Jogos Agendados (${lista.length})`;
   });
   const btnShare = document.getElementById('ophBtnCompartilharDash');
   if(btnShare) btnShare.style.display = ophSelecionados.size ? 'flex' : 'none';

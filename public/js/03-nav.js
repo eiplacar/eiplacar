@@ -25,7 +25,6 @@ function goTo(p) {
   if (p==='geral')       { renderGeral(); ophRenderLista(); }
   if (p==='dados')       { popularFiltroRodada(); renderDados(); }
   if (p==='analise')     { window.analiseReactRefresh?.(); renderAnalise(); }
-  if (p==='calculadora') { /* Calculadora de EV agora é componente React (src/main.jsx), auto-inicializa */ }
   if (p==='apostas')     { bpCarregarNuvem().then(()=>{ goSubApostas('nova-entrada'); window.resolvidasRefresh?.(); calcEntrada(); }); }
   if (p==='banca')       { window.bancaRefresh?.(); bpCarregarNuvem().then(()=>window.bancaRefresh?.()); }
   if (p==='futebol')     { window.estatisticaRefresh?.(); }

@@ -8,7 +8,7 @@ function abrirMenuBanca() { toastEsconder(); document.getElementById('modalMenuB
 function fecharMenuBanca() { document.getElementById('modalMenuBanca').classList.remove('open'); }
 
 // ══ CRUD via fetch REST ══
-async function carregarJogos() {
+async function carregarJogos(jaTentouRenovar) {
   if (!temConfig()) {
     setSyncStatus('config', 'Sem conexão com o banco de dados');
     jogosCache = []; renderAll(); return;
@@ -33,6 +33,17 @@ async function carregarJogos() {
     setSyncStatus('ok', `☁️ ${jogosCache.length} jogo(s) sincronizado(s)`);
     atualizarHeader(); renderAll(); sugCamp();
   } catch(e) {
+    if (ehErroSessaoExpirada(e.message) && !jaTentouRenovar) {
+      // Tenta renovar a sessão sozinho e repetir a busca uma vez, sem incomodar ninguém
+      const renovou = await authRefreshSessao();
+      if (renovou) { carregarJogos(true); return; }
+    }
+    if (ehErroSessaoExpirada(e.message)) {
+      // Não deu pra renovar sozinho (refresh_token também venceu) — mensagem limpa e
+      // clicável em vez do JSON cru travado na tela pra sempre.
+      setSyncStatus('erro', '⚠️ Sessão expirada — toque aqui pra entrar de novo');
+      return;
+    }
     setSyncStatus('erro', 'Erro: ' + e.message);
     toast('❌ Erro ao carregar: ' + e.message, true);
   }
@@ -105,6 +116,7 @@ function abrirEditarJogo(id){
   if(!j){ toast('⚠️ Jogo não encontrado'); return; }
   jogoEditandoId = id;
   document.getElementById('eCamp').value   = j.camp || '';
+  document.getElementById('ePais').value   = j.pais || '';
   document.getElementById('eData').value   = j.data || '';
   document.getElementById('eRodada').value = j.rodada || '';
   document.getElementById('eLocal').value  = j.local || '';
@@ -145,18 +157,23 @@ function campoIntOuNullEdit(id){
 async function confirmarEdicaoJogo(){
   if(jogoEditandoId==null) return;
   const camp   = document.getElementById('eCamp').value.trim();
+  const pais   = document.getElementById('ePais').value.trim();
   const data   = document.getElementById('eData').value;
   const rodada = document.getElementById('eRodada').value.trim();
   const casa   = document.getElementById('eCasa').value.trim();
   const vis    = document.getElementById('eVis').value.trim();
 
   if(!camp){ toast('⚠️ Informe o campeonato!'); return; }
+  if(!pais){ toast('⚠️ Informe o país!'); return; }
   if(!data){ toast('⚠️ Informe a data!'); return; }
   if(!casa || !vis){ toast('⚠️ Informe os dois times!'); return; }
   if(casa===vis){ toast('⚠️ Mandante e visitante não podem ser o mesmo time!'); return; }
 
+  const conflitoPais = jogosCache.find(j=>j.camp===camp && j.pais && j.pais!==pais && j.id!==jogoEditandoId);
+  if(conflitoPais){ toast(`⚠️ "${camp}" já está cadastrado como ${conflitoPais.pais}. Use um nome diferente pra este campeonato.`, true); return; }
+
   const dados = {
-    camp, data, rodada,
+    camp, pais, data, rodada,
     local: document.getElementById('eLocal').value.trim(),
     casa, vis,
     gC: parseInt(document.getElementById('eGC').value)||0,

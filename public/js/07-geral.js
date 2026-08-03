@@ -7,14 +7,34 @@ function renderGeral(){
   const jogos = campSel ? jogosCache.filter(j=>j.camp===campSel) : [];
 
   // ── Grade de campeonatos: sempre atualizada, é o ponto de entrada da página ──
-  const cMap={}; jogosCache.forEach(j=>cMap[j.camp]=(cMap[j.camp]||0)+1);
+  // O nome do campeonato (`camp`) continua sendo a chave única usada em todo o app
+  // (filtros, estatísticas, etc.) — o que mudou é que o país exibido no card agora
+  // vem do dado real de cada jogo (`pais`), não mais adivinhado pelo nome. Por isso
+  // é importante nunca reaproveitar o mesmo nome de campeonato pra países diferentes.
+  const cMap={}; const paisPorCamp={};
+  jogosCache.forEach(j=>{
+    cMap[j.camp]=(cMap[j.camp]||0)+1;
+    if(j.pais && !paisPorCamp[j.camp]) paisPorCamp[j.camp]=j.pais;
+  });
   const ordemCamps = comEspeciaisPorUltimo(gruposCampeonato(Object.keys(cMap)).flatMap(g=>g.itens));
   const ent = ordemCamps.map(n=>[n,cMap[n]]);
 
-  // Jogos de hoje (lista da Aba Oportunidades) — usada no Resumo e no selo de cada liga.
-  const hojeLista = (window.ophLoad ? window.ophLoad() : []).filter(j=> window.ophExpirado ? !window.ophExpirado(j) : true);
+  // Jogos de hoje e jogos agendados pra depois (lista da Aba Oportunidades) —
+  // usados no Resumo e no selo de cada liga. Itens sem `data` (salvos antes desse
+  // campo existir) contam como "hoje", pra não sumir nada de quem já usava a lista.
+  const hoje = window.hojeBR ? window.hojeBR() : null;
+  const listaAtiva = (window.ophLoad ? window.ophLoad() : []).filter(j=> window.ophExpirado ? !window.ophExpirado(j) : true);
+  const hojeLista = listaAtiva.filter(j=>!j.data || j.data===hoje);
+  const futurosLista = listaAtiva.filter(j=>j.data && hoje && j.data>hoje);
   const hojePorCamp = {};
   hojeLista.forEach(j=>{ if(j.camp) hojePorCamp[j.camp] = (hojePorCamp[j.camp]||0)+1; });
+  // Próximo jogo agendado por campeonato (a data mais próxima no futuro), pra mostrar
+  // no card quando não tiver jogo hoje — em vez de só cravar "0 jogos hoje".
+  const proximoPorCamp = {};
+  futurosLista.forEach(j=>{
+    if(!j.camp) return;
+    if(!proximoPorCamp[j.camp] || j.data<proximoPorCamp[j.camp]) proximoPorCamp[j.camp]=j.data;
+  });
 
   // Resumo: Campeonatos / Partidas na Temporada (só das ligas com jogo hoje, se houver) / Jogos de hoje
   const ligasComJogoHoje = new Set(hojeLista.map(j=>j.camp).filter(Boolean));
@@ -31,12 +51,20 @@ function renderGeral(){
   document.getElementById('campList').innerHTML = ent.length
     ? `<div class="camp-list">${ent.map(([n,c])=>{
         const qtdHoje = hojePorCamp[n]||0;
+        const pais = paisPorCamp[n] || paisDoCampeonato(n);
+        // Selo dinâmico: jogo(s) hoje (verde) > próximo jogo agendado (neutro) > nada (sem selo)
+        let selo = '';
+        if(qtdHoje){
+          selo = `<div class="camp-badge tem-jogo">${qtdHoje} jogo${qtdHoje===1?'':'s'} hoje</div>`;
+        } else if(proximoPorCamp[n]){
+          selo = `<div class="camp-badge">Próximo: ${fd(proximoPorCamp[n])}</div>`;
+        }
         return `<div class="camp-row" onclick="filtrarCamp('${n}')">
-          <div class="camp-top"><span class="camp-ic">🏆</span><span class="camp-nome">${n}</span></div>
-          <div class="camp-bottom">
-            <div><div class="camp-num">${c}</div><div class="camp-cap">partidas disputadas</div></div>
-            <div class="camp-badge ${qtdHoje?'tem-jogo':''}">${qtdHoje} jogo${qtdHoje===1?'':'s'} hoje</div>
-          </div>
+          ${pais?`<div class="camp-pais">${pais}</div>`:''}
+          <div class="camp-nome">${n}</div>
+          <div class="camp-num">${c}</div>
+          <div class="camp-cap">partidas disputadas</div>
+          ${selo}
         </div>`;
       }).join('')}</div>`
     : `<div class="empty"><div class="icon">🏆</div><p>Sem campeonatos ainda.</p></div>`;
