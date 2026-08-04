@@ -296,7 +296,12 @@
 <div class="modal-overlay" id="modalEditarOportunidade">
   <div class="modal" style="max-width:380px">
     <h2 style="font-size:15px;margin-bottom:12px">✏️ Editar Oportunidade</h2>
-    <div id="ophEditConfronto" style="font-size:12px;color:var(--texto2);margin-bottom:14px"></div>
+    <div style="margin-bottom:10px"><label>Campeonato</label><input type="text" id="ophEditCamp" placeholder="Ex: Brasileirão Série A"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div><label>Mandante</label><input type="text" id="ophEditCasa"></div>
+      <div><label>Visitante</label><input type="text" id="ophEditVis"></div>
+    </div>
+    <div style="height:1px;background:var(--c3);margin:2px 0 14px"></div>
     <div style="margin-bottom:10px"><label>Mercado</label><input type="text" id="ophEditMercado" placeholder="Ex: Over 1.5"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
       <div><label>Minuto</label><input type="number" min="0" max="120" id="ophEditMinuto" placeholder="Ex: 33"></div>

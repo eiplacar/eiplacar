@@ -46,14 +46,17 @@ function ophRemover(id){
   renderGeral();
 }
 
-// ══ Edição de Mercado/Odd/Minuto/Situação — feita depois de cadastrar o jogo,
-// direto no card (ícone ✏️), já que o formulário de cadastro só cuida do jogo em si ══
+// ══ Edição de Campeonato/Times/Mercado/Odd/Minuto/Situação — feita direto no
+// card (ícone ✏️, só aparece quando o card tá selecionado), pra corrigir dado
+// errado (vindo da API ou digitado errado) antes de compartilhar ══
 let ophEditandoId = null;
 function ophAbrirEdicao(id){
   const j = ophLoad().find(x=>x.id===id);
   if(!j) return;
   ophEditandoId = id;
-  document.getElementById('ophEditConfronto').textContent = `⚽ ${j.casa||'—'} 🆚 ${j.vis||'—'}`;
+  document.getElementById('ophEditCamp').value = j.camp||'';
+  document.getElementById('ophEditCasa').value = j.casa||'';
+  document.getElementById('ophEditVis').value = j.vis||'';
   document.getElementById('ophEditMercado').value = j.mercado||'';
   document.getElementById('ophEditMinuto').value = j.minuto||'';
   document.getElementById('ophEditOdd').value = j.odd||'';
@@ -69,6 +72,12 @@ function ophSalvarEdicao(){
   const lista = ophLoad();
   const j = lista.find(x=>x.id===ophEditandoId);
   if(!j){ ophFecharEdicao(); return; }
+  const casa = document.getElementById('ophEditCasa').value.trim();
+  const vis = document.getElementById('ophEditVis').value.trim();
+  if(!casa || !vis){ toast?.('⚠️ Preencha Mandante e Visitante'); return; }
+  j.camp = document.getElementById('ophEditCamp').value.trim();
+  j.casa = casa;
+  j.vis = vis;
   j.mercado = document.getElementById('ophEditMercado').value.trim();
   j.minuto = document.getElementById('ophEditMinuto').value;
   j.odd = document.getElementById('ophEditOdd').value;
@@ -76,6 +85,7 @@ function ophSalvarEdicao(){
   ophSave(lista);
   ophFecharEdicao();
   ophRenderLista();
+  renderGeral();
   toast?.('💾 Oportunidade atualizada!');
 }
 
@@ -109,7 +119,7 @@ function ophRenderLista(){
     <div onclick="ophToggleSelecao(${j.id})" style="flex:0 0 auto;width:150px;background:var(--c2);border:2px solid ${sel?'var(--verde2)':'var(--c3)'};border-radius:10px;padding:10px;text-align:center;position:relative;cursor:pointer">
       ${sel?'<div style="position:absolute;top:4px;left:4px;width:16px;height:16px;border-radius:50%;background:var(--verde2);color:#fff;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;line-height:1">✓</div>':''}
       ${foraDeHoje?`<div style="position:absolute;top:4px;right:38px;background:var(--c2-dest);color:var(--ouro);font-size:8px;font-weight:700;padding:2px 5px;border-radius:8px">${dataFmt}</div>`:''}
-      <button onclick="event.stopPropagation();ophAbrirEdicao(${j.id})" title="Editar Mercado/Odd/Situação" style="position:absolute;top:2px;right:22px;background:none;border:none;color:var(--texto2);font-size:13px;cursor:pointer;padding:2px 4px">✏️</button>
+      <button onclick="event.stopPropagation();ophAbrirEdicao(${j.id})" title="Editar Campeonato/Times/Mercado/Odd/Situação" style="position:absolute;top:2px;right:22px;background:none;border:none;color:var(--texto2);font-size:13px;cursor:${sel?'pointer':'default'};padding:2px 4px;display:${sel?'block':'none'}">✏️</button>
       <button onclick="event.stopPropagation();ophRemover(${j.id})" style="position:absolute;top:2px;right:4px;background:none;border:none;color:var(--texto2);font-size:13px;cursor:pointer;padding:2px 4px">✕</button>
       <div style="width:30px;height:30px;margin:0 auto">${escudoImgOuIcone(j.casa)}</div>
       <div style="font-size:10.5px;font-weight:700;line-height:1.2;margin-top:2px">${j.casa||'—'}</div>
@@ -120,7 +130,7 @@ function ophRenderLista(){
       <div style="font-size:9px;color:var(--texto2);margin-top:2px">${[j.horario?('🕘 '+j.horario):null, j.rodada||null].filter(Boolean).join(' • ')||'—'}</div>
       ${temDados
         ? `<div style="margin-top:6px;padding-top:6px;border-top:1px dashed var(--c3);font-size:9px;color:var(--texto)">${[j.mercado||null, j.minuto?(j.minuto+"'"):null, j.odd?('@'+parseFloat(j.odd).toFixed(2)):null].filter(Boolean).join(' · ')||'—'}</div>`
-        : `<div style="margin-top:6px;padding-top:6px;border-top:1px dashed var(--c3);font-size:9px;color:var(--texto2)">✏️ Toque no lápis pra editar</div>`}
+        : ''}
     </div>`;
   }).join('');
 
