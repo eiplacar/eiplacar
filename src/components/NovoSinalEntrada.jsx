@@ -60,11 +60,11 @@ export default function NovoSinalEntrada() {
     try {
       const resp = await fetch(`/.netlify/functions/jogos-do-dia?data=${data}`);
       const json = await resp.json();
-      if (json.erro) { window.toast?.('⚠️ ' + json.erro); setJogosApi([]); return; }
+      if (json.erro) { window.toast?.('' + json.erro); setJogosApi([]); return; }
       setJogosApi(json.jogos || []);
       if (!json.jogos?.length) window.toast?.('Nenhum jogo encontrado nessa data, nas ligas configuradas');
     } catch (e) {
-      window.toast?.('⚠️ Erro ao buscar jogos da API');
+      window.toast?.('Erro ao buscar jogos da API');
       setJogosApi([]);
     } finally {
       setBuscandoApi(false);
@@ -85,7 +85,7 @@ export default function NovoSinalEntrada() {
   }
 
   function adicionarSelecionadosApi() {
-    if (!jogosApi || !selecionadosApi.size) { window.toast?.('⚠️ Marque pelo menos um jogo pra adicionar'); return; }
+    if (!jogosApi || !selecionadosApi.size) { window.toast?.('Marque pelo menos um jogo pra adicionar'); return; }
     const ophLoad = window.ophLoad || (() => []);
     const ophSave = window.ophSave || (() => {});
     const lista = ophLoad();
@@ -105,7 +105,7 @@ export default function NovoSinalEntrada() {
     setSelecionadosApi(new Set());
     window.ophRenderLista?.();
     window.renderGeral?.();
-    window.toast?.(`✅ ${n} jogo(s) adicionado(s) — edite Mercado/Odd/Situação direto no card`);
+    window.toast?.(`${n} jogo(s) adicionado(s)`);
   }
 
   const jogosCache = window.jogosCache || [];
@@ -127,7 +127,7 @@ export default function NovoSinalEntrada() {
   }
 
   function adicionar() {
-    if (!casa || !vis) { window.toast?.('⚠️ Selecione os dois times'); return; }
+    if (!casa || !vis) { window.toast?.('Selecione os dois times'); return; }
     const horario = hora && min ? `${hora}:${min}` : '';
     const ophLoad = window.ophLoad || (() => []);
     const ophSave = window.ophSave || (() => {});
@@ -146,7 +146,7 @@ export default function NovoSinalEntrada() {
 
     window.ophRenderLista?.();
     window.renderGeral?.();
-    window.toast?.(data === (window.hojeBR?.() || data) ? '✅ Jogo adicionado — edite Mercado/Odd/Situação direto no card' : `✅ Jogo agendado para ${window.fd ? window.fd(data) : data}`);
+    window.toast?.(data === (window.hojeBR?.() || data) ? 'Jogo adicionado' : `Jogo agendado para ${window.fd ? window.fd(data) : data}`);
   }
 
   const escudoCasaHtml = window.escudoImgOuIcone ? window.escudoImgOuIcone(casa) : null;

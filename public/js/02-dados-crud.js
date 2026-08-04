@@ -30,7 +30,7 @@ async function carregarJogos(jaTentouRenovar) {
       from += PAGE_SIZE;
     }
     jogosCache = todos.map(j => ({ ...j, gols: j.gols || [] }));
-    setSyncStatus('ok', `☁️ ${jogosCache.length} jogo(s) sincronizado(s)`);
+    setSyncStatus('ok', `${jogosCache.length} jogo(s) sincronizado(s)`);
     atualizarHeader(); renderAll(); sugCamp();
   } catch(e) {
     if (ehErroSessaoExpirada(e.message) && !jaTentouRenovar) {
@@ -41,16 +41,16 @@ async function carregarJogos(jaTentouRenovar) {
     if (ehErroSessaoExpirada(e.message)) {
       // Não deu pra renovar sozinho (refresh_token também venceu) — mensagem limpa e
       // clicável em vez do JSON cru travado na tela pra sempre.
-      setSyncStatus('erro', '⚠️ Sessão expirada — toque aqui pra entrar de novo');
+      setSyncStatus('erro', 'Sessão expirada — toque aqui pra entrar de novo');
       return;
     }
     setSyncStatus('erro', 'Erro: ' + e.message);
-    toast('❌ Erro ao carregar: ' + e.message, true);
+    toast('Erro ao carregar: ' + e.message, true);
   }
 }
 
 async function inserirJogo(jogo) {
-  if (!temConfig()) { toast('⚠️ Sem conexão com o banco de dados', true); return false; }
+  if (!temConfig()) { toast('Sem conexão com o banco de dados', true); return false; }
   setSyncStatus('sync', 'Salvando...');
   try {
     const { id, ...dados } = jogo; // remove id local
@@ -61,11 +61,11 @@ async function inserirJogo(jogo) {
     });
     if (!res.ok) { const t = await res.text(); throw new Error(t); }
     const data = await res.json();
-    setSyncStatus('ok', '☁️ Salvo na nuvem!');
+    setSyncStatus('ok', 'Salvo na nuvem!');
     return Array.isArray(data) ? data[0] : data;
   } catch(e) {
     setSyncStatus('erro', 'Erro ao salvar: ' + e.message);
-    toast('❌ Erro ao salvar: ' + e.message, true);
+    toast('Erro ao salvar: ' + e.message, true);
     return false;
   }
 }
@@ -79,7 +79,7 @@ async function deletarJogoNuvem(id) {
       headers: sbHeaders()
     });
     if (!res.ok) { const t = await res.text(); throw new Error(t); }
-    setSyncStatus('ok', '☁️ Removido da nuvem');
+    setSyncStatus('ok', 'Removido da nuvem');
     return true;
   } catch(e) {
     setSyncStatus('erro', 'Erro ao remover: ' + e.message);
@@ -88,7 +88,7 @@ async function deletarJogoNuvem(id) {
 }
 
 async function atualizarJogoNuvem(id, dados) {
-  if (!temConfig()) { toast('⚠️ Sem conexão com o banco de dados', true); return false; }
+  if (!temConfig()) { toast('Sem conexão com o banco de dados', true); return false; }
   setSyncStatus('sync', 'Atualizando...');
   try {
     const res = await fetch(sbUrl(`?id=eq.${id}`), {
@@ -98,11 +98,11 @@ async function atualizarJogoNuvem(id, dados) {
     });
     if (!res.ok) { const t = await res.text(); throw new Error(t); }
     const data = await res.json();
-    setSyncStatus('ok', '☁️ Atualizado na nuvem!');
+    setSyncStatus('ok', 'Atualizado na nuvem!');
     return Array.isArray(data) ? data[0] : data;
   } catch(e) {
     setSyncStatus('erro', 'Erro ao atualizar: ' + e.message);
-    toast('❌ Erro ao atualizar: ' + e.message, true);
+    toast('Erro ao atualizar: ' + e.message, true);
     return false;
   }
 }
@@ -113,7 +113,7 @@ let jogoEditandoId = null;
 function abrirEditarJogo(id){
   toastEsconder();
   const j = jogosCache.find(x=>x.id===id);
-  if(!j){ toast('⚠️ Jogo não encontrado'); return; }
+  if(!j){ toast('Jogo não encontrado'); return; }
   jogoEditandoId = id;
   document.getElementById('eCamp').value   = j.camp || '';
   document.getElementById('ePais').value   = j.pais || '';
@@ -163,14 +163,14 @@ async function confirmarEdicaoJogo(){
   const casa   = document.getElementById('eCasa').value.trim();
   const vis    = document.getElementById('eVis').value.trim();
 
-  if(!camp){ toast('⚠️ Informe o campeonato!'); return; }
-  if(!pais){ toast('⚠️ Informe o país!'); return; }
-  if(!data){ toast('⚠️ Informe a data!'); return; }
-  if(!casa || !vis){ toast('⚠️ Informe os dois times!'); return; }
-  if(casa===vis){ toast('⚠️ Mandante e visitante não podem ser o mesmo time!'); return; }
+  if(!camp){ toast('Informe o campeonato!'); return; }
+  if(!pais){ toast('Informe o país!'); return; }
+  if(!data){ toast('Informe a data!'); return; }
+  if(!casa || !vis){ toast('Informe os dois times!'); return; }
+  if(casa===vis){ toast('Mandante e visitante não podem ser o mesmo time!'); return; }
 
   const conflitoPais = jogosCache.find(j=>j.camp===camp && j.pais && j.pais!==pais && j.id!==jogoEditandoId);
-  if(conflitoPais){ toast(`⚠️ "${camp}" já está cadastrado como ${conflitoPais.pais}. Use um nome diferente pra este campeonato.`, true); return; }
+  if(conflitoPais){ toast(`"${camp}" já está cadastrado como ${conflitoPais.pais}. Use um nome diferente pra este campeonato.`, true); return; }
 
   const dados = {
     camp, pais, data, rodada,
@@ -195,7 +195,7 @@ async function confirmarEdicaoJogo(){
 
   fecharModalEditar();
   renderDados(); atualizarHeader(); renderGeral(); sugCamp();
-  toast('✅ Jogo atualizado! ☁️');
+  toast('Jogo atualizado!');
 }
 
 // ══ ESTADO LOCAL (gols temporários) ══
@@ -208,7 +208,7 @@ const periodos6 = [
   { l:'46–60',  s:46, e:60  },{ l:'61–75',  s:61, e:75  },{ l:'76–90+', s:76, e:120 },
 ];
 const periodos4 = [
-  { l:"1-20'",   ico:'🌅', s:1,  e:20  },{ l:"21-45+'", ico:'⚡', s:21, e:45  },
-  { l:"46-65'",  ico:'🔥', s:46, e:65  },{ l:"66-90+'", ico:'🏁', s:66, e:120 },
+  { l:"1-20'",   s:1,  e:20  },{ l:"21-45+'", s:21, e:45  },
+  { l:"46-65'",  s:46, e:65  },{ l:"66-90+'", s:66, e:120 },
 ];
 

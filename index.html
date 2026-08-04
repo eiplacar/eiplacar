@@ -44,7 +44,7 @@
       <label>Senha</label>
       <div class="pwd-wrap" style="margin-bottom:4px">
         <input type="password" id="loginSenha" placeholder="••••••••">
-        <button type="button" class="pwd-eye" onclick="togglePwd('loginSenha', this)">👁️</button>
+        <button type="button" class="pwd-eye" onclick="togglePwd('loginSenha', this)"><span data-ic="eye" data-ic-size="16"></span></button>
       </div>
       <span class="auth-link" onclick="authGoTab('recuperar')">Esqueci minha senha</span>
       <button class="btn-primary" onclick="fazerLogin()">Entrar</button>
@@ -63,7 +63,7 @@
       <label>Senha</label>
       <div class="pwd-wrap" style="margin-bottom:18px">
         <input type="password" id="cadSenha" placeholder="mínimo 6 caracteres">
-        <button type="button" class="pwd-eye" onclick="togglePwd('cadSenha', this)">👁️</button>
+        <button type="button" class="pwd-eye" onclick="togglePwd('cadSenha', this)"><span data-ic="eye" data-ic-size="16"></span></button>
       </div>
       <button class="btn-primary" onclick="fazerCadastro()">Criar Conta</button>
     </div>
@@ -72,7 +72,7 @@
     <div class="auth-form" id="aform-recuperar">
       <label>E-mail cadastrado</label>
       <input type="email" id="recEmail" placeholder="seu@email.com" style="margin-bottom:18px">
-      <button class="btn-primary" onclick="enviarRecuperacaoSenha()">📧 Enviar link de recuperação</button>
+      <button class="btn-primary" onclick="enviarRecuperacaoSenha()"><span data-ic="mail" data-ic-size="14"></span> Enviar link de recuperação</button>
       <span class="auth-voltar" onclick="authGoTab('login')">← Voltar para o login</span>
     </div>
 
@@ -82,9 +82,9 @@
       <label>Nova senha</label>
       <div class="pwd-wrap" style="margin-bottom:18px">
         <input type="password" id="novaSenha" placeholder="mínimo 6 caracteres">
-        <button type="button" class="pwd-eye" onclick="togglePwd('novaSenha', this)">👁️</button>
+        <button type="button" class="pwd-eye" onclick="togglePwd('novaSenha', this)"><span data-ic="eye" data-ic-size="16"></span></button>
       </div>
-      <button class="btn-primary" onclick="salvarNovaSenha()">💾 Salvar nova senha</button>
+      <button class="btn-primary" onclick="salvarNovaSenha()"><span data-ic="save" data-ic-size="14"></span> Salvar nova senha</button>
     </div>
   </div>
 </div>
@@ -92,7 +92,7 @@
 <!-- ══ TELA DE ESPERA DE APROVAÇÃO ══ -->
 <div id="waitScreen">
   <div class="wait-box">
-    <div class="icon">⏳</div>
+    <div class="icon"><span data-ic="hourglass" data-ic-size="44"></span></div>
     <h2>Cadastro em análise</h2>
     <p>Sua conta foi criada! O organizador precisa aprovar seu acesso antes de você ver os dados da banca. Volte a tentar em breve.</p>
     <button class="btn-fechar-cfg" onclick="fazerLogout()">Sair</button>
@@ -102,7 +102,7 @@
 <!-- ══ TELA DE ACESSO RESTRITO (sem saldo) ══ -->
 <div id="blockScreen">
   <div class="wait-box">
-    <div class="icon">🔒</div>
+    <div class="icon"><span data-ic="lock" data-ic-size="44"></span></div>
     <h2>Acesso restrito</h2>
     <p>Seu acesso foi bloqueado pelo administrador. Fale com o organizador se achar que isso é um engano.</p>
     <button class="btn-fechar-cfg" onclick="fazerLogout()">Sair</button>
@@ -112,13 +112,13 @@
 <!-- ══ MODAL EDITAR MOVIMENTAÇÃO ══ -->
 <div class="modal-overlay" id="modalEditMov">
   <div class="modal" style="max-width:360px">
-    <h2 id="editMovTitulo" style="font-size:15px;margin-bottom:16px">✏️ Editar</h2>
+    <h2 id="editMovTitulo" style="font-size:15px;margin-bottom:16px"><span data-ic="pencil" data-ic-size="15"></span> Editar</h2>
     <div id="editMovTipoRow" style="margin-bottom:12px">
       <label>Tipo</label>
       <select id="editMovTipo" style="width:100%;margin-top:4px">
-        <option value="transferir">🔄 Transferência</option>
-        <option value="despesa">💸 Saque</option>
-        <option value="reforco">➕ Reforço</option>
+        <option value="transferir">Transferência</option>
+        <option value="despesa">Saque</option>
+        <option value="reforco">Reforço</option>
       </select>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
@@ -128,7 +128,7 @@
     <div style="margin-bottom:16px"><label>Descrição</label><input type="text" id="editMovDesc" placeholder="Ex: Servidor" style="margin-top:4px"></div>
     <div class="modal-btns">
       <button class="btn-fechar-cfg" id="editMovCancelar">Cancelar</button>
-      <button class="btn-salvar-cfg" id="editMovSalvar">💾 Salvar</button>
+      <button class="btn-salvar-cfg" id="editMovSalvar"><span data-ic="save" data-ic-size="14"></span> Salvar</button>
     </div>
   </div>
 </div>
@@ -136,7 +136,7 @@
 <!-- ══ MODAL INFO ORGANIZADOR ══ -->
 <div class="modal-overlay" id="modalInfoOrg">
   <div class="modal">
-    <h2>👔 Organizador</h2>
+    <h2><span data-ic="briefcase" data-ic-size="15"></span> Organizador</h2>
     <div class="modal-steps" style="line-height:1.9">
       <strong style="color:var(--ouro)">Como funciona</strong><br>
       A cada green registrado, <strong>10% do lucro bruto</strong> vai automaticamente para o Organizador.<br><br>
@@ -154,16 +154,16 @@
 <!-- ══ MODAL INFO TESOURARIA ══ -->
 <div class="modal-overlay" id="modalInfoTes">
   <div class="modal">
-    <h2>🏦 Tesouraria</h2>
+    <h2><span data-ic="landmark" data-ic-size="15"></span> Tesouraria</h2>
     <div class="modal-steps" style="line-height:1.9">
       <strong style="color:var(--ouro)">Como funciona</strong><br>
       A cada green, <strong>10% do lucro bruto</strong> vai automaticamente para a Tesouraria. É a reserva coletiva da comunidade.<br><br>
       <strong style="color:var(--ouro)">Para que serve</strong><br>
       Protege a banca em períodos ruins, pode cobrir um red grande sem impactar o saldo dos membros, ou ser reinvestida quando a reserva estiver forte.<br><br>
       <strong style="color:var(--ouro)">Operações disponíveis</strong><br>
-      🔄 <strong>Transferir para Caixa</strong> — o organizador move parte da reserva de volta ao saldo dos membros, distribuído proporcional às cotas.<br>
-      💸 <strong>Despesa externa</strong> — paga um custo da comunidade (servidor, ferramenta) sem ir para nenhum membro.<br>
-      ➕ <strong>Reforço</strong> — a comunidade decide contribuir com parte do caixa dos membros para fortalecer a reserva.<br><br>
+      <span data-ic="refreshCw" data-ic-size="13"></span> <strong>Transferir para Caixa</strong> — o organizador move parte da reserva de volta ao saldo dos membros, distribuído proporcional às cotas.<br>
+      <span data-ic="banknote" data-ic-size="13"></span> <strong>Despesa externa</strong> — paga um custo da comunidade (servidor, ferramenta) sem ir para nenhum membro.<br>
+      <span data-ic="plus" data-ic-size="13"></span> <strong>Reforço</strong> — a comunidade decide contribuir com parte do caixa dos membros para fortalecer a reserva.<br><br>
       Todas as movimentações ficam registradas no histórico.
     </div>
     <div class="modal-btns">
@@ -175,7 +175,7 @@
 <!-- ══ MODAL CONFIRMAR ENTRADA ══ -->
 <div class="modal-overlay" id="modalConfirmarEntrada">
   <div class="modal" style="max-width:360px">
-    <h2 style="font-size:15px;margin-bottom:12px">✅ Confirmar Entrada</h2>
+    <h2 style="font-size:15px;margin-bottom:12px"><span data-ic="circleCheck" data-ic-size="15"></span> Confirmar Entrada</h2>
     <div id="modalConfirmarTexto" style="background:var(--c1);border:1px solid var(--c3);border-radius:10px;padding:14px;font-size:13px;line-height:2;margin-bottom:16px"></div>
     <div class="modal-btns">
       <button class="btn-fechar-cfg" id="modalConfirmarCancelar">Cancelar</button>
@@ -187,7 +187,7 @@
 <!-- ══ MODAL CONFIRMAR EXCLUSÃO ENTRADA ══ -->
 <div class="modal-overlay" id="modalConfirmarExclusao">
   <div class="modal" style="max-width:340px">
-    <h2 style="font-size:15px;margin-bottom:12px">🗑️ Remover Entrada</h2>
+    <h2 style="font-size:15px;margin-bottom:12px"><span data-ic="trash2" data-ic-size="15"></span> Remover Entrada</h2>
     <p style="font-size:13px;color:var(--texto2);margin-bottom:16px">O saldo dos membros será recalculado. Confirma a remoção?</p>
     <div class="modal-btns">
       <button class="btn-fechar-cfg" id="modalExclusaoCancelar">Cancelar</button>
@@ -199,7 +199,7 @@
 <!-- ══ MODAL EDITAR ENTRADA ══ -->
 <div class="modal-overlay" id="modalEditarEntrada">
   <div class="modal" style="max-width:400px">
-    <h2 style="font-size:15px;margin-bottom:12px">✏️ Editar Entrada</h2>
+    <h2 style="font-size:15px;margin-bottom:12px"><span data-ic="pencil" data-ic-size="15"></span> Editar Entrada</h2>
     <div style="margin-bottom:10px"><label>Mercado</label><input type="text" id="editEMercado"></div>
     <div style="margin-bottom:10px"><label>Liga</label><input type="text" id="editELiga"></div>
     <div style="margin-bottom:10px"><label>Confronto (Casa × Visitante)</label><input type="text" id="editETimes" placeholder="Opcional"></div>
@@ -207,8 +207,8 @@
       <div>
         <label>Tipo de Entrada</label>
         <select id="editETipo" onchange="document.getElementById('editEMinutoWrap').style.display=this.value==='live'?'block':'none'">
-          <option value="prelive">📋 Pré-live</option>
-          <option value="live">🔴 Live</option>
+          <option value="prelive">Pré-live</option>
+          <option value="live">Live</option>
         </select>
       </div>
       <div>
@@ -232,16 +232,16 @@
     <div style="margin-bottom:10px">
       <label>Resultado</label>
       <select id="editEResultado">
-        <option value="green">✅ Green</option>
-        <option value="red">❌ Red</option>
+        <option value="green">Green</option>
+        <option value="red">Red</option>
         <option value="void">↩️ Void</option>
-        <option value="cashout">💰 Cash Out</option>
+        <option value="cashout">Cash Out</option>
       </select>
     </div>
     <div style="margin-bottom:16px"><label>Data</label><input type="date" id="editEData"></div>
     <div class="modal-btns">
       <button class="btn-fechar-cfg" onclick="fecharModalEditarEntrada()">Cancelar</button>
-      <button class="btn-salvar-cfg" onclick="salvarEdicaoEntrada()">💾 Salvar</button>
+      <button class="btn-salvar-cfg" onclick="salvarEdicaoEntrada()"><span data-ic="save" data-ic-size="14"></span> Salvar</button>
     </div>
   </div>
 </div>
@@ -252,21 +252,21 @@
     <h2>ℹ️ Como funciona</h2>
     <p>Resumo rápido do que cada card da Visão Geral mostra.</p>
     <div class="modal-steps" style="line-height:1.9">
-      <strong style="color:var(--ouro)">💰 Total em Caixa</strong><br>
+      <strong style="color:var(--ouro)"><span data-ic="dollarSign" data-ic-size="13"></span> Total em Caixa</strong><br>
       Saldo Disponível (dos membros) + Tesouraria + Organizador.<br>
       A cada <strong>green</strong>, o lucro é dividido assim:<br>
-      🟢 80% para os membros (proporcional à cota de cada um)<br>
-      🏦 10% Tesouraria — proteção e crescimento da banca<br>
-      👔 10% Organizador — manutenção e melhorias do sistema<br><br>
-      <strong style="color:var(--ouro)">👥 Membros</strong><br>
+      <span data-ic="circleDot" data-ic-size="13" style="color:var(--verde2)"></span> 80% para os membros (proporcional à cota de cada um)<br>
+      <span data-ic="landmark" data-ic-size="13"></span> 10% Tesouraria — proteção e crescimento da banca<br>
+      <span data-ic="briefcase" data-ic-size="13"></span> 10% Organizador — manutenção e melhorias do sistema<br><br>
+      <strong style="color:var(--ouro)"><span data-ic="users" data-ic-size="13"></span> Membros</strong><br>
       Depósitos: total que entrou. Retiradas: total que saiu. Saldo Disponível: o que sobrou (depósitos − retiradas + resultado das entradas).<br><br>
-      <strong style="color:var(--ouro)">📈 Performance</strong><br>
+      <strong style="color:var(--ouro)"><span data-ic="trendingUp" data-ic-size="13"></span> Performance</strong><br>
       <em>P&L</em>: lucro ou prejuízo em R$ desde o início.<br>
       <em>ROI</em>: P&L ÷ saldo inicial investido, em %.<br>
       <em>APR</em>: ROI projetado para 1 ano, com base nos dias desde a 1ª movimentação.<br><br>
-      <strong style="color:var(--ouro)">🎯 Atividade</strong><br>
+      <strong style="color:var(--ouro)"><span data-ic="target" data-ic-size="13"></span> Atividade</strong><br>
       Quantidade de entradas feitas e % de acerto (greens ÷ total).<br><br>
-      <strong style="color:var(--ouro)">💡 Sugestão de Stake</strong><br>
+      <strong style="color:var(--ouro)"><span data-ic="lightbulb" data-ic-size="13"></span> Sugestão de Stake</strong><br>
       Quanto apostar (1%, 2% ou 3%) com base no saldo disponível dos membros.
     </div>
     <div class="modal-btns">
@@ -282,12 +282,12 @@
 <!-- ══ MODAL DATA/HORÁRIO DO JOGO (antes de compartilhar) ══ -->
 <div class="modal-overlay" id="modalDataJogo">
   <div class="modal" style="max-width:380px">
-    <h2>🗓️ Data/Horário do Jogo</h2>
+    <h2><span data-ic="calendarPlus" data-ic-size="15"></span> Data/Horário do Jogo</h2>
     <p style="font-size:12px;color:var(--texto2);margin-bottom:14px">Opcional — só pra dar contexto a quem receber a análise.</p>
     <input type="text" id="inputDataJogo" placeholder="Ex: 28/06 às 16h" style="margin-bottom:18px">
     <div class="modal-btns">
       <button class="btn-fechar-cfg" onclick="fecharModalDataJogo()">Pular</button>
-      <button class="btn-salvar-cfg" onclick="confirmarCompartilhar()">✅ Continuar</button>
+      <button class="btn-salvar-cfg" onclick="confirmarCompartilhar()"><span data-ic="circleCheck" data-ic-size="14"></span> Continuar</button>
     </div>
   </div>
 </div>
@@ -295,7 +295,7 @@
 <!-- ══ MODAL EDITAR JOGO (Oportunidade) — Mercado/Odd/Minuto/Situação preenchidos depois de cadastrar o jogo ══ -->
 <div class="modal-overlay" id="modalEditarOportunidade">
   <div class="modal" style="max-width:380px">
-    <h2 style="font-size:15px;margin-bottom:12px">✏️ Editar Oportunidade</h2>
+    <h2 style="font-size:15px;margin-bottom:12px"><span data-ic="pencil" data-ic-size="15"></span> Editar Oportunidade</h2>
     <div style="margin-bottom:10px"><label>Campeonato</label><input type="text" id="ophEditCamp" placeholder="Ex: Brasileirão Série A"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
       <div><label>Mandante</label><input type="text" id="ophEditCasa"></div>
@@ -310,16 +310,16 @@
     <div style="margin-bottom:16px">
       <label>Situação</label>
       <select id="ophEditStatus">
-        <option value="aguardando">🟡 Aguardando resultado</option>
-        <option value="green">✅ Green</option>
-        <option value="red">❌ Red</option>
-        <option value="void">↩️ Void</option>
-        <option value="encerrado">⚫ Encerrado</option>
+        <option value="aguardando">Aguardando resultado</option>
+        <option value="green">Green</option>
+        <option value="red">Red</option>
+        <option value="void">Void</option>
+        <option value="encerrado">Encerrado</option>
       </select>
     </div>
     <div class="modal-btns">
       <button class="btn-fechar-cfg" onclick="ophFecharEdicao()">Cancelar</button>
-      <button class="btn-salvar-cfg" onclick="ophSalvarEdicao()">💾 Salvar</button>
+      <button class="btn-salvar-cfg" onclick="ophSalvarEdicao()"><span data-ic="save" data-ic-size="14"></span> Salvar</button>
     </div>
   </div>
 </div>
@@ -327,7 +327,7 @@
 <!-- ══ MODAL DETALHE DO JOGO ══ -->
 <div class="modal-overlay" id="modalDetalheJogo">
   <div class="modal" style="max-width:380px">
-    <h2 id="detJogoTitulo" style="font-size:14px;text-align:center">🏆</h2>
+    <h2 id="detJogoTitulo" style="font-size:14px;text-align:center"><span data-ic="trophy" data-ic-size="16"></span></h2>
     <div id="detJogoPlacar"></div>
     <div id="detJogoGols"></div>
     <div id="detJogoExtra"></div>
@@ -340,7 +340,7 @@
 <!-- ══ MODAL EDITAR JOGO ══ -->
 <div class="modal-overlay" id="modalEditarJogo">
   <div class="modal">
-    <h2>✏️ Editar Jogo</h2>
+    <h2><span data-ic="pencil" data-ic-size="15"></span> Editar Jogo</h2>
     <div class="fg fg2">
       <div><label>Campeonato</label><input type="text" id="eCamp"></div>
       <div><label>País</label><input type="text" id="ePais"></div>
@@ -360,13 +360,13 @@
     <div class="card-title" style="margin-bottom:8px">Placar Final</div>
     <div class="placar-area" style="margin-bottom:16px">
       <div style="flex:1;text-align:center">
-        <div class="escudo-upload" id="eEscudoCasa" onclick="escudoInput('eCasa')" title="Toque para adicionar o escudo">🛡️</div>
+        <div class="escudo-upload" id="eEscudoCasa" onclick="escudoInput('eCasa')" title="Toque para adicionar o escudo"><span data-ic="shield" data-ic-size="22"></span></div>
       </div>
       <input type="number" id="eGC" min="0">
       <div class="vs-label">×</div>
       <input type="number" id="eGV" min="0">
       <div style="flex:1;text-align:center">
-        <div class="escudo-upload" id="eEscudoVis" onclick="escudoInput('eVis')" title="Toque para adicionar o escudo">🛡️</div>
+        <div class="escudo-upload" id="eEscudoVis" onclick="escudoInput('eVis')" title="Toque para adicionar o escudo"><span data-ic="shield" data-ic-size="22"></span></div>
       </div>
     </div>
     <div class="fg fg2">
@@ -376,12 +376,12 @@
     <details class="adv-details" style="margin-bottom:16px">
       <summary class="adv-summary">▼ Dados Avançados</summary>
       <div class="adv-content">
-        <div class="adv-group-title">⏱️ Gols 1º Tempo</div>
+        <div class="adv-group-title"><span data-ic="clock" data-ic-size="12"></span> Gols 1º Tempo</div>
         <div class="fg fg2">
           <div><label>Mandante</label><input type="number" id="eHTC" min="0"></div>
           <div><label>Visitante</label><input type="number" id="eHTV" min="0"></div>
         </div>
-        <div class="adv-group-title">🎯 Chutes</div>
+        <div class="adv-group-title"><span data-ic="target" data-ic-size="12"></span> Chutes</div>
         <div class="fg fg2">
           <div><label>Totais — Mandante</label><input type="number" id="eChutesC" min="0"></div>
           <div><label>Totais — Visitante</label><input type="number" id="eChutesV" min="0"></div>
@@ -390,12 +390,12 @@
           <div><label>No gol — Mandante</label><input type="number" id="eChutesGolC" min="0"></div>
           <div><label>No gol — Visitante</label><input type="number" id="eChutesGolV" min="0"></div>
         </div>
-        <div class="adv-group-title">🚩 Escanteios</div>
+        <div class="adv-group-title"><span data-ic="flag" data-ic-size="12"></span> Escanteios</div>
         <div class="fg fg2">
           <div><label>Mandante</label><input type="number" id="eEscanteiosC" min="0"></div>
           <div><label>Visitante</label><input type="number" id="eEscanteiosV" min="0"></div>
         </div>
-        <div class="adv-group-title">🟨 Cartões</div>
+        <div class="adv-group-title"><span data-ic="square" data-ic-size="12"></span> Cartões</div>
         <div class="fg fg2">
           <div><label>Amarelos — Mandante</label><input type="number" id="eAmarelosC" min="0"></div>
           <div><label>Amarelos — Visitante</label><input type="number" id="eAmarelosV" min="0"></div>
@@ -408,13 +408,13 @@
     </details>
     <div class="modal-btns">
       <button class="btn-fechar-cfg" onclick="fecharModalEditar()">Cancelar</button>
-      <button class="btn-salvar-cfg" onclick="confirmarEdicaoJogo()">💾 Salvar Alterações</button>
+      <button class="btn-salvar-cfg" onclick="confirmarEdicaoJogo()"><span data-ic="save" data-ic-size="14"></span> Salvar Alterações</button>
     </div>
   </div>
 </div>
 
 <header>
-  <button class="btn-hamb" onclick="toggleSidebar()" aria-label="Abrir menu" style="justify-self:start">☰</button>
+  <button class="btn-hamb" onclick="toggleSidebar()" aria-label="Abrir menu" style="justify-self:start"><span data-ic="menu" data-ic-size="18"></span></button>
   <div class="logo" style="justify-self:center">
     <img src="logo-wordmark.png" alt="EI PLACAR" style="height:30px;width:auto;display:block" />
   </div>
@@ -547,10 +547,10 @@
   <div class="modal">
     <h2>ℹ️ Sobre as tabelas</h2>
     <div class="modal-steps" style="line-height:1.9">
-      <strong style="color:var(--ouro)">📈 Estatística por Liga</strong><br>
+      <strong style="color:var(--ouro)"><span data-ic="trendingUp" data-ic-size="13"></span> Estatística por Liga</strong><br>
       Agrupa suas entradas (Calculadora) por Liga, Mercado e Tipo (Pré-live/Live). Mostra minuto médio de entrada, odd média e % de acerto.<br>
       Use para descobrir a melhor faixa de minuto/odd para cada liga.<br><br>
-      <strong style="color:var(--ouro)">📐 Minuto Médio do Gol que Bate o Over</strong><br>
+      <strong style="color:var(--ouro)"><span data-ic="target" data-ic-size="13"></span> Minuto Médio do Gol que Bate o Over</strong><br>
       Busca nos jogos de <strong>Dados</strong> (com minutos preenchidos) os que bateram cada Over. Separa em 1ºT/2ºT pelo minuto do <strong>1º gol</strong> — seu sinal de entrada ao vivo.<br>
       Mostra: média do 1º gol e média do gol que confirmou o Over.<br>
       A coluna <strong>% Jogos</strong> = quantos % dos jogos da liga caem nessa categoria.<br>

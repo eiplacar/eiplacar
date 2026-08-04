@@ -140,8 +140,8 @@ function AbaMovimentacoes() {
 
   function confirmar() {
     const r = window.bancaMovimentar(acao, valor, data, obs);
-    if (!r.ok) { window.toast?.('⚠️ ' + r.msg, true); return; }
-    window.toast?.('✅ Movimentação registrada');
+    if (!r.ok) { window.toast?.('' + r.msg, true); return; }
+    window.toast?.('Movimentação registrada');
     fechar();
     setTick((t) => t + 1);
     window.__bancaCarteiraTick?.();

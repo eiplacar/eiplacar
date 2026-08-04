@@ -91,36 +91,36 @@ function UsuarioDetalhe({ usuario, onVoltar, onMudou }) {
     setSalvando(true);
     const r = await window.adminAtualizarUsuario(u.id, { nome: u.nome, telefone: u.telefone });
     setSalvando(false);
-    if (!r.ok) { window.toast?.('⚠️ Não foi possível salvar (talvez falte a coluna "telefone")', true); return; }
-    window.toast?.('✅ Dados atualizados'); onMudou();
+    if (!r.ok) { window.toast?.('Não foi possível salvar (talvez falte a coluna "telefone")', true); return; }
+    window.toast?.('Dados atualizados'); onMudou();
   }
-  async function aprovarAcesso() { await window.aprovarMembro(u.id); window.toast?.('✅ Acesso aprovado'); onMudou(); onVoltar(); }
+  async function aprovarAcesso() { await window.aprovarMembro(u.id); window.toast?.('Acesso aprovado'); onMudou(); onVoltar(); }
   async function rejeitarAcesso() { if (!confirm('Rejeitar o cadastro de ' + u.nome + '?')) return; await window.rejeitarMembro(u.id); onMudou(); onVoltar(); }
   async function escolherPlano(p) {
     const r = picker === 'aprovar' ? await window.adminAprovarPlano(u.id, p.id, p.dias) : await window.adminRenovarPlano(u.id, u.assinatura_vencimento, p.dias);
     setPicker(null);
-    if (!r.ok) { window.toast?.('⚠️ ' + (r.msg || 'Erro ao salvar plano'), true); return; }
-    window.toast?.('✅ Plano atualizado'); onMudou();
+    if (!r.ok) { window.toast?.('' + (r.msg || 'Erro ao salvar plano'), true); return; }
+    window.toast?.('Plano atualizado'); onMudou();
     const atualizado = await window.adminListarUsuarios();
     setU((atualizado.usuarios || []).find((x) => x.id === u.id) || u);
   }
   async function cancelar() {
     if (!confirm('Cancelar a assinatura de ' + u.nome + '?')) return;
     const r = await window.adminCancelarAssinatura(u.id);
-    if (!r.ok) { window.toast?.('⚠️ Erro ao cancelar', true); return; }
-    window.toast?.('✅ Assinatura cancelada'); onMudou(); onVoltar();
+    if (!r.ok) { window.toast?.('Erro ao cancelar', true); return; }
+    window.toast?.('Assinatura cancelada'); onMudou(); onVoltar();
   }
   async function bloquear() {
     const r = await window.adminBloquearUsuario(u.id, !u.bloqueado);
-    if (!r.ok) { window.toast?.('⚠️ Não foi possível bloquear (talvez falte a coluna "bloqueado")', true); return; }
+    if (!r.ok) { window.toast?.('Não foi possível bloquear (talvez falte a coluna "bloqueado")', true); return; }
     setU((x) => ({ ...x, bloqueado: !x.bloqueado }));
-    window.toast?.(u.bloqueado ? '✅ Usuário desbloqueado' : '🚫 Usuário bloqueado'); onMudou();
+    window.toast?.(u.bloqueado ? 'Usuário desbloqueado' : 'Usuário bloqueado'); onMudou();
   }
   async function excluir() {
     if (!confirm(`Excluir o acesso de ${u.nome}? Isso remove o perfil dele do app (não apaga a conta de login).`)) return;
     const r = await window.adminExcluirUsuario(u.id);
-    if (!r.ok) { window.toast?.('⚠️ Erro ao excluir', true); return; }
-    window.toast?.('🗑️ Usuário removido'); onMudou(); onVoltar();
+    if (!r.ok) { window.toast?.('Erro ao excluir', true); return; }
+    window.toast?.('Usuário removido'); onMudou(); onVoltar();
   }
 
   return (
@@ -242,13 +242,13 @@ function AbaAssinaturas() {
 
   async function renovarRapido(u, p) {
     const r = await window.adminRenovarPlano(u.id, u.assinatura_vencimento, p.dias);
-    if (!r.ok) { window.toast?.('⚠️ Erro ao renovar', true); return; }
-    window.toast?.('✅ Renovado por mais ' + p.dias + ' dias'); recarregar();
+    if (!r.ok) { window.toast?.('Erro ao renovar', true); return; }
+    window.toast?.('Renovado por mais ' + p.dias + ' dias'); recarregar();
   }
   async function trocarPlano(u, p) {
     const r = await window.adminAprovarPlano(u.id, p.id, p.dias);
-    if (!r.ok) { window.toast?.('⚠️ Erro ao trocar plano', true); return; }
-    window.toast?.('✅ Plano alterado para ' + p.nome); recarregar();
+    if (!r.ok) { window.toast?.('Erro ao trocar plano', true); return; }
+    window.toast?.('Plano alterado para ' + p.nome); recarregar();
   }
 
   return (
@@ -302,7 +302,7 @@ function AbaSistema() {
   function salvar() {
     setSalvando(true);
     window.cfgAppSave?.(cfg);
-    setTimeout(() => { setSalvando(false); window.toast?.('✅ Configurações salvas'); }, 300);
+    setTimeout(() => { setSalvando(false); window.toast?.('Configurações salvas'); }, 300);
   }
 
   return (

@@ -90,21 +90,21 @@ function AbaPerfil() {
     setSalvando(true);
     const r = await window.salvarPerfil({ nome: perfil.nome, telefone: perfil.telefone, data_nascimento: perfil.data_nascimento || null });
     setSalvando(false);
-    if (!r.ok) { window.toast?.('⚠️ ' + r.msg, true); return; }
-    window.toast?.('✅ Dados salvos');
+    if (!r.ok) { window.toast?.('' + r.msg, true); return; }
+    window.toast?.('Dados salvos');
   }
 
   function escolherFoto() { fileRef.current?.click(); }
   function onFoto(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 1.5 * 1024 * 1024) { window.toast?.('⚠️ Escolha uma foto menor (até 1,5MB)', true); return; }
+    if (file.size > 1.5 * 1024 * 1024) { window.toast?.('Escolha uma foto menor (até 1,5MB)', true); return; }
     const reader = new FileReader();
     reader.onload = async () => {
       const dataUri = reader.result;
       setPerfil((p) => ({ ...p, foto_url: dataUri }));
       const r = await window.salvarPerfil({ foto_url: dataUri });
-      if (!r.ok) window.toast?.('⚠️ ' + r.msg, true); else window.toast?.('✅ Foto atualizada');
+      if (!r.ok) window.toast?.('' + r.msg, true); else window.toast?.('Foto atualizada');
     };
     reader.readAsDataURL(file);
   }
@@ -162,7 +162,7 @@ function AbaPerfil() {
         {verPlanos && (
           <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--c3)', display: 'flex', flexDirection: 'column', gap: 8 }}>
             {planosAtuais().map((p) => (
-              <button key={p.id} onClick={() => window.toast?.('💳 Pagamento ainda não conectado — em breve você poderá assinar o plano ' + p.nome + ' por aqui.')}
+              <button key={p.id} onClick={() => window.toast?.('Pagamento ainda não conectado — em breve você poderá assinar o plano ' + p.nome + ' por aqui.')}
                 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 8, padding: '10px 12px', color: 'var(--texto)', cursor: 'pointer' }}>
                 <span style={{ fontWeight: 700 }}>{p.nome}</span>
                 <span style={{ color: 'var(--ouro)', fontWeight: 800 }}>R$ {p.preco.toFixed(2).replace('.', ',')} <span style={{ color: 'var(--texto2)', fontWeight: 400, fontSize: 11 }}>{p.periodo}</span></span>
@@ -236,7 +236,7 @@ function AbaConfiguracoes() {
   async function alternarNotif(ligar) {
     if (ligar && typeof Notification !== 'undefined') {
       const perm = await Notification.requestPermission();
-      if (perm !== 'granted') { window.toast?.('⚠️ Permissão de notificação negada pelo navegador', true); return; }
+      if (perm !== 'granted') { window.toast?.('Permissão de notificação negada pelo navegador', true); return; }
     }
     setNotif(ligar);
     try { localStorage.setItem('eiPlacar_notif', ligar ? '1' : '0'); } catch {}
@@ -255,18 +255,18 @@ function AbaConfiguracoes() {
     window.bancaSalvarStopMeta?.(meta, gain, loss);
     setMetaDiaria(meta); setStopGain(gain); setStopLoss(loss);
     setSalvandoStopMeta(false);
-    window.toast?.('✅ Stop e Meta salvos');
+    window.toast?.('Stop e Meta salvos');
     window.__bancaCarteiraTick?.();
   }
 
   async function salvarSenha() {
-    if (senha1.length < 6) { window.toast?.('⚠️ Mínimo de 6 caracteres', true); return; }
-    if (senha1 !== senha2) { window.toast?.('⚠️ As senhas não coincidem', true); return; }
+    if (senha1.length < 6) { window.toast?.('Mínimo de 6 caracteres', true); return; }
+    if (senha1 !== senha2) { window.toast?.('As senhas não coincidem', true); return; }
     setSalvandoSenha(true);
     const r = await window.alterarSenhaLogado(senha1);
     setSalvandoSenha(false);
-    if (!r.ok) { window.toast?.('⚠️ ' + r.msg, true); return; }
-    window.toast?.('✅ Senha alterada!');
+    if (!r.ok) { window.toast?.('' + r.msg, true); return; }
+    window.toast?.('Senha alterada!');
     setSenha1(''); setSenha2(''); setAlterandoSenha(false);
   }
 

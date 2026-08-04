@@ -45,7 +45,7 @@ async function escudosSyncNuvem(){
     if(!res.ok){
       const t = await res.text();
       if(t.includes('does not exist') || t.includes('PGRST205') || t.includes('schema cache')){
-        toast('⚠️ Crie a tabela "escudos" no Supabase pra salvar escudos na nuvem (veja ⚙️ Configurar)', true);
+        toast('Crie a tabela "escudos" no Supabase pra salvar escudos na nuvem (veja Configurar)', true);
       }
     }
   } catch(e){ /* sem internet — fica só local mesmo, sem travar a UI */ }
@@ -83,7 +83,7 @@ function escudoMini(nome){
 let escudoCampoAtual = null;
 function escudoInput(campoId){
   const nome = document.getElementById(campoId).value.trim();
-  if(!nome){ toast('⚠️ Preencha o nome do time antes de adicionar o escudo'); return; }
+  if(!nome){ toast('Preencha o nome do time antes de adicionar o escudo'); return; }
   escudoCampoAtual = campoId;
   document.getElementById('escudoFileInput').click();
 }
@@ -108,7 +108,7 @@ function onEscudoFileChange(ev){
       // Atualiza os círculos de escudo visíveis nos dois formulários (H2H e Editar Jogo)
       if(document.getElementById('iCasa')) syncNomes();
       if(document.getElementById('eCasa')) syncNomesEdicao();
-      toast('🛡️ Escudo salvo — já vai aparecer em todo lugar desse time');
+      toast('Escudo salvo — já vai aparecer em todo lugar desse time');
     };
     img.src = reader.result;
   };
@@ -145,7 +145,7 @@ function syncNomes() {
 // ══ GOLS ══
 function addGol(time) {
   const min=parseInt(document.getElementById('golMin').value);
-  if(!min||min<1||min>120){ toast('⚠️ Informe o minuto (1–120)'); return; }
+  if(!min||min<1||min>120){ toast('Informe o minuto (1–120)'); return; }
   const c=document.getElementById('iCasa').value.trim()||'Mandante';
   const v=document.getElementById('iVis').value.trim()||'Visitante';
   golsTemp.push({ min, time, nome:time==='casa'?c:v });

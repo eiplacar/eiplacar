@@ -74,7 +74,7 @@ function ophSalvarEdicao(){
   if(!j){ ophFecharEdicao(); return; }
   const casa = document.getElementById('ophEditCasa').value.trim();
   const vis = document.getElementById('ophEditVis').value.trim();
-  if(!casa || !vis){ toast?.('⚠️ Preencha Mandante e Visitante'); return; }
+  if(!casa || !vis){ toast?.('Preencha Mandante e Visitante'); return; }
   j.camp = document.getElementById('ophEditCamp').value.trim();
   j.casa = casa;
   j.vis = vis;
@@ -86,7 +86,7 @@ function ophSalvarEdicao(){
   ophFecharEdicao();
   ophRenderLista();
   renderGeral();
-  toast?.('💾 Oportunidade atualizada!');
+  toast?.('Oportunidade atualizada!');
 }
 
 // Ids marcados pra compartilhar (toque no card pra marcar/desmarcar). Fica só na memória
@@ -119,15 +119,15 @@ function ophRenderLista(){
     <div onclick="ophToggleSelecao(${j.id})" style="flex:0 0 auto;width:150px;background:var(--c2);border:2px solid ${sel?'var(--verde2)':'var(--c3)'};border-radius:10px;padding:10px;text-align:center;position:relative;cursor:pointer">
       ${sel?'<div style="position:absolute;top:4px;left:4px;width:16px;height:16px;border-radius:50%;background:var(--verde2);color:#fff;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;line-height:1">✓</div>':''}
       ${foraDeHoje?`<div style="position:absolute;top:4px;right:38px;background:var(--c2-dest);color:var(--ouro);font-size:8px;font-weight:700;padding:2px 5px;border-radius:8px">${dataFmt}</div>`:''}
-      <button onclick="event.stopPropagation();ophAbrirEdicao(${j.id})" title="Editar Campeonato/Times/Mercado/Odd/Situação" style="position:absolute;top:2px;right:22px;background:none;border:none;color:var(--texto2);font-size:13px;cursor:${sel?'pointer':'default'};padding:2px 4px;display:${sel?'block':'none'}">✏️</button>
+      <button onclick="event.stopPropagation();ophAbrirEdicao(${j.id})" title="Editar Campeonato/Times/Mercado/Odd/Situação" style="position:absolute;top:2px;right:22px;background:none;border:none;color:var(--texto2);font-size:13px;cursor:${sel?'pointer':'default'};padding:2px 4px;display:${sel?'flex':'none'}"><span data-ic="pencil" data-ic-size="13"></span></button>
       <button onclick="event.stopPropagation();ophRemover(${j.id})" style="position:absolute;top:2px;right:4px;background:none;border:none;color:var(--texto2);font-size:13px;cursor:pointer;padding:2px 4px">✕</button>
       <div style="width:30px;height:30px;margin:0 auto">${escudoImgOuIcone(j.casa)}</div>
       <div style="font-size:10.5px;font-weight:700;line-height:1.2;margin-top:2px">${j.casa||'—'}</div>
-      <div style="font-size:9px;color:var(--texto2);margin:3px 0">🆚</div>
+      <div style="font-size:9px;color:var(--texto2);margin:3px 0;display:flex;justify-content:center"><span data-ic="swords" data-ic-size="11"></span></div>
       <div style="width:30px;height:30px;margin:0 auto">${escudoImgOuIcone(j.vis)}</div>
       <div style="font-size:10.5px;font-weight:700;line-height:1.2;margin-top:2px">${j.vis||'—'}</div>
-      <div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--c3);font-size:9px;color:var(--ouro);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🏆 ${j.camp||'—'}</div>
-      <div style="font-size:9px;color:var(--texto2);margin-top:2px">${[j.horario?('🕘 '+j.horario):null, j.rodada||null].filter(Boolean).join(' • ')||'—'}</div>
+      <div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--c3);font-size:9px;color:var(--ouro);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;justify-content:center;gap:3px"><span data-ic="trophy" data-ic-size="10"></span> ${j.camp||'—'}</div>
+      <div style="font-size:9px;color:var(--texto2);margin-top:2px">${[j.horario?(j.horario):null, j.rodada||null].filter(Boolean).join(' • ')||'—'}</div>
       ${temDados
         ? `<div style="margin-top:6px;padding-top:6px;border-top:1px dashed var(--c3);font-size:9px;color:var(--texto)">${[j.mercado||null, j.minuto?(j.minuto+"'"):null, j.odd?('@'+parseFloat(j.odd).toFixed(2)):null].filter(Boolean).join(' · ')||'—'}</div>`
         : ''}
@@ -137,13 +137,14 @@ function ophRenderLista(){
   const vazio = `<div style="color:var(--texto2);font-size:12px;padding:10px">Nenhum jogo adicionado ainda.</div>`;
   ['ophListaDash'].forEach(id=>{
     const el = document.getElementById(id);
-    if(el) el.innerHTML = html || vazio;
+    if(el) { el.innerHTML = html || vazio; window.renderIcons?.(el); }
   });
   ['ophListaTituloDash'].forEach(id=>{
     const el = document.getElementById(id);
     if(!el) return;
     // "Jogos Agendados" porque a lista já pode ter jogos de dias futuros, não só hoje
-    el.textContent = `📋 Jogos Agendados (${lista.length})`;
+    el.innerHTML = `<span data-ic="clipboard" data-ic-size="14"></span> Jogos Agendados (${lista.length})`;
+    window.renderIcons?.(el);
   });
   const btnShare = document.getElementById('ophBtnCompartilharDash');
   if(btnShare) btnShare.style.display = ophSelecionados.size ? 'flex' : 'none';
@@ -158,7 +159,7 @@ function ophRenderLista(){
 // ══ Compartilha só os jogos marcados (toque no card pra marcar) ══
 function ophCompartilharSelecionados(){
   const lista = ophLoad().filter(j=>!ophExpirado(j) && ophSelecionados.has(j.id)).sort((a,b)=>(a.horario||'99:99').localeCompare(b.horario||'99:99'));
-  if(!lista.length){ toast('⚠️ Toque nos jogos que quer compartilhar primeiro'); return; }
+  if(!lista.length){ toast('Toque nos jogos que quer compartilhar primeiro'); return; }
 
   const agora = new Date();
   const dataFmt = String(agora.getDate()).padStart(2,'0')+'/'+String(agora.getMonth()+1).padStart(2,'0')+'/'+agora.getFullYear();

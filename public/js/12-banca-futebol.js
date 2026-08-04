@@ -77,7 +77,7 @@ async function bpSyncNuvem(){
     if (!res.ok) {
       const t = await res.text();
       if (t.includes('does not exist') || t.includes('PGRST205') || t.includes('schema cache')) {
-        setSyncStatus('erro', '⚠️ Crie a tabela "banca" no Supabase (veja ⚙️ Configurar)');
+        setSyncStatus('erro', 'Crie a tabela "banca" no Supabase (veja Configurar)');
         bpSyncEmAndamento = false;
         return;
       }
@@ -86,7 +86,7 @@ async function bpSyncNuvem(){
     setBancaSyncStatus('ok');
   } catch(e) {
     setBancaSyncStatus('erro');
-    toast('❌ Banca não sincronizou com a nuvem: ' + e.message, true);
+    toast('Banca não sincronizou com a nuvem: ' + e.message, true);
   }
   bpSyncEmAndamento = false;
   if (bpSyncPendente) { bpSyncPendente = false; bpSyncNuvem(); }
@@ -605,7 +605,7 @@ function renderFutebolClassificacao(){
 function setBancaSyncStatus(estado){
   // reaproveita o mesmo indicador de sincronização do topo
 
-  if (estado==='ok')     setSyncStatus('ok', '☁️ Banca sincronizada');
+  if (estado==='ok')     setSyncStatus('ok', 'Banca sincronizada');
   if (estado==='sync')   setSyncStatus('sync', 'Sincronizando banca...');
   if (estado==='erro')   setSyncStatus('erro', 'Erro ao sincronizar a banca');
   if (estado==='config') setSyncStatus('config', 'Sem conexão com o banco de dados');

@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════
 
 async function salvarJogo() {
-  if (!temConfig()) { toast('⚠️ Sem conexão com o banco de dados', true); return; }
+  if (!temConfig()) { toast('Sem conexão com o banco de dados', true); return; }
   const camp=document.getElementById('iCamp').value.trim();
   const pais=document.getElementById('iPais').value.trim();
   const casa=document.getElementById('iCasa').value.trim();
@@ -12,23 +12,23 @@ async function salvarJogo() {
   const rodada=document.getElementById('iRodada').value.trim();
 
   // Validações obrigatórias
-  if(!camp)   { toast('⚠️ Informe o campeonato!'); document.getElementById('iCamp').focus(); return; }
-  if(!pais)   { toast('⚠️ Informe o país!'); document.getElementById('iPais').focus(); return; }
-  if(!data)   { toast('⚠️ Informe a data do jogo!'); document.getElementById('iData').focus(); return; }
-  if(!casa)   { toast('⚠️ Informe o time mandante!'); document.getElementById('iCasa').focus(); return; }
-  if(!vis)    { toast('⚠️ Informe o time visitante!'); document.getElementById('iVis').focus(); return; }
-  if(!rodada) { toast('⚠️ Informe a rodada/fase!'); document.getElementById('iRodada').focus(); return; }
-  if(casa===vis){ toast('⚠️ Mandante e visitante não podem ser o mesmo time!'); return; }
+  if(!camp)   { toast('Informe o campeonato!'); document.getElementById('iCamp').focus(); return; }
+  if(!pais)   { toast('Informe o país!'); document.getElementById('iPais').focus(); return; }
+  if(!data)   { toast('Informe a data do jogo!'); document.getElementById('iData').focus(); return; }
+  if(!casa)   { toast('Informe o time mandante!'); document.getElementById('iCasa').focus(); return; }
+  if(!vis)    { toast('Informe o time visitante!'); document.getElementById('iVis').focus(); return; }
+  if(!rodada) { toast('Informe a rodada/fase!'); document.getElementById('iRodada').focus(); return; }
+  if(casa===vis){ toast('Mandante e visitante não podem ser o mesmo time!'); return; }
 
   // Bloqueia se esse nome de campeonato já existe cadastrado com OUTRO país — evita
   // misturar duas ligas homônimas (ex: "Série A" do Brasil x "Série A" da Itália)
   // nas Estatísticas, já que o nome do campeonato é a chave usada em todo o app.
   const conflitoPais = jogosCache.find(j=>j.camp===camp && j.pais && j.pais!==pais);
-  if(conflitoPais){ toast(`⚠️ "${camp}" já está cadastrado como ${conflitoPais.pais}. Use um nome diferente pra este campeonato (ex: "${camp} (${pais})")`, true); return; }
+  if(conflitoPais){ toast(`"${camp}" já está cadastrado como ${conflitoPais.pais}. Use um nome diferente pra este campeonato (ex: "${camp} (${pais})")`, true); return; }
 
   // Verificar duplicado
   const dup=jogosCache.find(j=>j.camp===camp&&j.casa===casa&&j.vis===vis&&j.data===data);
-  if(dup){ toast('⚠️ Este jogo já está registrado nessa data!'); return; }
+  if(dup){ toast('Este jogo já está registrado nessa data!'); return; }
 
   const jogo = {
     camp, pais, data:document.getElementById('iData').value,
@@ -57,7 +57,7 @@ async function salvarJogo() {
   document.getElementById('iGC').value=0; document.getElementById('iGV').value=0;
   golsTemp=[]; syncNomes(); renderCampo(); renderGolsLista();
   sugCamp(); onCampInput(); atualizarHeader(); renderGeral();
-  toast('✅ Jogo salvo na nuvem! ☁️');
+  toast('Jogo salvo na nuvem!');
 }
 
 // Lê um campo numérico do formulário; retorna null se vazio (em vez de 0),
@@ -76,6 +76,6 @@ async function deletarJogo(id) {
   if (!ok) return;
   jogosCache = jogosCache.filter(j=>j.id!==id);
   renderDados(); atualizarHeader(); renderGeral();
-  toast('🗑️ Removido');
+  toast('Removido');
 }
 

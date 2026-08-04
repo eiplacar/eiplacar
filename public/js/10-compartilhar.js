@@ -5,7 +5,7 @@
 function compartilhar(){
   const casa = document.getElementById('selCasa').value;
   const vis  = document.getElementById('selVis').value;
-  if(!casa||!vis){ toast('⚠️ Selecione os dois times primeiro'); return; }
+  if(!casa||!vis){ toast('Selecione os dois times primeiro'); return; }
   document.getElementById('inputDataJogo').value = '';
   document.getElementById('modalDataJogo').classList.add('open');
 }
@@ -20,7 +20,7 @@ function confirmarCompartilhar(){
 
   const casa = document.getElementById('selCasa').value;
   const vis  = document.getElementById('selVis').value;
-  if(!casa||!vis){ toast('⚠️ Selecione os dois times primeiro'); return; }
+  if(!casa||!vis){ toast('Selecione os dois times primeiro'); return; }
   const camp = document.getElementById('selCampAnalise')?.value||'';
   const sC = statsTime(casa, filtro.casa.local, camp, filtro.casa.qty);
   const sV = statsTime(vis,  filtro.vis.local,  camp, filtro.vis.qty);
@@ -110,15 +110,15 @@ function copiarTexto(txt){
       ta.focus(); ta.select();
       const ok = document.execCommand('copy');
       document.body.removeChild(ta);
-      if(ok) toast('📋 Copiado! Cole onde quiser');
-      else toast('⚠️ Não foi possível copiar');
+      if(ok) toast('Copiado! Cole onde quiser');
+      else toast('Não foi possível copiar');
     }catch{
-      toast('⚠️ Não foi possível copiar');
+      toast('Não foi possível copiar');
     }
   }
   if(navigator.clipboard && navigator.clipboard.writeText){
     navigator.clipboard.writeText(txt)
-      .then(()=>toast('📋 Copiado! Cole onde quiser'))
+      .then(()=>toast('Copiado! Cole onde quiser'))
       .catch(copiaAntiga);
   } else {
     copiaAntiga();
@@ -148,7 +148,7 @@ function abrirCompartilhamento(txt, titulo){
     navigator.share({ title: titulo||'Ei Placar', text: txt }).catch(()=>{});
   } else {
     copiarTexto(txt);
-    toast('📋 Texto copiado! Cole onde quiser compartilhar.');
+    toast('Texto copiado! Cole onde quiser compartilhar.');
   }
 }
 

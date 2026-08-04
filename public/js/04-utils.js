@@ -99,7 +99,15 @@ let _toastTimeoutId = null;
 function toast(msg, erro=false) {
   const t=document.getElementById('toast');
   if (_toastTimeoutId) { clearTimeout(_toastTimeoutId); _toastTimeoutId = null; } // cancela o timeout anterior, evita um toast antigo escondendo um novo (ou vice-versa)
-  t.textContent=msg;
+  t.innerHTML = '';
+  const icone = document.createElement('span');
+  icone.className = 'toast-ic';
+  icone.setAttribute('data-ic', erro ? 'circleAlert' : 'circleCheck');
+  icone.setAttribute('data-ic-size', '16');
+  const texto = document.createElement('span');
+  texto.textContent = msg; // via textContent, não innerHTML — evita quebrar com caracteres especiais em mensagens de erro
+  t.append(icone, texto);
+  window.renderIcons?.(t);
   t.className = erro ? 'show erro' : 'show';
   _toastTimeoutId = setTimeout(()=>{ t.className=''; _toastTimeoutId=null; }, 2400);
 }
@@ -120,14 +128,13 @@ function probOverSingle(lambdaTotal, n){
 }
 
 // Monta a barra visual de confiança (% de jogos com aquele dado realmente preenchido, considerando o pior dos dois times).
-// Escala de 5 níveis, pela % de dados coletados:
-//  🟢 Excelente (90–100) · 🔵 Bom (75–89) · 🟡 Neutro (55–74) · 🟠 Arriscado (35–54) · 🔴 Evitar (0–34)
+// Escala de 5 níveis, pela % de dados coletados: Excelente (90–100) · Bom (75–89) · Neutro (55–74) · Arriscado (35–54) · Evitar (0–34)
 function nivelConfianca(pct){
-  if(pct>=90) return { emoji:'🟢', nome:'Excelente', cor:'#4dd87a' };
-  if(pct>=75) return { emoji:'🔵', nome:'Bom',        cor:'#3a8ee0' };
-  if(pct>=55) return { emoji:'🟡', nome:'Neutro',      cor:'var(--ouro)' };
-  if(pct>=35) return { emoji:'🟠', nome:'Arriscado',   cor:'#f08060' };
-  return          { emoji:'🔴', nome:'Evitar',      cor:'var(--perigo)' };
+  if(pct>=90) return { nome:'Excelente', cor:'#4dd87a' };
+  if(pct>=75) return { nome:'Bom',        cor:'#3a8ee0' };
+  if(pct>=55) return { nome:'Neutro',      cor:'var(--ouro)' };
+  if(pct>=35) return { nome:'Arriscado',   cor:'#f08060' };
+  return          { nome:'Evitar',      cor:'var(--perigo)' };
 }
 function barraConfianca(pct, casa, vis, confCasa, confVis){
   const nivel = nivelConfianca(pct);

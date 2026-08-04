@@ -91,7 +91,15 @@ function ehErroSessaoExpirada(msg){ return /jwt expired|pgrst303/i.test(msg||'')
 
 function authMostrarMsg(texto, tipo){
   const el = document.getElementById('authMsg');
-  el.textContent = texto;
+  el.innerHTML = '';
+  const icone = document.createElement('span');
+  icone.className = 'auth-msg-ic';
+  icone.setAttribute('data-ic', tipo==='ok' ? 'circleCheck' : tipo==='erro' ? 'circleAlert' : 'circleDot');
+  icone.setAttribute('data-ic-size', '14');
+  const spanTexto = document.createElement('span');
+  spanTexto.textContent = texto;
+  el.append(icone, spanTexto);
+  window.renderIcons?.(el);
   el.className = 'auth-msg show ' + (tipo||'info');
 }
 function authLimparMsg(){
@@ -119,11 +127,11 @@ async function fazerCadastro(){
   const dataNascimento = document.getElementById('cadDataNascimento').value;
   const senha = document.getElementById('cadSenha').value;
   authLimparMsg();
-  if(!nome)  { authMostrarMsg('⚠️ Informe seu nome', 'erro'); return; }
-  if(!email) { authMostrarMsg('⚠️ Informe seu e-mail', 'erro'); return; }
-  if(!telefone) { authMostrarMsg('⚠️ Informe seu telefone', 'erro'); return; }
-  if(!dataNascimento) { authMostrarMsg('⚠️ Informe sua data de nascimento', 'erro'); return; }
-  if(!senha||senha.length<6){ authMostrarMsg('⚠️ A senha precisa ter no mínimo 6 caracteres', 'erro'); return; }
+  if(!nome)  { authMostrarMsg('️ Informe seu nome','erro'); return; }
+  if(!email) { authMostrarMsg('️ Informe seu e-mail','erro'); return; }
+  if(!telefone) { authMostrarMsg('️ Informe seu telefone','erro'); return; }
+  if(!dataNascimento) { authMostrarMsg('️ Informe sua data de nascimento','erro'); return; }
+  if(!senha||senha.length<6){ authMostrarMsg('️ A senha precisa ter no mínimo 6 caracteres','erro'); return; }
 
   // Limpa qualquer sessão que já estivesse salva neste navegador (ex: admin testando
   // o cadastro) ANTES de criar a conta nova — evita continuar "logado" na conta antiga
@@ -140,9 +148,9 @@ async function fazerCadastro(){
     if(!res.ok){
       const msg = (data && data.msg) || (data && data.error_description) || 'Erro ao criar conta';
       if(msg.toLowerCase().includes('already') || msg.toLowerCase().includes('registered')){
-        authMostrarMsg('⚠️ Este e-mail já possui conta. Tente entrar.', 'erro');
+        authMostrarMsg('️ Este e-mail já possui conta. Tente entrar.','erro');
       } else {
-        authMostrarMsg('⚠️ ' + msg, 'erro');
+        authMostrarMsg('️'+ msg,'erro');
       }
       return;
     }
@@ -159,16 +167,16 @@ async function fazerCadastro(){
       // O Supabase, por segurança, não revela se o e-mail já existe: quando a confirmação por
       // e-mail está ativada, um cadastro repetido volta como "sucesso" mas com identities:[] —
       // esse é o sinal de que já existe conta com esse e-mail.
-      authMostrarMsg('⚠️ Este e-mail já possui conta. Tente entrar ou recupere sua senha.', 'erro');
+      authMostrarMsg('️ Este e-mail já possui conta. Tente entrar ou recupere sua senha.','erro');
       authAplicarTela();
     } else {
       // projeto com confirmação por e-mail ativada
-      authMostrarMsg('✅ Conta criada! Verifique seu e-mail para confirmar, depois faça login.', 'ok');
+      authMostrarMsg('Conta criada! Verifique seu e-mail para confirmar, depois faça login.','ok');
       authAplicarTela();
       authGoTab('login');
     }
   } catch(e){
-    authMostrarMsg('❌ Erro de conexão: ' + e.message, 'erro');
+    authMostrarMsg('Erro de conexão:'+ e.message,'erro');
   }
 }
 
@@ -177,7 +185,7 @@ async function fazerLogin(){
   const email = document.getElementById('loginEmail').value.trim();
   const senha = document.getElementById('loginSenha').value;
   authLimparMsg();
-  if(!email||!senha){ authMostrarMsg('⚠️ Informe e-mail e senha', 'erro'); return; }
+  if(!email||!senha){ authMostrarMsg('️ Informe e-mail e senha','erro'); return; }
 
   try {
     const res = await fetch(authUrl('/token?grant_type=password'), {
@@ -187,13 +195,13 @@ async function fazerLogin(){
     const data = await res.json();
     if(!res.ok){
       const msg = (data && data.error_description) || (data && data.msg) || 'E-mail ou senha incorretos';
-      authMostrarMsg('⚠️ ' + msg, 'erro');
+      authMostrarMsg('️'+ msg,'erro');
       return;
     }
     authSaveSessao(data);
     await authIniciarSessao();
   } catch(e){
-    authMostrarMsg('❌ Erro de conexão: ' + e.message, 'erro');
+    authMostrarMsg('Erro de conexão:'+ e.message,'erro');
   }
 }
 
@@ -220,15 +228,16 @@ async function fazerLogout(){
 // ── Mostrar/ocultar senha (ícone de olho) ──
 function togglePwd(id, btn){
   const el = document.getElementById(id);
-  if(el.type==='password'){ el.type='text'; btn.textContent='🙈'; }
-  else { el.type='password'; btn.textContent='👁️'; }
+  const mostrar = el.type === 'password';
+  el.type = mostrar ? 'text' : 'password';
+  btn.innerHTML = ic(mostrar ? 'eyeOff' : 'eye', 16);
 }
 
 // ── Recuperar senha: envia e-mail com link via Supabase Auth ──
 async function enviarRecuperacaoSenha(){
   const email = document.getElementById('recEmail').value.trim();
   authLimparMsg();
-  if(!email){ authMostrarMsg('⚠️ Informe seu e-mail', 'erro'); return; }
+  if(!email){ authMostrarMsg('️ Informe seu e-mail','erro'); return; }
   try {
     const res = await fetch(authUrl('/recover'), {
       method:'POST', headers: authHeadersBase(),
@@ -236,13 +245,13 @@ async function enviarRecuperacaoSenha(){
     });
     // O Supabase responde 200 mesmo se o e-mail não existir (por segurança, não revela quais e-mails têm conta)
     if(res.ok){
-      authMostrarMsg('✅ Se esse e-mail tiver conta, enviamos um link de recuperação. Verifique sua caixa de entrada (e o spam).', 'ok');
+      authMostrarMsg('Se esse e-mail tiver conta, enviamos um link de recuperação. Verifique sua caixa de entrada (e o spam).','ok');
     } else {
       const data = await res.json().catch(()=>({}));
-      authMostrarMsg('⚠️ ' + ((data&&data.msg)||(data&&data.error_description)||'Erro ao enviar e-mail'), 'erro');
+      authMostrarMsg('️'+ ((data&&data.msg)||(data&&data.error_description)||'Erro ao enviar e-mail'),'erro');
     }
   } catch(e){
-    authMostrarMsg('❌ Erro de conexão: ' + e.message, 'erro');
+    authMostrarMsg('Erro de conexão:'+ e.message,'erro');
   }
 }
 
@@ -251,8 +260,8 @@ let tokenRecuperacao = null;
 async function salvarNovaSenha(){
   const senha = document.getElementById('novaSenha').value;
   authLimparMsg();
-  if(!senha||senha.length<6){ authMostrarMsg('⚠️ A senha precisa ter no mínimo 6 caracteres', 'erro'); return; }
-  if(!tokenRecuperacao){ authMostrarMsg('⚠️ Link inválido ou expirado. Solicite a recuperação novamente.', 'erro'); return; }
+  if(!senha||senha.length<6){ authMostrarMsg('️ A senha precisa ter no mínimo 6 caracteres','erro'); return; }
+  if(!tokenRecuperacao){ authMostrarMsg('️ Link inválido ou expirado. Solicite a recuperação novamente.','erro'); return; }
   try {
     const res = await fetch(authUrl('/user'), {
       method:'PUT',
@@ -261,14 +270,14 @@ async function salvarNovaSenha(){
     });
     const data = await res.json();
     if(!res.ok){
-      authMostrarMsg('⚠️ ' + ((data&&data.msg)||(data&&data.error_description)||'Erro ao salvar nova senha'), 'erro');
+      authMostrarMsg('️'+ ((data&&data.msg)||(data&&data.error_description)||'Erro ao salvar nova senha'),'erro');
       return;
     }
-    authMostrarMsg('✅ Senha alterada! Faça login com a nova senha.', 'ok');
+    authMostrarMsg('Senha alterada! Faça login com a nova senha.','ok');
     history.replaceState(null, '', location.pathname); // limpa o token da URL
     setTimeout(()=>authGoTab('login'), 1500);
   } catch(e){
-    authMostrarMsg('❌ Erro de conexão: ' + e.message, 'erro');
+    authMostrarMsg('Erro de conexão:'+ e.message,'erro');
   }
 }
 
@@ -435,7 +444,7 @@ function authAplicarTela(){
   // Popula o avatar e o menu suspenso com dados do usuário
   const av = document.getElementById('userAvatar');
   if(av){
-    av.textContent = '👤';
+    av.innerHTML = ic('user', 16);
     av.style.display = 'flex';
   }
   const menuNome  = document.getElementById('menuNome');
@@ -483,7 +492,8 @@ async function carregarPendentes(){
     if(!res.ok) throw new Error('Erro ao buscar pendentes');
     const lista = await res.json();
     if(!lista.length){
-      el.innerHTML = '<div class="empty"><div class="icon">✅</div><p>Nenhum cadastro pendente.</p></div>';
+      el.innerHTML = '<div class="empty"><div class="icon"><span data-ic="circleCheck" data-ic-size="38"></span></div><p>Nenhum cadastro pendente.</p></div>';
+      window.renderIcons?.(el);
       return;
     }
     el.innerHTML = lista.map(p=>`
@@ -492,13 +502,15 @@ async function carregarPendentes(){
           <div class="aprov-nome">${p.nome}</div>
         </div>
         <div class="aprov-btns">
-          <button class="btn-aprovar" onclick="aprovarMembro('${p.id}')">✅ Aprovar</button>
-          <button class="btn-rejeitar" onclick="rejeitarMembro('${p.id}')">✕ Rejeitar</button>
+          <button class="btn-aprovar" onclick="aprovarMembro('${p.id}')"><span data-ic="circleCheck" data-ic-size="13"></span> Aprovar</button>
+          <button class="btn-rejeitar" onclick="rejeitarMembro('${p.id}')"><span data-ic="circleX" data-ic-size="13"></span> Rejeitar</button>
         </div>
       </div>
     `).join('');
+    window.renderIcons?.(el);
   } catch(e){
-    el.innerHTML = `<div class="empty"><div class="icon">⚠️</div><p>Erro ao carregar: ${e.message}</p></div>`;
+    el.innerHTML = `<div class="empty"><div class="icon"><span data-ic="circleAlert" data-ic-size="38"></span></div><p>Erro ao carregar: ${e.message}</p></div>`;
+    window.renderIcons?.(el);
   }
 }
 
@@ -511,10 +523,10 @@ async function aprovarMembro(perfilId){
     });
     if(!upd.ok){ const t = await upd.text(); throw new Error(t); }
 
-    toast('✅ Membro aprovado!');
+    toast('Membro aprovado!');
     carregarPendentes();
   } catch(e){
-    toast('❌ Erro ao aprovar: ' + e.message, true);
+    toast('Erro ao aprovar: ' + e.message, true);
   }
 }
 
@@ -526,10 +538,10 @@ async function rejeitarMembro(perfilId){
       body: JSON.stringify({ status:'rejeitado' })
     });
     if(!res.ok){ const t = await res.text(); throw new Error(t); }
-    toast('🗑️ Cadastro rejeitado');
+    toast('Cadastro rejeitado');
     carregarPendentes();
   } catch(e){
-    toast('❌ Erro: ' + e.message, true);
+    toast('Erro: ' + e.message, true);
   }
 }
 
