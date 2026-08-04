@@ -102,7 +102,6 @@ export default function ListaPartidas() {
 
   const jogosCache = window.jogosCache || [];
   const sortNatural = window.sortNatural || ((arr) => [...arr].sort());
-  const gruposCampeonato = window.gruposCampeonato || ((camps) => camps.map((c) => ({ base: c, itens: [c] })));
 
   const allCamps = useMemo(() => [...new Set(jogosCache.map((j) => j.camp))], [jogosCache]);
 
@@ -123,12 +122,9 @@ export default function ListaPartidas() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allCamps, jogosCache.length]);
 
-  const { comVariante, soltas } = useMemo(() => {
-    const grupos = gruposCampeonato(allCamps);
-    return {
-      comVariante: grupos.filter((g) => g.itens.length >= 2),
-      soltas: sortNatural(grupos.filter((g) => g.itens.length < 2).flatMap((g) => g.itens)),
-    };
+  const listaCamps = useMemo(() => {
+    const especiais = window.comEspeciaisPorUltimo;
+    return especiais ? especiais(sortNatural(allCamps)) : sortNatural(allCamps);
   }, [allCamps]);
 
   const rodadas = useMemo(() => {
@@ -182,16 +178,7 @@ export default function ListaPartidas() {
         </div>
         <select value={filtroCamp} onChange={onChangeCamp}>
           <option value="">Todos os campeonatos</option>
-          {comVariante.map((g) => (
-            <optgroup key={g.base} label={g.base}>
-              {g.itens.map((c) => <option key={c} value={c}>{c}</option>)}
-            </optgroup>
-          ))}
-          {soltas.length > 0 && (
-            <optgroup label="Outras Ligas">
-              {soltas.map((c) => <option key={c} value={c}>{c}</option>)}
-            </optgroup>
-          )}
+          {listaCamps.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
         <select value={filtroRodada} onChange={onChangeRodada}>
           <option value="">Todas as rodadas</option>

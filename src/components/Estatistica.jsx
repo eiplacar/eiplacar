@@ -14,32 +14,18 @@ import { Trophy, Goal, Search, LineChart } from 'lucide-react';
 //   - window.computeLigas(filtroTipo, filtroCamp)      → public/js/13-calculadora.js
 //   - window.computeTempoGolTabela(camp)                → public/js/13-calculadora.js
 //   - window.computeFutebolTimes(busca, camp, local)     → public/js/12-banca-futebol.js
-//   - window.jogosCache / window.bpLoad() / window.gruposCampeonato / window.sortNatural
+//   - window.jogosCache / window.bpLoad() / window.sortNatural / window.comEspeciaisPorUltimo
 //
 // Como os dados (jogosCache, banca) podem mudar em outra aba (ex: nova entrada
 // na Calculadora), o componente recalcula toda vez que a aba é reaberta —
 // window.estatisticaRefresh é o "sininho" chamado pelo goTo('futebol') do nav.
 
 function CampeonatoOptions({ camps }) {
-  const gruposCampeonato = window.gruposCampeonato || ((c) => c.map((x) => ({ base: x, itens: [x] })));
   const sortNatural = window.sortNatural || ((arr) => [...arr].sort());
-  const grupos = gruposCampeonato(camps);
-  const comVariante = grupos.filter((g) => g.itens.length >= 2);
-  const soltas = sortNatural(grupos.filter((g) => g.itens.length < 2).flatMap((g) => g.itens));
-  return (
-    <>
-      {comVariante.map((g) => (
-        <optgroup key={g.base} label={g.base}>
-          {g.itens.map((c) => <option key={c} value={c}>{c}</option>)}
-        </optgroup>
-      ))}
-      {soltas.length > 0 && (
-        <optgroup label="Outras Ligas">
-          {soltas.map((c) => <option key={c} value={c}>{c}</option>)}
-        </optgroup>
-      )}
-    </>
-  );
+  const especiais = window.comEspeciaisPorUltimo;
+  const lista = especiais ? especiais(sortNatural(camps)) : sortNatural(camps);
+  return lista.map((c) => <option key={c} value={c}>{c}</option>);
+}
 }
 
 function corPct(p) { return p >= 70 ? 'var(--verde2)' : p >= 50 ? 'var(--ouro)' : 'var(--perigo)'; }

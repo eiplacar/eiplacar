@@ -46,6 +46,39 @@ function ophRemover(id){
   renderGeral();
 }
 
+// ══ Edição de Mercado/Odd/Minuto/Situação — feita depois de cadastrar o jogo,
+// direto no card (ícone ✏️), já que o formulário de cadastro só cuida do jogo em si ══
+let ophEditandoId = null;
+function ophAbrirEdicao(id){
+  const j = ophLoad().find(x=>x.id===id);
+  if(!j) return;
+  ophEditandoId = id;
+  document.getElementById('ophEditConfronto').textContent = `⚽ ${j.casa||'—'} 🆚 ${j.vis||'—'}`;
+  document.getElementById('ophEditMercado').value = j.mercado||'';
+  document.getElementById('ophEditMinuto').value = j.minuto||'';
+  document.getElementById('ophEditOdd').value = j.odd||'';
+  document.getElementById('ophEditStatus').value = j.status||'aguardando';
+  document.getElementById('modalEditarOportunidade').classList.add('open');
+}
+function ophFecharEdicao(){
+  document.getElementById('modalEditarOportunidade').classList.remove('open');
+  ophEditandoId = null;
+}
+function ophSalvarEdicao(){
+  if(ophEditandoId==null) return;
+  const lista = ophLoad();
+  const j = lista.find(x=>x.id===ophEditandoId);
+  if(!j){ ophFecharEdicao(); return; }
+  j.mercado = document.getElementById('ophEditMercado').value.trim();
+  j.minuto = document.getElementById('ophEditMinuto').value;
+  j.odd = document.getElementById('ophEditOdd').value;
+  j.status = document.getElementById('ophEditStatus').value;
+  ophSave(lista);
+  ophFecharEdicao();
+  ophRenderLista();
+  toast?.('💾 Oportunidade atualizada!');
+}
+
 // Ids marcados pra compartilhar (toque no card pra marcar/desmarcar). Fica só na memória
 // da sessão — assim, se um jogo já foi compartilhado, ele não vem marcado de novo sozinho.
 let ophSelecionados = new Set();
@@ -71,10 +104,12 @@ function ophRenderLista(){
     const sel = ophSelecionados.has(j.id);
     const foraDeHoje = j.data && hoje && j.data!==hoje;
     const dataFmt = foraDeHoje ? (window.fd ? window.fd(j.data) : j.data) : null;
+    const temDados = j.mercado || j.odd || j.minuto;
     return `
-    <div onclick="ophToggleSelecao(${j.id})" style="flex:0 0 auto;width:140px;background:var(--c2);border:2px solid ${sel?'var(--verde2)':'var(--c3)'};border-radius:10px;padding:10px;text-align:center;position:relative;cursor:pointer">
+    <div onclick="ophToggleSelecao(${j.id})" style="flex:0 0 auto;width:150px;background:var(--c2);border:2px solid ${sel?'var(--verde2)':'var(--c3)'};border-radius:10px;padding:10px;text-align:center;position:relative;cursor:pointer">
       ${sel?'<div style="position:absolute;top:4px;left:4px;width:16px;height:16px;border-radius:50%;background:var(--verde2);color:#fff;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;line-height:1">✓</div>':''}
-      ${foraDeHoje?`<div style="position:absolute;top:4px;right:20px;background:var(--c2-dest);color:var(--ouro);font-size:8px;font-weight:700;padding:2px 5px;border-radius:8px">${dataFmt}</div>`:''}
+      ${foraDeHoje?`<div style="position:absolute;top:4px;right:38px;background:var(--c2-dest);color:var(--ouro);font-size:8px;font-weight:700;padding:2px 5px;border-radius:8px">${dataFmt}</div>`:''}
+      <button onclick="event.stopPropagation();ophAbrirEdicao(${j.id})" title="Editar Mercado/Odd/Situação" style="position:absolute;top:2px;right:22px;background:none;border:none;color:var(--texto2);font-size:13px;cursor:pointer;padding:2px 4px">✏️</button>
       <button onclick="event.stopPropagation();ophRemover(${j.id})" style="position:absolute;top:2px;right:4px;background:none;border:none;color:var(--texto2);font-size:13px;cursor:pointer;padding:2px 4px">✕</button>
       <div style="width:30px;height:30px;margin:0 auto">${escudoImgOuIcone(j.casa)}</div>
       <div style="font-size:10.5px;font-weight:700;line-height:1.2;margin-top:2px">${j.casa||'—'}</div>
@@ -83,6 +118,9 @@ function ophRenderLista(){
       <div style="font-size:10.5px;font-weight:700;line-height:1.2;margin-top:2px">${j.vis||'—'}</div>
       <div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--c3);font-size:9px;color:var(--ouro);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🏆 ${j.camp||'—'}</div>
       <div style="font-size:9px;color:var(--texto2);margin-top:2px">${[j.horario?('🕘 '+j.horario):null, j.rodada||null].filter(Boolean).join(' • ')||'—'}</div>
+      ${temDados
+        ? `<div style="margin-top:6px;padding-top:6px;border-top:1px dashed var(--c3);font-size:9px;color:var(--texto)">${[j.mercado||null, j.minuto?(j.minuto+"'"):null, j.odd?('@'+parseFloat(j.odd).toFixed(2)):null].filter(Boolean).join(' · ')||'—'}</div>`
+        : `<div style="margin-top:6px;padding-top:6px;border-top:1px dashed var(--c3);font-size:9px;color:var(--texto2)">✏️ Toque no lápis pra editar</div>`}
     </div>`;
   }).join('');
 
@@ -125,7 +163,6 @@ function ophCompartilharSelecionados(){
     j.minuto ? `⏱ Entrada: ${j.minuto}'` : null,
     j.odd ? `💰 Odd: ${parseFloat(j.odd).toFixed(2)}` : null,
     `🟡 Situação: ${ophRotuloStatus(j.status)}`,
-    j.analise ? `📝 Análise:\n${j.analise}` : null,
   ].filter(l=>l!==null).join('\n'));
 
   const titulo = lista.length===1 ? `${lista[0].casa} × ${lista[0].vis}` : 'Jogos de Hoje';

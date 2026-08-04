@@ -18,25 +18,10 @@ import { TrendingUp, Target, ShieldHalf, CalendarRange, Trophy, Goal, Clock, His
 // é o "sininho" chamado pelo goTo('estrategias') do nav (public/js/03-nav.js).
 
 function CampeonatoOptions({ camps }) {
-  const gruposCampeonato = window.gruposCampeonato || ((c) => c.map((x) => ({ base: x, itens: [x] })));
   const sortNatural = window.sortNatural || ((arr) => [...arr].sort());
-  const grupos = gruposCampeonato(camps);
-  const comVariante = grupos.filter((g) => g.itens.length >= 2);
-  const soltas = sortNatural(grupos.filter((g) => g.itens.length < 2).flatMap((g) => g.itens));
-  return (
-    <>
-      {comVariante.map((g) => (
-        <optgroup key={g.base} label={g.base}>
-          {g.itens.map((c) => <option key={c} value={c}>{c}</option>)}
-        </optgroup>
-      ))}
-      {soltas.length > 0 && (
-        <optgroup label="Outras Ligas">
-          {soltas.map((c) => <option key={c} value={c}>{c}</option>)}
-        </optgroup>
-      )}
-    </>
-  );
+  const especiais = window.comEspeciaisPorUltimo;
+  const lista = especiais ? especiais(sortNatural(camps)) : sortNatural(camps);
+  return lista.map((c) => <option key={c} value={c}>{c}</option>);
 }
 
 function corPct(p) { return p == null ? 'var(--texto2)' : p >= 50 ? 'var(--verde2)' : p >= 25 ? 'var(--ouro)' : 'var(--perigo)'; }

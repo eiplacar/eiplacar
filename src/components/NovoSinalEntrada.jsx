@@ -1,38 +1,29 @@
 import { useState } from 'react';
-import { Trophy, Swords, Flag, Clock, TrendingUp, Timer, DollarSign, CircleDot, FileText, Lightbulb, Eye, Plus, Shield, BarChart3, Calendar } from 'lucide-react';
+import { Trophy, Swords, Flag, Clock, Plus, Shield, Calendar, CheckSquare, Square, ListChecks } from 'lucide-react';
 
-// ══ Novo Sinal de Entrada (sub-aba dentro de Partidas) — quinto módulo migrado para React ══
+// ══ Novo Sinal de Entrada (sub-aba dentro de Partidas) — reformulado ══
 //
-// Antes era JS puro em public/js/11-jogosdodia.js (funções ophXxx). A lista
-// "Jogos de Hoje" (localStorage + expiração automática) continua JS puro,
-// já que é compartilhada com o Dashboard — este componente só lê/escreve nela
-// através das mesmas funções de sempre.
+// Antes esse formulário juntava tudo (Campeonato/Jogo/Rodada/Horário +
+// Mercado/Minuto/Odd/Situação/Análise) numa entrada só, de um jogo por vez.
+// Agora ele cuida só de CADASTRAR o jogo (de onde vai jogar). Mercado, Odd,
+// Minuto e Situação viraram edição posterior, feita direto no card do
+// Dashboard (ícone de editar) — public/js/11-jogosdodia.js.
+//
+// Dois jeitos de cadastrar:
+//  1) Buscar pela API-Football, marcar quantos jogos quiser (checkbox) e
+//     adicionar todos de uma vez ("Adicionar Selecionados").
+//  2) Preencher Campeonato/Jogo/Rodada/Horário manualmente e clicar
+//     "Adicionar Jogo" — pra times/campeonatos que a API não cobre.
 //
 // Pontes com o restante do app, que ainda é JS puro:
 //   - window.jogosCache      → array de jogos (times/campeonatos disponíveis)
-//   - window.ultimaAnalise   → preenchido pela aba Análise
-//   - window.ophLoad / ophSave / ophExpirado → lista "Jogos de Hoje" (localStorage)
+//   - window.ophLoad / ophSave → lista "Jogos de Hoje" (localStorage)
 //   - window.ophRenderLista  → redesenha os cards de "Jogos de Hoje" (Dashboard)
 //   - window.renderGeral     → atualiza o Dashboard depois de adicionar um jogo
-//   - window.toast / escudoImgOuIcone / sortNatural / gruposCampeonato
+//   - window.toast / escudoImgOuIcone / sortNatural / comEspeciaisPorUltimo
 
 const HORAS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
 const MINUTOS = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
-
-const ROTULO_STATUS = {
-  aguardando: '🟡 Aguardando resultado',
-  green: '✅ Green',
-  red: '❌ Red',
-  void: '↩️ Void',
-  encerrado: '⚫ Encerrado',
-};
-
-function fmtDataHoraAgora() {
-  const agora = new Date();
-  const dataFmt = String(agora.getDate()).padStart(2, '0') + '/' + String(agora.getMonth() + 1).padStart(2, '0') + '/' + agora.getFullYear();
-  const horaFmt = String(agora.getHours()).padStart(2, '0') + ':' + String(agora.getMinutes()).padStart(2, '0');
-  return { dataFmt, horaFmt };
-}
 
 function SectionLabel({ icon: Icon, children }) {
   return (
@@ -43,6 +34,10 @@ function SectionLabel({ icon: Icon, children }) {
   );
 }
 
+function normalizaRodada(r) {
+  return r ? String(r).replace(/^Regular Season - /i, 'Rodada ') : '';
+}
+
 export default function NovoSinalEntrada() {
   const [camp, setCamp] = useState('');
   const [casa, setCasa] = useState('');
@@ -51,23 +46,17 @@ export default function NovoSinalEntrada() {
   const [data, setData] = useState(window.hojeBR ? window.hojeBR() : new Date().toISOString().slice(0, 10));
   const [hora, setHora] = useState('');
   const [min, setMin] = useState('');
-  const [mercado, setMercado] = useState('');
-  const [minutoEntrada, setMinutoEntrada] = useState('');
-  const [odd, setOdd] = useState('');
-  const [status, setStatus] = useState('aguardando');
-  const [placar, setPlacar] = useState('');
-  const [analise, setAnalise] = useState('');
-  const [mostrarSugestoes, setMostrarSugestoes] = useState(false);
-  const [mercadoSugeridoIdx, setMercadoSugeridoIdx] = useState('');
 
-  // ── API-Football: busca os jogos de hoje e deixa preencher com 1 clique ──
+  // ── API-Football: busca os jogos de hoje e deixa marcar quantos quiser ──
   const [buscandoApi, setBuscandoApi] = useState(false);
   const [jogosApi, setJogosApi] = useState(null); // null = ainda não buscou
-  const [extra, setExtra] = useState({ camp: '', casa: '', vis: '' }); // times/campeonato vindos da API que ainda não existem no histórico
+  const [selecionadosApi, setSelecionadosApi] = useState(new Set());
+  const [extra, setExtra] = useState({ camp: '' }); // campeonato vindo da API que ainda não existe no histórico
 
   async function buscarJogos() {
     setBuscandoApi(true);
     setJogosApi(null);
+    setSelecionadosApi(new Set());
     try {
       const resp = await fetch(`/.netlify/functions/jogos-do-dia?data=${data}`);
       const json = await resp.json();
@@ -82,36 +71,52 @@ export default function NovoSinalEntrada() {
     }
   }
 
-  function preencherDaApi(jogo) {
-    setExtra({ camp: jogo.campeonato, casa: jogo.casa, vis: jogo.vis });
-    setCamp(jogo.campeonato);
-    setCasa(jogo.casa);
-    setVis(jogo.vis);
-    if (jogo.rodada) setRodada(String(jogo.rodada).replace(/^Regular Season - /i, 'Rodada '));
-    if (jogo.horario) {
-      const [h, m] = jogo.horario.split(':');
-      setHora(h); setMin(m);
-    }
-    setJogosApi(null);
-    window.toast?.('⚽ Jogo preenchido a partir da API-Football!');
+  function toggleSelecaoApi(idx) {
+    setSelecionadosApi((prev) => {
+      const novo = new Set(prev);
+      if (novo.has(idx)) novo.delete(idx); else novo.add(idx);
+      return novo;
+    });
   }
+
+  function selecionarTodosApi() {
+    if (!jogosApi) return;
+    setSelecionadosApi(selecionadosApi.size === jogosApi.length ? new Set() : new Set(jogosApi.map((_, i) => i)));
+  }
+
+  function adicionarSelecionadosApi() {
+    if (!jogosApi || !selecionadosApi.size) { window.toast?.('⚠️ Marque pelo menos um jogo pra adicionar'); return; }
+    const ophLoad = window.ophLoad || (() => []);
+    const ophSave = window.ophSave || (() => {});
+    const lista = ophLoad();
+    let n = 0;
+    jogosApi.forEach((j, i) => {
+      if (!selecionadosApi.has(i)) return;
+      lista.push({
+        id: Date.now() + n, camp: j.campeonato, casa: j.casa, vis: j.vis,
+        rodada: normalizaRodada(j.rodada), data, horario: j.horario || '',
+        mercado: '', minuto: '', odd: '', status: 'aguardando',
+        placar: '', analise: '', criadoEm: new Date().toISOString(),
+      });
+      n++;
+    });
+    ophSave(lista);
+    setJogosApi(null);
+    setSelecionadosApi(new Set());
+    window.ophRenderLista?.();
+    window.renderGeral?.();
+    window.toast?.(`✅ ${n} jogo(s) adicionado(s) — edite Mercado/Odd/Situação direto no card`);
+  }
+
   const jogosCache = window.jogosCache || [];
   const sortNatural = window.sortNatural || ((arr) => [...arr].sort());
-  const gruposCampeonato = window.gruposCampeonato || ((camps) => camps.map((c) => ({ base: c, itens: [c] })));
-  const ultimaAnalise = window.ultimaAnalise;
+  const especiais = window.comEspeciaisPorUltimo;
 
   const allCamps = sortNatural([...new Set([...jogosCache.map((j) => j.camp), ...(extra.camp ? [extra.camp] : [])])]);
-  const grupos = gruposCampeonato(allCamps);
-  const comVariante = grupos.filter((g) => g.itens.length >= 2);
-  const soltas = sortNatural(grupos.filter((g) => g.itens.length < 2).flatMap((g) => g.itens));
+  const listaCamps = especiais ? especiais(allCamps) : allCamps;
 
   const jogosDoCamp = camp ? jogosCache.filter((j) => j.camp === camp) : jogosCache;
-  const timesExtra = [camp && camp === extra.camp ? extra.casa : null, camp && camp === extra.camp ? extra.vis : null].filter(Boolean);
-  const times = [...new Set([...jogosDoCamp.map((j) => j.casa), ...jogosDoCamp.map((j) => j.vis), ...timesExtra])].sort();
-
-  const mercadoLower = mercado.toLowerCase();
-  const placarLabel = mercadoLower.includes('canto') ? 'Total de Cantos' : mercadoLower.includes('cart') ? 'Total de Cartões' : 'Placar Final';
-  const placarPlaceholder = mercadoLower.includes('canto') ? 'Ex: 9' : mercadoLower.includes('cart') ? 'Ex: 5' : 'Ex: 2 x 1';
+  const times = [...new Set([...jogosDoCamp.map((j) => j.casa), ...jogosDoCamp.map((j) => j.vis)])].sort();
 
   function onChangeCamp(novoCamp) {
     setCamp(novoCamp);
@@ -119,37 +124,6 @@ export default function NovoSinalEntrada() {
     const timesNovos = [...new Set([...jogos.map((j) => j.casa), ...jogos.map((j) => j.vis)])];
     if (casa && !timesNovos.includes(casa)) setCasa('');
     if (vis && !timesNovos.includes(vis)) setVis('');
-  }
-
-  function sugerirAnalise() {
-    if (!ultimaAnalise) { window.toast?.('⚠️ Faça uma análise primeiro na aba 🔍 Análise'); return; }
-    const mercadoAtual = mercado.trim();
-
-    if (mercadoAtual) {
-      const m = ultimaAnalise.mercados.find((x) => x.nome.toLowerCase() === mercadoAtual.toLowerCase());
-      if (!m) { window.toast?.(`⚠️ Esse mercado não está na última análise (${ultimaAnalise.casa} × ${ultimaAnalise.vis})`); return; }
-      setAnalise(`Segundo a análise, ${m.nome} tem ${m.prob}% de chance.`);
-      window.toast?.('💡 Análise sugerida!');
-      return;
-    }
-
-    if (!ultimaAnalise.mercados?.length) { window.toast?.('⚠️ A última análise não tem mercados calculados'); return; }
-    setMostrarSugestoes(true);
-    window.toast?.(`📊 Escolha um mercado da última análise (${ultimaAnalise.casa} × ${ultimaAnalise.vis})`);
-  }
-
-  function escolherMercadoSugerido(idx) {
-    setMercadoSugeridoIdx(idx);
-    if (idx === '') return;
-    const m = ultimaAnalise?.mercados?.[parseInt(idx, 10)];
-    if (!m) return;
-    setMercado(m.nome);
-    setAnalise(`Segundo a análise, ${m.nome} tem ${m.prob}% de chance.`);
-    setMostrarSugestoes(false);
-    setMercadoSugeridoIdx('');
-    if (!casa && times.includes(ultimaAnalise.casa)) setCasa(ultimaAnalise.casa);
-    if (!vis && times.includes(ultimaAnalise.vis)) setVis(ultimaAnalise.vis);
-    window.toast?.('💡 Mercado e análise preenchidos!');
   }
 
   function adicionar() {
@@ -161,47 +135,22 @@ export default function NovoSinalEntrada() {
     const lista = ophLoad();
     lista.push({
       id: Date.now(), camp, casa, vis, rodada: rodada.trim(), data, horario,
-      mercado: mercado.trim(), minuto: minutoEntrada, odd, status,
-      placar: placar.trim(), analise: analise.trim(), criadoEm: new Date().toISOString(),
+      mercado: '', minuto: '', odd: '', status: 'aguardando',
+      placar: '', analise: '', criadoEm: new Date().toISOString(),
     });
     ophSave(lista);
 
-    // Limpa o formulário pra montar o próximo sinal — mantém campeonato e data
-    // (comum adicionar vários jogos seguidos do mesmo campeonato/dia)
+    // Limpa só os times/rodada/horário — mantém campeonato e data (comum
+    // adicionar vários jogos seguidos do mesmo campeonato/dia)
     setRodada(''); setHora(''); setMin(''); setCasa(''); setVis('');
-    setMercado(''); setMinutoEntrada(''); setOdd(''); setStatus('aguardando');
-    setPlacar(''); setAnalise(''); setMostrarSugestoes(false);
 
     window.ophRenderLista?.();
     window.renderGeral?.();
-    window.toast?.(data === (window.hojeBR?.() || data) ? '✅ Jogo adicionado à lista de hoje' : `✅ Jogo agendado para ${window.fd ? window.fd(data) : data}`);
+    window.toast?.(data === (window.hojeBR?.() || data) ? '✅ Jogo adicionado — edite Mercado/Odd/Situação direto no card' : `✅ Jogo agendado para ${window.fd ? window.fd(data) : data}`);
   }
 
   const escudoCasaHtml = window.escudoImgOuIcone ? window.escudoImgOuIcone(casa) : null;
   const escudoVisHtml = window.escudoImgOuIcone ? window.escudoImgOuIcone(vis) : null;
-
-  // Preview ao vivo — mesmo texto usado no compartilhamento da lista
-  let preview = 'Preencha os campos acima para ver o preview.';
-  if (casa || vis || mercado) {
-    const horario = hora && min ? `${hora}:${min}` : '';
-    const { dataFmt, horaFmt } = fmtDataHoraAgora();
-    preview = [
-      camp ? `🏆 Campeonato: ${camp}` : null,
-      casa || vis ? `⚽ ${casa || '—'} 🆚 ${vis || '—'}` : null,
-      rodada ? `🏟️ Rodada: ${rodada}` : null,
-      data ? `📅 Data: ${window.fd ? window.fd(data) : data}` : null,
-      horario ? `🕒 Horário: ${horario}` : null,
-      mercado ? `📈 Mercado: ${mercado}` : null,
-      minutoEntrada ? `⏱ Entrada: ${minutoEntrada}'` : null,
-      odd ? `💰 Odd: ${parseFloat(odd).toFixed(2)}` : null,
-      `🟡 Situação: ${ROTULO_STATUS[status] || ROTULO_STATUS.aguardando}`,
-      analise ? `📝 Análise:\n${analise}` : null,
-      `━━━━━━━━━━━━━━━━━━`,
-      `📅 Publicado em:\n${dataFmt} às ${horaFmt}`,
-      ``,
-      `📲 Ei Placar`,
-    ].filter((l) => l !== null).join('\n');
-  }
 
   return (
     <div className="card">
@@ -231,38 +180,48 @@ export default function NovoSinalEntrada() {
         </button>
 
         {jogosApi && jogosApi.length > 0 && (
-          <div style={{ marginTop: 8, maxHeight: 240, overflowY: 'auto', border: '1px solid var(--c3)', borderRadius: 10 }}>
-            {jogosApi.map((j) => (
-              <div
-                key={j.id}
-                onClick={() => preencherDaApi(j)}
-                style={{ padding: '8px 10px', cursor: 'pointer', borderBottom: '1px solid var(--c3)' }}
-              >
-                <div style={{ fontSize: 11, opacity: 0.7 }}>{j.campeonato} · {j.horario}</div>
-                <div style={{ fontWeight: 600 }}>{j.casa} × {j.vis}</div>
-              </div>
-            ))}
-          </div>
+          <>
+            <div style={{ marginTop: 8, maxHeight: 260, overflowY: 'auto', border: '1px solid var(--c3)', borderRadius: 10 }}>
+              {jogosApi.map((j, i) => {
+                const sel = selecionadosApi.has(i);
+                return (
+                  <div
+                    key={j.id ?? i}
+                    onClick={() => toggleSelecaoApi(i)}
+                    style={{ padding: '8px 10px', cursor: 'pointer', borderBottom: '1px solid var(--c3)', display: 'flex', alignItems: 'center', gap: 8, background: sel ? 'var(--c2-dest)' : 'transparent' }}
+                  >
+                    {sel ? <CheckSquare size={16} style={{ color: 'var(--verde2)', flexShrink: 0 }} /> : <Square size={16} style={{ color: 'var(--texto2)', flexShrink: 0 }} />}
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 11, opacity: 0.7 }}>{j.campeonato} · {j.horario}</div>
+                      <div style={{ fontWeight: 600 }}>{j.casa} × {j.vis}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+              <button type="button" onClick={selecionarTodosApi} className="btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 12 }}>
+                <ListChecks size={13} /> {selecionadosApi.size === jogosApi.length ? 'Limpar seleção' : 'Marcar todos'}
+              </button>
+              <button type="button" onClick={adicionarSelecionadosApi} className="btn-primary" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 12 }}>
+                <Plus size={13} /> Adicionar {selecionadosApi.size > 0 ? `(${selecionadosApi.size})` : 'selecionados'}
+              </button>
+            </div>
+          </>
         )}
         {jogosApi && jogosApi.length === 0 && (
           <div style={{ marginTop: 8, fontSize: 12, opacity: 0.7 }}>Nenhum jogo encontrado pra hoje nas ligas configuradas.</div>
         )}
       </div>
 
+      <div style={{ height: 1, background: 'var(--c3)', margin: '4px 0 14px' }} />
+      <div style={{ fontSize: 11, color: 'var(--texto2)', marginBottom: 10 }}>Ou cadastre um jogo manualmente:</div>
+
       <div style={{ marginBottom: 10 }}>
         <SectionLabel icon={Trophy}>Campeonato</SectionLabel>
         <select value={camp} onChange={(e) => onChangeCamp(e.target.value)}>
           <option value="">— Selecione o campeonato —</option>
-          {comVariante.map((g) => (
-            <optgroup key={g.base} label={g.base}>
-              {g.itens.map((c) => <option key={c} value={c}>{c}</option>)}
-            </optgroup>
-          ))}
-          {soltas.length > 0 && (
-            <optgroup label="Outras Ligas">
-              {soltas.map((c) => <option key={c} value={c}>{c}</option>)}
-            </optgroup>
-          )}
+          {listaCamps.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
       </div>
 
@@ -309,69 +268,6 @@ export default function NovoSinalEntrada() {
           </div>
         </div>
       </div>
-
-      <div style={{ height: 1, background: 'var(--c3)', margin: '4px 0 14px' }} />
-
-      <div style={{ marginBottom: 8 }}>
-        <SectionLabel icon={TrendingUp}>Mercado</SectionLabel>
-        <input type="text" value={mercado} onChange={(e) => setMercado(e.target.value)} placeholder="Ex: Over 1.5" />
-      </div>
-      {mostrarSugestoes && (
-        <div style={{ marginBottom: 8 }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}><BarChart3 size={12} /> Mercados da última análise</label>
-          <select value={mercadoSugeridoIdx} onChange={(e) => escolherMercadoSugerido(e.target.value)}>
-            <option value="">— Selecione —</option>
-            {ultimaAnalise?.mercados?.map((m, i) => <option key={i} value={i}>{m.nome} — {m.prob}%</option>)}
-          </select>
-        </div>
-      )}
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
-        <div>
-          <SectionLabel icon={Timer}>Minuto da Entrada</SectionLabel>
-          <input type="number" min="0" max="120" value={minutoEntrada} onChange={(e) => setMinutoEntrada(e.target.value)} placeholder="Ex: 33" />
-        </div>
-        <div>
-          <SectionLabel icon={DollarSign}>Odd</SectionLabel>
-          <input type="number" min="1.01" step="0.01" value={odd} onChange={(e) => setOdd(e.target.value)} placeholder="1.80" />
-        </div>
-      </div>
-
-      <div style={{ marginBottom: 8 }}>
-        <SectionLabel icon={CircleDot}>Situação</SectionLabel>
-        <select value={status} onChange={(e) => setStatus(e.target.value)}>
-          <option value="aguardando">🟡 Aguardando resultado</option>
-          <option value="green">✅ Green</option>
-          <option value="red">❌ Red</option>
-          <option value="void">↩️ Void</option>
-          <option value="encerrado">⚫ Encerrado</option>
-        </select>
-      </div>
-      {status !== 'aguardando' && (
-        <div style={{ marginBottom: 8 }}>
-          <label>{placarLabel}</label>
-          <input type="text" value={placar} onChange={(e) => setPlacar(e.target.value)} placeholder={placarPlaceholder} />
-        </div>
-      )}
-
-      <div style={{ marginBottom: 8 }}>
-        <SectionLabel icon={FileText}>Análise</SectionLabel>
-        <textarea rows={2} value={analise} onChange={(e) => setAnalise(e.target.value)} placeholder="Ex: Jogo intenso, muitas finalizações e pressão ofensiva." />
-      </div>
-      <button
-        type="button"
-        onClick={sugerirAnalise}
-        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'var(--c1)', border: '1px dashed var(--c3)', borderRadius: 8, padding: 8, color: 'var(--texto2)', fontSize: 12, fontWeight: 600, cursor: 'pointer', marginBottom: 14 }}
-      >
-        <Lightbulb size={13} /> Sugerir análise
-      </button>
-
-      <div style={{ height: 1, background: 'var(--c3)', margin: '4px 0 14px' }} />
-
-      <SectionLabel icon={Eye}>Modelo final</SectionLabel>
-      <pre style={{ background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 9, padding: 12, fontSize: 11, color: 'var(--texto2)', whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'inherit', lineHeight: 1.6, margin: '0 0 14px' }}>
-        {preview}
-      </pre>
 
       <button className="btn-primary" onClick={adicionar} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
         <Plus size={15} /> Adicionar Jogo

@@ -10,31 +10,16 @@ import { Trophy, BarChart3 } from 'lucide-react';
 //
 // A matemática continua a mesma de sempre, só virou função pura sem DOM:
 //   - window.computeClassificacao(camp) → public/js/12-banca-futebol.js
-//   - window.jogosCache / window.sortNatural / window.gruposCampeonato
+//   - window.jogosCache / window.sortNatural / window.comEspeciaisPorUltimo
 //
 // window.classificacaoRefresh é o "sininho" chamado pelo goTo('classificacao')
 // do nav sempre que a aba é reaberta (os jogos podem ter mudado noutra aba).
 
 function CampeonatoOptions({ camps }) {
-  const gruposCampeonato = window.gruposCampeonato || ((c) => c.map((x) => ({ base: x, itens: [x] })));
   const sortNatural = window.sortNatural || ((arr) => [...arr].sort());
-  const grupos = gruposCampeonato(camps);
-  const comVariante = grupos.filter((g) => g.itens.length >= 2);
-  const soltas = sortNatural(grupos.filter((g) => g.itens.length < 2).flatMap((g) => g.itens));
-  return (
-    <>
-      {comVariante.map((g) => (
-        <optgroup key={g.base} label={g.base}>
-          {g.itens.map((c) => <option key={c} value={c}>{c}</option>)}
-        </optgroup>
-      ))}
-      {soltas.length > 0 && (
-        <optgroup label="Outras Ligas">
-          {soltas.map((c) => <option key={c} value={c}>{c}</option>)}
-        </optgroup>
-      )}
-    </>
-  );
+  const especiais = window.comEspeciaisPorUltimo;
+  const lista = especiais ? especiais(sortNatural(camps)) : sortNatural(camps);
+  return lista.map((c) => <option key={c} value={c}>{c}</option>);
 }
 
 export default function Classificacao() {

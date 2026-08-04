@@ -81,7 +81,7 @@ function gruposCampeonato(camps){
 // Monta as <option> de uma lista de campeonatos: lista simples e ordenada,
 // sem agrupar por liga/optgroup (amistoso e Copa do Mundo ficam por último).
 function optionsCampeonato(camps, selecionado){
-  const ordenados = comEspeciaisPorUltimo(gruposCampeonato(camps).flatMap(g=>g.itens));
+  const ordenados = comEspeciaisPorUltimo(sortNatural(camps));
   return ordenados.map(c=>`<option value="${c}" ${c===selecionado?'selected':''}>${c}</option>`).join('');
 }
 

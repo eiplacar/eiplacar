@@ -15,7 +15,7 @@ import { Trophy, Shield, Share2, CheckCircle2, Home, Plane, RotateCcw } from 'lu
 //                                    cálculo de estatísticas (window.renderAnalise)
 //   - window.renderAnalise()      → recalcula (computeAnalise) e avisa o componente
 //                                    AnaliseResultado.jsx pra redesenhar
-//   - window.escudoImgOuIcone(nome) / window.gruposCampeonato(camps)
+//   - window.escudoImgOuIcone(nome) / window.comEspeciaisPorUltimo(camps)
 //   - window.analiseReactRefresh  → "sininho": o goTo('analise') do nav ainda chama
 //                                    esse nome pra avisar o componente ao trocar de aba
 
@@ -44,16 +44,12 @@ export default function SeletorAnalise() {
   }, []);
 
   const jogosCache = window.jogosCache || [];
-  const gruposCampeonato = window.gruposCampeonato || ((camps) => camps.map((c) => ({ base: c, itens: [c] })));
   const sortNatural = window.sortNatural || ((arr) => [...arr].sort());
 
   const allCamps = useMemo(() => sortNatural([...new Set(jogosCache.map((j) => j.camp))]), [jogosCache]);
-  const { comVariante, soltas } = useMemo(() => {
-    const grupos = gruposCampeonato(allCamps);
-    return {
-      comVariante: grupos.filter((g) => g.itens.length >= 2),
-      soltas: sortNatural(grupos.filter((g) => g.itens.length < 2).flatMap((g) => g.itens)),
-    };
+  const listaCamps = useMemo(() => {
+    const especiais = window.comEspeciaisPorUltimo;
+    return especiais ? especiais(allCamps) : allCamps;
   }, [allCamps]);
 
   const times = useMemo(() => {
@@ -128,16 +124,7 @@ export default function SeletorAnalise() {
         </div>
         <select id="selCampAnalise" value={campeonato} onChange={onChangeCampeonato}>
           <option value="">Todos os campeonatos</option>
-          {comVariante.map((g) => (
-            <optgroup key={g.base} label={g.base}>
-              {g.itens.map((c) => <option key={c} value={c}>{c}</option>)}
-            </optgroup>
-          ))}
-          {soltas.length > 0 && (
-            <optgroup label="Outras Ligas">
-              {soltas.map((c) => <option key={c} value={c}>{c}</option>)}
-            </optgroup>
-          )}
+          {listaCamps.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
         <div style={{ fontSize: 10, color: 'var(--texto2)', marginTop: 6 }}>Selecione um campeonato para filtrar os times disponíveis</div>
       </div>
