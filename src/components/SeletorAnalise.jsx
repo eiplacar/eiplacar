@@ -21,7 +21,7 @@ import { Trophy, Shield, Share2, CheckCircle2, Home, Plane, RotateCcw } from 'lu
 
 function EscudoBox({ html }) {
   const style = { width: 30, height: 30, fontSize: 15, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' };
-  if (html && !html.includes('🛡️')) {
+  if (html && html.includes('<img')) {
     return <div className="escudo-sel" style={style} dangerouslySetInnerHTML={{ __html: html }} />;
   }
   return <div className="escudo-sel" style={style}><Shield size={15} /></div>;

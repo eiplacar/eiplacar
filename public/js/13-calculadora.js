@@ -432,12 +432,14 @@ function excluirEntrada(id){
 
 // ══ EDITAR ENTRADA (corrige mercado, odd, resultado, data etc. de um lançamento já feito) ══
 let idEntradaEmEdicao = null;
+let editERetornoManual = false; // true assim que a pessoa mexe direto no campo Retorno (correção manual)
 function editarEntrada(id){
   toastEsconder();
   const d = bpLoad();
   const e = d.entradas.find(x=>x.id===id);
   if(!e) return;
   idEntradaEmEdicao = id;
+  editERetornoManual = false;
   document.getElementById('editEMercado').value   = e.mercado || '';
   document.getElementById('editETipoAposta').value = e.tipoAposta || 'simples';
   document.getElementById('editELiga').value      = e.liga || '';
@@ -447,9 +449,24 @@ function editarEntrada(id){
   document.getElementById('editEMinutoWrap').style.display = (e.tipo==='live') ? 'block' : 'none';
   document.getElementById('editEOdd').value       = e.odd || '';
   document.getElementById('editEStake').value     = e.stake || '';
+  // Retorno já salvo (se a entrada tiver um green registrado, stake+lucro; senão Stake × Odd)
+  const retornoSalvo = e.resultado==='green' ? (e.stake||0)+(e.lucro||0) : (e.stake||0)*(e.odd||0);
+  document.getElementById('editERetorno').value = retornoSalvo ? retornoSalvo.toFixed(2).replace('.',',') : '';
   document.getElementById('editEResultado').value = e.resultado || 'green';
   document.getElementById('editEData').value      = e.data || '';
   document.getElementById('modalEditarEntrada').classList.add('open');
+}
+// oninput de Odd/Valor Apostado: recalcula o Retorno sozinho, a não ser que a pessoa já tenha corrigido ele na mão
+function editECalcularRetorno(){
+  if(editERetornoManual) return;
+  const odd   = numBR(document.getElementById('editEOdd').value);
+  const stake = numBR(document.getElementById('editEStake').value);
+  const el = document.getElementById('editERetorno');
+  el.value = (odd>0 && stake>0) ? (odd*stake).toFixed(2).replace('.',',') : '';
+}
+// oninput do próprio campo Retorno: marca como correção manual, pra não sobrescrever mais sozinho
+function editERetornoEditadoManual(){
+  editERetornoManual = true;
 }
 function fecharModalEditarEntrada(){
   document.getElementById('modalEditarEntrada').classList.remove('open');
@@ -490,7 +507,11 @@ function salvarEdicaoEntrada(){
   const tot   = d.saldo||0;
   const stake = Math.round(novoStakeInformado*100)/100;
   const pct   = tot>0 ? Math.round((stake/tot)*1000)/10 : antiga.pct;
-  const lucroB = novoRes==='green' ? Math.round(stake*(novoOdd-1)*100)/100 : 0;
+  // Retorno: se a pessoa corrigiu na mão (ex: a casa pagou um valor diferente do Stake × Odd),
+  // usa o que tá no campo; senão cai no cálculo padrão Stake × Odd.
+  const retornoInformado = numBR(document.getElementById('editERetorno').value);
+  const retorno = retornoInformado>0 ? retornoInformado : stake*novoOdd;
+  const lucroB = novoRes==='green' ? Math.round((retorno-stake)*100)/100 : 0;
   const protecaoAtiva = d.protecaoAtiva!==false;
   const protecaoPct   = d.protecaoPct??10;
   const reservaCorte  = novoRes==='green' ? Math.round(lucroB*(protecaoAtiva?protecaoPct:0)/100*100)/100 : 0;

@@ -57,6 +57,8 @@ function ophAbrirEdicao(id){
   document.getElementById('ophEditCamp').value = j.camp||'';
   document.getElementById('ophEditCasa').value = j.casa||'';
   document.getElementById('ophEditVis').value = j.vis||'';
+  document.getElementById('ophEditData').value = j.data || (window.hojeBR ? window.hojeBR() : '');
+  document.getElementById('ophEditHorario').value = j.horario||'';
   document.getElementById('ophEditMercado').value = j.mercado||'';
   document.getElementById('ophEditMinuto').value = j.minuto||'';
   document.getElementById('ophEditOdd').value = j.odd||'';
@@ -74,10 +76,14 @@ function ophSalvarEdicao(){
   if(!j){ ophFecharEdicao(); return; }
   const casa = document.getElementById('ophEditCasa').value.trim();
   const vis = document.getElementById('ophEditVis').value.trim();
-  if(!casa || !vis){ toast?.('Preencha Mandante e Visitante'); return; }
+  const data = document.getElementById('ophEditData').value;
+  if(!casa || !vis){ toast?.('Preencha Mandante e Visitante', true); return; }
+  if(!data){ toast?.('Preencha a data do jogo', true); return; }
   j.camp = document.getElementById('ophEditCamp').value.trim();
   j.casa = casa;
   j.vis = vis;
+  j.data = data;
+  j.horario = document.getElementById('ophEditHorario').value;
   j.mercado = document.getElementById('ophEditMercado').value.trim();
   j.minuto = document.getElementById('ophEditMinuto').value;
   j.odd = document.getElementById('ophEditOdd').value;

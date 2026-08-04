@@ -206,140 +206,6 @@ function statsTime(nome, local, camp, qty){
   return { nome, nt, nc, nv, local, qty, mediaGM_casa:nc?r2(gmCasa/nc):0, mediaGS_casa:nc?r2(gsCasa/nc):0, mediaGM_vis:nv?r2(gmVis/nv):0, mediaGS_vis:nv?r2(gsVis/nv):0, vedCasa, vedFora, lambda, lambdaDef, lambdaAjustado, lambdaDefAjustado, lambdaHT, lambdaDefHT, ntHT, lambdaIndice, indiceForca, mediaChutesGolMarc, mediaChutesTotMarc, mediaCantosMarc, mediaVermProprio, mediaAmarProprio, confCantos, confCartoes, confChutes, rankMedAdv, calendario, minStats, jogosComMin, todosGols, mediasGolJogo, mediasMarc, mediasSofr, mediaMinMarc, mediaMinSofr, jogosComGols:jogosComGols.length };
 }
 
-// ══ RENDER MOMENTO DE ENTRADA ══
-function renderEntrada(sC, sV, casa, vis, camp){
-  const temDadosC = sC.jogosComGols > 0;
-  const temDadosV = sV.jogosComGols > 0;
-
-  if(!temDadosC && !temDadosV){
-    return `<div class="empty"><div class="icon">⏱️</div><p>Nenhum minuto de gol registrado para estes times.<br>Registre os gols com os minutos na aba Cadastrar Jogo.</p></div>`;
-  }
-
-  function seqHtml(medias, tipo, label){
-    if(!medias.some(m=>m!==null)) return '';
-    return `<div class="entrada-card">
-      <div class="entrada-header">
-        <div class="entrada-titulo">${label}</div>
-        <div class="entrada-jogos">${tipo==='marc'?sC.jogosComGols:sC.jogosComGols} jogo(s) c/ minutos</div>
-      </div>
-      <div class="gol-seq">
-        ${medias.map((m,i)=>m!==null?`<div class="gol-seq-item">
-          <div class="gsi-num">${i+1}º gol</div>
-          <div class="gsi-min ${tipo}">${m}'</div>
-          <div class="gsi-sub">média</div>
-        </div>`:'').filter(Boolean).join('')}
-      </div>
-    </div>`;
-  }
-
-  // Calcular momento estimado de cada over cruzando os dois times
-  // Gol N do jogo = média dos Nº gols combinados dos dois times
-  function mediaOver(n){ // n=1 => 1º gol do jogo
-    // pegar mediasGolJogo de cada time
-    const vC = sC.mediasGolJogo[n-1];
-    const vV = sV.mediasGolJogo[n-1];
-    if(vC!==null && vV!==null) return r2((vC+vV)/2);
-    if(vC!==null) return vC;
-    if(vV!==null) return vV;
-    return null;
-  }
-
-  // Método alternativo: usar média geral marcação+sofrimento dos dois times
-  // 1º gol = (mediaMinMarc_C + mediaMinSofr_C + mediaMinMarc_V + mediaMinSofr_V) / 4
-  const mC_marc = sC.mediaMinMarc, mC_sofr = sC.mediaMinSofr;
-  const mV_marc = sV.mediaMinMarc, mV_sofr = sV.mediaMinSofr;
-
-  // Estimativa do 1º gol por média dos dois times
-  const vals1gol = [mC_marc, mC_sofr, mV_marc, mV_sofr].filter(v=>v!==null);
-  const est1gol  = vals1gol.length ? r2(vals1gol.reduce((a,b)=>a+b,0)/vals1gol.length) : null;
-
-  // Estimativas dos demais gols (sequência combinada)
-  const overMins = [1,2,3,4,5].map(n=>mediaOver(n));
-
-  // Cor por mercado
-  const marketInfo = [
-    { label:'Over 1.5', idx:1, cls:'verde',   desc:'Aguardar 2º gol' },
-    { label:'Over 2.5', idx:2, cls:'amarelo',  desc:'Aguardar 3º gol' },
-    { label:'Over 3.5', idx:3, cls:'laranja',  desc:'Aguardar 4º gol' },
-    { label:'Over 4.5', idx:4, cls:'perigo',   desc:'Aguardar 5º gol' },
-  ];
-
-  const overHtml = marketInfo.map(m=>{
-    const min = overMins[m.idx];
-    const seguro = min && min > 20;
-    return `<div class="oe-box ${m.cls}">
-      <div class="oe-market">${m.label}</div>
-      <div class="oe-min" style="color:var(--ouro)">${min ? min+"'" : '—'}</div>
-      <div class="oe-label">${m.desc}</div>
-      ${seguro?`<div class="oe-seguro">✅ Entrada segura</div>`:''}
-    </div>`;
-  }).join('');
-
-  // Aviso de segurança
-  const avisoMin = est1gol ? Math.round(est1gol) : null;
-
-  return `
-    <!-- SUMÁRIO DOS DOIS TIMES -->
-    <div class="sec">
-      <div class="sec-title">🔢 Médias de Minuto — ${casa}</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-        <div class="gol-seq-item" style="flex:1;min-width:80px;background:var(--c2);border:1px solid var(--c3);border-radius:8px;padding:10px;text-align:center">
-          <div class="gsi-num">⚽ Marca em média</div>
-          <div class="gsi-min marc">${mC_marc!==null?mC_marc+"'":'—'}</div>
-          <div class="gsi-sub">${sC.todosGols.filter(g=>g.marcado).length} gols em ${sC.jogosComGols}j</div>
-        </div>
-        <div class="gol-seq-item" style="flex:1;min-width:80px;background:var(--c2);border:1px solid var(--c3);border-radius:8px;padding:10px;text-align:center">
-          <div class="gsi-num">🥅 Sofre em média</div>
-          <div class="gsi-min sofr">${mC_sofr!==null?mC_sofr+"'":'—'}</div>
-          <div class="gsi-sub">${sC.todosGols.filter(g=>!g.marcado).length} gols em ${sC.jogosComGols}j</div>
-        </div>
-      </div>
-      ${sC.mediasMarc.some(m=>m!==null)?`<div style="font-size:11px;color:var(--texto2);margin-bottom:6px;font-weight:700">Sequência gols marcados:</div>
-      <div class="gol-seq">${sC.mediasMarc.map((m,i)=>m!==null?`<div class="gol-seq-item"><div class="gsi-num">${i+1}º</div><div class="gsi-min marc">${m}'</div></div>`:'').filter(Boolean).join('')}</div>`:''}
-      ${sC.mediasSofr.some(m=>m!==null)?`<div style="font-size:11px;color:var(--texto2);margin-bottom:6px;font-weight:700;margin-top:8px">Sequência gols sofridos:</div>
-      <div class="gol-seq">${sC.mediasSofr.map((m,i)=>m!==null?`<div class="gol-seq-item"><div class="gsi-num">${i+1}º</div><div class="gsi-min sofr">${m}'</div></div>`:'').filter(Boolean).join('')}</div>`:''}
-    </div>
-
-    <div class="sec">
-      <div class="sec-title">🔢 Médias de Minuto — ${vis}</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-        <div class="gol-seq-item" style="flex:1;min-width:80px;background:var(--c2);border:1px solid var(--c3);border-radius:8px;padding:10px;text-align:center">
-          <div class="gsi-num">⚽ Marca em média</div>
-          <div class="gsi-min marc">${mV_marc!==null?mV_marc+"'":'—'}</div>
-          <div class="gsi-sub">${sV.todosGols.filter(g=>g.marcado).length} gols em ${sV.jogosComGols}j</div>
-        </div>
-        <div class="gol-seq-item" style="flex:1;min-width:80px;background:var(--c2);border:1px solid var(--c3);border-radius:8px;padding:10px;text-align:center">
-          <div class="gsi-num">🥅 Sofre em média</div>
-          <div class="gsi-min sofr">${mV_sofr!==null?mV_sofr+"'":'—'}</div>
-          <div class="gsi-sub">${sV.todosGols.filter(g=>!g.marcado).length} gols em ${sV.jogosComGols}j</div>
-        </div>
-      </div>
-      ${sV.mediasMarc.some(m=>m!==null)?`<div style="font-size:11px;color:var(--texto2);margin-bottom:6px;font-weight:700">Sequência gols marcados:</div>
-      <div class="gol-seq">${sV.mediasMarc.map((m,i)=>m!==null?`<div class="gol-seq-item"><div class="gsi-num">${i+1}º</div><div class="gsi-min marc">${m}'</div></div>`:'').filter(Boolean).join('')}</div>`:''}
-      ${sV.mediasSofr.some(m=>m!==null)?`<div style="font-size:11px;color:var(--texto2);margin-bottom:6px;font-weight:700;margin-top:8px">Sequência gols sofridos:</div>
-      <div class="gol-seq">${sV.mediasSofr.map((m,i)=>m!==null?`<div class="gol-seq-item"><div class="gsi-num">${i+1}º</div><div class="gsi-min sofr">${m}'</div></div>`:'').filter(Boolean).join('')}</div>`:''}
-    </div>
-
-    <!-- MOMENTO DE ENTRADA POR MERCADO -->
-    <div class="sec">
-      <div class="sec-title">🚦 Momento Ideal de Entrada</div>
-      ${est1gol!==null?`<div style="background:var(--c2);border:1px solid var(--verde2);border-radius:10px;padding:12px;text-align:center;margin-bottom:12px">
-        <div style="font-size:11px;color:var(--texto2);margin-bottom:4px">⏱️ Estimativa do 1º gol do jogo</div>
-        <div style="font-size:36px;font-weight:900;color:var(--ouro)">${est1gol}'</div>
-        <div style="font-size:11px;color:var(--texto2);margin-top:4px">média entre marcação e sofrimento dos dois times</div>
-      </div>`:''}
-      <div class="over-entrada">${overHtml}</div>
-      ${avisoMin&&avisoMin>20?`<div class="aviso-entrada">
-        💡 <strong>Ponto de segurança:</strong> com base nos dados, o 1º gol costuma sair após o <strong>${avisoMin}º minuto</strong>.<br>
-        Entrar antes disso aumenta o risco. Aguardar a confirmação antes de apostar em Over é mais conservador.
-      </div>`:''}
-      <div style="font-size:10px;color:var(--texto2);margin-top:10px;line-height:1.7">
-        ⚠️ Baseado em médias históricas. Quanto mais jogos com minutos registrados, maior a precisão.<br>
-        ${sC.jogosComGols}j com min. (${casa}) · ${sV.jogosComGols}j com min. (${vis})
-      </div>
-    </div>
-  `;
-}
 
 // Estado global das probabilidades calculadas
 let ultimaAnalise = null;
@@ -349,7 +215,7 @@ let ultimaAnalise = null;
 // lógica de negócio) — o componente React injeta isso com dangerouslySetInnerHTML,
 // igual já se fazia com escudos de time.
 function renderMinTabela(s){
-  if(!s.jogosComMin) return `<div class="empty" style="padding:16px"><div class="icon" style="font-size:24px">⏱️</div><p>Sem minutos de gols registrados.</p></div>`;
+  if(!s.jogosComMin) return `<div class="empty" style="padding:16px"><div class="icon" style="font-size:24px"><span data-ic="clock" data-ic-size="24"></span></div><p>Sem minutos de gols registrados.</p></div>`;
   const picoM=s.minStats.indexOf(s.minStats.reduce((a,b)=>b.marc>a.marc?b:a));
   const picoS=s.minStats.indexOf(s.minStats.reduce((a,b)=>b.sofr>a.sofr?b:a));
   const totMarc=s.minStats.reduce((a,b)=>a+b.marc,0);
@@ -357,17 +223,17 @@ function renderMinTabela(s){
   const cards=s.minStats.map((p,i)=>{
     const isPicoM=(i===picoM), isPicoS=(i===picoS);
     const cls=isPicoM?'pico-marc':isPicoS?'pico-sofr':'';
-    const tag=isPicoM?'<div class="pc-tag">⚽ Pico Marc.</div>':isPicoS?'<div class="pc-tag">🥅 Pico Sofr.</div>':'';
+    const tag=isPicoM?'<div class="pc-tag"><span data-ic="target" data-ic-size="11"></span> Pico Marc.</div>':isPicoS?'<div class="pc-tag"><span data-ic="goalNet" data-ic-size="11"></span> Pico Sofr.</div>':'';
     return `<div class="periodo-card ${cls}">
       <div class="pc-label">${p.l}</div>
-      <div class="pc-row"><span class="pc-ico">⚽</span><span class="pc-val marc">${p.marc}</span></div>
-      <div class="pc-row"><span class="pc-ico">🥅</span><span class="pc-val sofr">${p.sofr}</span></div>
+      <div class="pc-row"><span class="pc-ico" data-ic="target" data-ic-size="12"></span><span class="pc-val marc">${p.marc}</span></div>
+      <div class="pc-row"><span class="pc-ico" data-ic="goalNet" data-ic-size="12"></span><span class="pc-val sofr">${p.sofr}</span></div>
       ${tag}
     </div>`;
   }).join('');
   return `<div class="periodo-cards">${cards}</div>
   <div class="min-insight" style="margin-top:10px">
-    ⚽ Total marcados: <strong>${totMarc}</strong> &nbsp;·&nbsp; 🥅 Total sofridos: <strong>${totSofr}</strong><br>
+    <span data-ic="target" data-ic-size="12"></span> Total marcados: <strong>${totMarc}</strong> &nbsp;·&nbsp; <span data-ic="goalNet" data-ic-size="12"></span> Total sofridos: <strong>${totSofr}</strong><br>
     Marca mais: <strong>${s.minStats[picoM].l}</strong> &nbsp;·&nbsp; Sofre mais: <strong>${s.minStats[picoS].l}</strong><br>
     <span style="color:var(--texto2)">${s.jogosComMin} jogo(s) com minutos registrados</span>
   </div>`;

@@ -108,6 +108,10 @@ function toast(msg, erro=false) {
   texto.textContent = msg; // via textContent, não innerHTML — evita quebrar com caracteres especiais em mensagens de erro
   t.append(icone, texto);
   window.renderIcons?.(t);
+  // Posiciona o toast medindo a altura real da barra de navegação de baixo
+  // (em vez de um valor fixo no CSS, que não bate com todo aparelho/área segura)
+  const navH = document.querySelector('.quicknav')?.offsetHeight || 60;
+  t.style.bottom = (navH + 14) + 'px';
   t.className = erro ? 'show erro' : 'show';
   _toastTimeoutId = setTimeout(()=>{ t.className=''; _toastTimeoutId=null; }, 2400);
 }

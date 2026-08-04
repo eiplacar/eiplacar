@@ -74,11 +74,11 @@ async function escudosCarregarNuvem(){
 }
 function escudoImgOuIcone(nome){
   const url = getEscudo(nome);
-  return url ? `<img src="${url}" alt="" style="width:100%;height:100%;object-fit:contain;display:block">` : '🛡️';
+  return url ? `<img src="${url}" alt="" style="width:100%;height:100%;object-fit:contain;display:block">` : ic('shield', 20, 'width:100%;height:100%');
 }
 function escudoMini(nome){
   const url = getEscudo(nome);
-  return `<span class="escudo-mini" style="${url?'':'opacity:.35'}">${url ? `<img src="${url}" alt="">` : '🛡️'}</span>`;
+  return `<span class="escudo-mini" style="${url?'':'opacity:.35'}">${url ? `<img src="${url}" alt="">` : ic('shield', 14)}</span>`;
 }
 let escudoCampoAtual = null;
 function escudoInput(campoId){
@@ -167,7 +167,8 @@ function renderCampo() {
 }
 function renderGolsLista(){
   document.getElementById('contGols').textContent=golsTemp.length+(golsTemp.length===1?' gol':' gols');
-  document.getElementById('golsLista').innerHTML=golsTemp.map((g,i)=>`<div class="gol-item"><span class="gi-min">${g.min}'</span><span>⚽</span><span class="gi-time ${g.time}">${g.nome}</span><button class="gi-del" onclick="removerGol(${i})">✕</button></div>`).join('');
+  document.getElementById('golsLista').innerHTML=golsTemp.map((g,i)=>`<div class="gol-item"><span class="gi-min">${g.min}'</span><span data-ic="target" data-ic-size="13"></span><span class="gi-time ${g.time}">${g.nome}</span><button class="gi-del" onclick="removerGol(${i})">✕</button></div>`).join('');
+  window.renderIcons?.(document.getElementById('golsLista'));
 }
 
 // ══ SALVAR ══

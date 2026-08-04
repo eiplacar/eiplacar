@@ -226,15 +226,16 @@
       <input type="number" id="editEMinuto" min="0" max="120">
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-      <div><label>Odd</label><input type="text" inputMode="decimal" id="editEOdd"></div>
-      <div><label>Valor Apostado (R$)</label><input type="text" inputMode="decimal" id="editEStake"></div>
+      <div><label>Odd</label><input type="text" inputMode="decimal" id="editEOdd" oninput="editECalcularRetorno()"></div>
+      <div><label>Valor Apostado (R$)</label><input type="text" inputMode="decimal" id="editEStake" oninput="editECalcularRetorno()"></div>
     </div>
+    <div style="margin-bottom:10px"><label>Retorno (R$)</label><input type="text" inputMode="decimal" id="editERetorno" placeholder="Calculado automaticamente" oninput="editERetornoEditadoManual()"></div>
     <div style="margin-bottom:10px">
       <label>Resultado</label>
       <select id="editEResultado">
         <option value="green">Green</option>
         <option value="red">Red</option>
-        <option value="void">↩️ Void</option>
+        <option value="void">Void</option>
         <option value="cashout">Cash Out</option>
       </select>
     </div>
@@ -300,6 +301,10 @@
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
       <div><label>Mandante</label><input type="text" id="ophEditCasa"></div>
       <div><label>Visitante</label><input type="text" id="ophEditVis"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div><label>Data</label><input type="date" id="ophEditData"></div>
+      <div><label>Horário</label><input type="time" id="ophEditHorario"></div>
     </div>
     <div style="height:1px;background:var(--c3);margin:2px 0 14px"></div>
     <div style="margin-bottom:10px"><label>Mercado</label><input type="text" id="ophEditMercado" placeholder="Ex: Over 1.5"></div>

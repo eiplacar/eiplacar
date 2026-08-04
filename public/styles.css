@@ -499,7 +499,7 @@ tr:hover td { background: rgba(255,255,255,.03); }
 .ei-val.pos { color:#4dd87a; }
 .ei-val.neg { color:#f08060; }
 
-#toast { position: fixed; bottom: calc(70px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%) translateY(80px); background: var(--verde2); color: #fff; padding: 11px 20px; border-radius: 14px; font-size: 13px; font-weight: 600; line-height: 1.35; text-align: left; max-width: min(88vw, 360px); z-index: 999; transition: transform .3s; pointer-events: none; display: flex; align-items: center; gap: 8px; }
+#toast { position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--verde2); color: #fff; padding: 11px 20px; border-radius: 14px; font-size: 13px; font-weight: 600; line-height: 1.35; text-align: left; max-width: min(88vw, 360px); z-index: 999; transition: transform .3s; pointer-events: none; display: flex; align-items: center; gap: 8px; }
 #toast .toast-ic { flex-shrink: 0; display: flex; }
 #toast.show { transform: translateX(-50%) translateY(0); }
 #toast.erro { background: var(--perigo); }

@@ -67,7 +67,8 @@ function renderGeral(){
           ${selo}
         </div>`;
       }).join('')}</div>`
-    : `<div class="empty"><div class="icon">🏆</div><p>Sem campeonatos ainda.</p></div>`;
+    : `<div class="empty"><div class="icon"><span data-ic="trophy" data-ic-size="38"></span></div><p>Sem campeonatos ainda.</p></div>`;
+  window.renderIcons?.(document.getElementById('campList'));
 
   if(!campSel){
     document.getElementById('cardCamps').style.display='';
@@ -79,7 +80,8 @@ function renderGeral(){
   document.getElementById('cardCamps').style.display='none';
   document.getElementById('ophListaCardDash').style.display='none';
   document.getElementById('geralCampSelecionado').style.display='block';
-  document.getElementById('geralCampNome').textContent = '🏆 '+campSel;
+  document.getElementById('geralCampNome').innerHTML = '<span data-ic="trophy" data-ic-size="15"></span> '+campSel;
+  window.renderIcons?.(document.getElementById('geralCampNome'));
 
   const total=jogos.length;
   const gols=jogos.reduce((s,j)=>s+(j.gC||0)+(j.gV||0),0);
@@ -118,17 +120,19 @@ function renderGeral(){
           <div class="tt-rank">${i+1}º</div>
           <div class="tt-nome">${nome}</div>
           <div class="tt-bar"><div class="tt-fill" style="width:${Math.round(g/maxGols*100)}%"></div></div>
-          <div class="tt-val">${g} ⚽</div>
+          <div class="tt-val">${g} <span data-ic="target" data-ic-size="11"></span></div>
         </div>`).join('')}
       </div>
     </div>`:''}
   `;
+  window.renderIcons?.(document.getElementById('statsExtras'));
 
   // Últimos resultados: só os 5 mais recentes. Cada linha abre o detalhe do jogo ao tocar.
   const rec = ordenados.slice(0, 5);
   document.getElementById('recentList').innerHTML = rec.length
     ? rec.map(j=>`<div class="match-row" style="cursor:pointer" onclick="abrirDetalheJogo(${j.id})"><div class="match-camp"><span class="mc-texto">${j.camp}${j.data?' · '+fd(j.data):''}${j.rodada?' · '+j.rodada:''}</span>${res(j.gC,j.gV)}</div><div class="match-teams">${escudoMini(j.casa)}<span class="nome nome-casa">${j.casa}</span><span class="placar">${j.gC} × ${j.gV}</span><span class="nome nome-vis">${j.vis}</span>${escudoMini(j.vis)}</div></div>`).join('')
-    : `<div class="empty"><div class="icon">📋</div><p>Nenhum jogo ainda.</p></div>`;
+    : `<div class="empty"><div class="icon"><span data-ic="clipboard" data-ic-size="38"></span></div><p>Nenhum jogo ainda.</p></div>`;
+  window.renderIcons?.(document.getElementById('recentList'));
 }
 
 function filtrarCamp(nome){
@@ -143,7 +147,7 @@ function abrirDetalheJogo(id){
   if(!j) return;
   const gC2=(j.gols||[]).filter(g=>g.time==='casa').sort((a,b)=>a.min-b.min);
   const gV2=(j.gols||[]).filter(g=>g.time==='vis').sort((a,b)=>a.min-b.min);
-  const linhaGol = (g)=>`<div style="font-size:12px;color:var(--texto2);padding:3px 0">⚽ ${g.min}' ${g.nome||''}</div>`;
+  const linhaGol = (g)=>`<div style="font-size:12px;color:var(--texto2);padding:3px 0;display:flex;align-items:center;gap:4px"><span data-ic="target" data-ic-size="11"></span> ${g.min}' ${g.nome||''}</div>`;
   document.getElementById('detJogoTitulo').textContent = `${j.camp}${j.data?' · '+fd(j.data):''}${j.rodada?' · '+j.rodada:''}`;
   document.getElementById('detJogoPlacar').innerHTML = `
     <div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:14px 0">
@@ -162,8 +166,10 @@ function abrirDetalheJogo(id){
       <div style="flex:1">${gC2.length?gC2.map(linhaGol).join(''):'<div style="font-size:12px;color:var(--texto2)">—</div>'}</div>
       <div style="flex:1">${gV2.length?gV2.map(linhaGol).join(''):'<div style="font-size:12px;color:var(--texto2)">—</div>'}</div>
     </div>` : '';
+  window.renderIcons?.(document.getElementById('detJogoGols'));
   document.getElementById('detJogoExtra').innerHTML = (j.escanteiosC!=null && j.escanteiosV!=null)
-    ? `<div style="font-size:12px;color:var(--texto2);text-align:center;margin-top:8px">🚩 Escanteios: ${j.escanteiosC} × ${j.escanteiosV}</div>` : '';
+    ? `<div style="font-size:12px;color:var(--texto2);text-align:center;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:4px"><span data-ic="flag" data-ic-size="11"></span> Escanteios: ${j.escanteiosC} × ${j.escanteiosV}</div>` : '';
+  window.renderIcons?.(document.getElementById('detJogoExtra'));
   document.getElementById('modalDetalheJogo').classList.add('open');
 }
 function fecharDetalheJogo(){

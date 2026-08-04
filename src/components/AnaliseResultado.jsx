@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Target, BarChart3, Flag, Square, Search, AlertTriangle, MapPin, Trophy, Scale, Goal, Handshake, Clock, Calendar, Timer, Home, Plane, ShieldAlert, Sunrise, Zap, Flame, X, Footprints, Award } from 'lucide-react';
 
-const PERIODO_ICONE = { '🌅': Sunrise, '⚡': Zap, '🔥': Flame, '🏁': Flag };
+const PERIODO_ICONE = { inicio: Sunrise, fimPrimeiro: Zap, inicioSegundo: Flame, final: Flag };
 
 // ══ Resultado da Análise — sétimo módulo migrado para React ══
 //
@@ -33,7 +33,9 @@ function GolRow({ label, pct, cor }) {
 }
 
 function HtmlChunk({ html }) {
-  return <div dangerouslySetInnerHTML={{ __html: html }} />;
+  const ref = useRef(null);
+  useEffect(() => { window.renderIcons?.(ref.current); }, [html]);
+  return <div ref={ref} dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
 const localLbl = (loc) => (loc === 'all' ? 'Total' : loc === 'casa' ? 'Em casa' : 'Fora');
