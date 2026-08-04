@@ -26,7 +26,6 @@ function CampeonatoOptions({ camps }) {
   const lista = especiais ? especiais(sortNatural(camps)) : sortNatural(camps);
   return lista.map((c) => <option key={c} value={c}>{c}</option>);
 }
-}
 
 function corPct(p) { return p >= 70 ? 'var(--verde2)' : p >= 50 ? 'var(--ouro)' : 'var(--perigo)'; }
 
