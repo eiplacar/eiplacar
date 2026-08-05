@@ -142,7 +142,7 @@ function UsuarioDetalhe({ usuario, onVoltar, onMudou }) {
           <div><label>E-mail</label><input type="text" value={u.email || '—'} disabled style={{ opacity: .6 }} /></div>
           <div><label>Cadastro</label><input type="text" value={fdBr(u.created_at && u.created_at.slice(0, 10))} disabled style={{ opacity: .6 }} /></div>
         </div>
-        <button className="btn-primary" onClick={salvarEdicao} disabled={salvando}>{salvando ? 'Salvando...' : '💾 Salvar dados'}</button>
+        <button className="btn-primary" onClick={salvarEdicao} disabled={salvando} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>{salvando ? 'Salvando...' : <><Save size={14} /> Salvar dados</>}</button>
       </div>
 
       <div className="card">
@@ -301,8 +301,10 @@ function AbaSistema() {
 
   function salvar() {
     setSalvando(true);
-    window.cfgAppSave?.(cfg);
-    setTimeout(() => { setSalvando(false); window.toast?.('Configurações salvas'); }, 300);
+    Promise.resolve(window.cfgAppSave?.(cfg))
+      .then(() => window.toast?.('Configurações salvas'))
+      .catch(() => window.toast?.('Não foi possível salvar — crie a tabela "config_app" no Supabase (veja Configurar)', true))
+      .finally(() => setSalvando(false));
   }
 
   return (

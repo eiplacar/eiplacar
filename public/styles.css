@@ -172,7 +172,7 @@ main { flex: 1; padding: 16px; max-width: 900px; width: 100%; margin: 0 auto; pa
 /* RESUMO (Geral) — 3 caixinhas: campeonatos / partidas na temporada (só das ligas com jogo
    hoje) / jogos de hoje. Altura reduzida (~15-20%) em relação à versão anterior. */
 .resumo-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
-.resumo-box { background: var(--c1); border: 1px solid var(--c3); border-radius: 14px; padding: 12px 8px; text-align: center; }
+.resumo-box { background: var(--c2); border: 1px solid var(--c3); border-radius: 14px; padding: 12px 8px; text-align: center; }
 .resumo-ic { font-size: 16px; margin-bottom: 3px; }
 .resumo-num { font-size: 24px; font-weight: 700; font-family: var(--fonte-stat); line-height: 1; }
 .resumo-lbl { font-size: 12px; font-weight: 400; color: var(--texto2); margin-top: 3px; }
@@ -388,6 +388,13 @@ tr:hover td { background: rgba(255,255,255,.03); }
 .min-table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .min-table th { background: var(--c2); color: var(--texto2); font-size: 10px; text-transform: uppercase; padding: 6px 8px; text-align: center; border-bottom: 1px solid var(--c3); }
 .min-table td { padding: 6px 8px; text-align: center; border-bottom: 1px solid rgba(255,255,255,.05); }
+
+/* Tabela "Comparativo entre as Equipes" (Estratégias > Equipes): sem a barra pesada
+   de fundo no cabeçalho — só os escudos, com uma linha fina separando as estatísticas. */
+.tabela-comparativo { min-width: 0; }
+.tabela-comparativo th { background: transparent; border-bottom: none; padding: 2px 8px 10px; }
+.tabela-comparativo td { border-bottom: 1px solid rgba(255,255,255,.06); }
+.tabela-comparativo tr:last-child td { border-bottom: none; }
 .min-table .label-col { text-align: left; font-weight: 600; color: var(--texto2); }
 .min-table .total-col { font-weight: 800; color: var(--ouro); }
 .cell-n { font-weight: 700; }
@@ -499,7 +506,7 @@ tr:hover td { background: rgba(255,255,255,.03); }
 .ei-val.pos { color:#4dd87a; }
 .ei-val.neg { color:#f08060; }
 
-#toast { position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--verde2); color: #fff; padding: 11px 20px; border-radius: 14px; font-size: 13px; font-weight: 600; line-height: 1.35; text-align: left; max-width: min(88vw, 360px); z-index: 999; transition: transform .3s; pointer-events: none; display: flex; align-items: center; gap: 8px; }
+#toast { position: fixed; bottom: 92px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--verde2); color: #fff; padding: 11px 20px; border-radius: 14px; font-size: 13px; font-weight: 600; line-height: 1.35; text-align: left; max-width: min(88vw, 360px); z-index: 999; transition: transform .3s; pointer-events: none; display: flex; align-items: center; gap: 8px; }
 #toast .toast-ic { flex-shrink: 0; display: flex; }
 #toast.show { transform: translateX(-50%) translateY(0); }
 #toast.erro { background: var(--perigo); }

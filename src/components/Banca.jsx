@@ -110,7 +110,7 @@ function AbaCarteira() {
         <StatBox val={c.reds} lbl="Reds" cor="var(--perigo)" />
       </Grupo>
 
-      <Grupo titulo={<><Lightbulb size={11} /> Stake Recomendada</>}>
+      <Grupo titulo={<><Lightbulb size={11} /> Stake</>}>
         {c.stakeRecomendada.map((s) => (
           <StatBox key={s.pct} val={'R$ ' + s.valor.toFixed(2)} lbl={s.pct + '%'} cor="var(--ouro)" />
         ))}
@@ -387,8 +387,8 @@ function AbaEvolucao() {
                 <div style={{ flex: 1 }}><BarraProgresso pct={r.progressoMeta} cor="var(--verde2)" /></div>
                 <strong style={{ color: 'var(--verde2)', fontSize: 13 }}>{r.progressoMeta}%</strong>
               </div>
-              <div style={{ marginTop: 8, fontSize: 11, fontWeight: 600, color: r.metaBatida ? 'var(--verde2)' : 'var(--texto2)' }}>
-                {r.metaBatida ? '🎯 Meta do dia batida!' : `Falta R$ ${r.faltaMeta.toFixed(2)} para bater sua meta`}
+              <div style={{ marginTop: 8, fontSize: 11, fontWeight: 600, color: r.metaBatida ? 'var(--verde2)' : 'var(--texto2)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                {r.metaBatida ? <><Target size={12} /> Meta do dia batida!</> : `Falta R$ ${r.faltaMeta.toFixed(2)} para bater sua meta`}
               </div>
             </>
           ) : (
@@ -427,9 +427,9 @@ function AbaEvolucao() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
             <StatBox val={r.entradasHoje} lbl="Entradas" cor="var(--texto2)" />
+            <StatBox val={(r.plHoje >= 0 ? '+' : '') + 'R$ ' + r.plHoje.toFixed(2)} lbl="P&L do Dia" cor={r.plHoje >= 0 ? 'var(--verde2)' : 'var(--perigo)'} />
             <StatBox val={r.greensHoje} lbl="Greens" cor="var(--verde2)" />
             <StatBox val={r.redsHoje} lbl="Reds" cor="var(--perigo)" />
-            <StatBox val={(r.plHoje >= 0 ? '+' : '') + 'R$ ' + r.plHoje.toFixed(2)} lbl="P&L do Dia" cor={r.plHoje >= 0 ? 'var(--verde2)' : 'var(--perigo)'} />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 10, borderTop: '1px solid var(--c3)' }}>
             <span style={{ fontSize: 11, color: 'var(--texto2)' }}>Taxa de acerto<br />do dia</span>
@@ -443,10 +443,10 @@ function AbaEvolucao() {
             <span style={{ fontSize: 10.5, color: 'var(--texto2)', fontWeight: 700 }}>{mesLabelAtual()}</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            <StatBox val={r.entradasMes} lbl="Entradas" />
             <StatBox val={(r.plMes >= 0 ? '+' : '') + 'R$ ' + r.plMes.toFixed(2)} lbl="Lucro" cor={r.plMes >= 0 ? 'var(--verde2)' : 'var(--perigo)'} />
             <StatBox val={(r.roiMes >= 0 ? '+' : '') + r.roiMes + '%'} lbl="ROI" cor={r.roiMes >= 0 ? 'var(--verde2)' : 'var(--perigo)'} />
             <StatBox val={r.taxaAcertoMes + '%'} lbl="Taxa de Acerto" />
-            <StatBox val={r.entradasMes} lbl="Entradas" />
           </div>
         </div>
       </div>

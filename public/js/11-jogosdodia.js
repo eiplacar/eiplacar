@@ -126,10 +126,10 @@ function ophRenderLista(){
       ${sel?'<div style="position:absolute;top:4px;left:4px;width:16px;height:16px;border-radius:50%;background:var(--verde2);color:#fff;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;line-height:1">✓</div>':''}
       ${foraDeHoje?`<div style="position:absolute;top:4px;right:38px;background:var(--c2-dest);color:var(--ouro);font-size:8px;font-weight:700;padding:2px 5px;border-radius:8px">${dataFmt}</div>`:''}
       <button onclick="event.stopPropagation();ophAbrirEdicao(${j.id})" title="Editar Campeonato/Times/Mercado/Odd/Situação" style="position:absolute;top:2px;right:22px;background:none;border:none;color:var(--texto2);font-size:13px;cursor:${sel?'pointer':'default'};padding:2px 4px;display:${sel?'flex':'none'}"><span data-ic="pencil" data-ic-size="13"></span></button>
-      <button onclick="event.stopPropagation();ophRemover(${j.id})" style="position:absolute;top:2px;right:4px;background:none;border:none;color:var(--texto2);font-size:13px;cursor:pointer;padding:2px 4px">✕</button>
+      <button onclick="event.stopPropagation();ophRemover(${j.id})" style="position:absolute;top:2px;right:4px;background:none;border:none;color:var(--texto2);font-size:13px;cursor:${sel?'pointer':'default'};padding:2px 4px;display:${sel?'flex':'none'}">✕</button>
       <div style="width:30px;height:30px;margin:0 auto">${escudoImgOuIcone(j.casa)}</div>
       <div style="font-size:10.5px;font-weight:700;line-height:1.2;margin-top:2px">${j.casa||'—'}</div>
-      <div style="font-size:9px;color:var(--texto2);margin:3px 0;display:flex;justify-content:center"><span data-ic="swords" data-ic-size="11"></span></div>
+      <div style="height:8px"></div>
       <div style="width:30px;height:30px;margin:0 auto">${escudoImgOuIcone(j.vis)}</div>
       <div style="font-size:10.5px;font-weight:700;line-height:1.2;margin-top:2px">${j.vis||'—'}</div>
       <div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--c3);font-size:9px;color:var(--ouro);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;justify-content:center;gap:3px"><span data-ic="trophy" data-ic-size="10"></span> ${j.camp||'—'}</div>

@@ -19,14 +19,22 @@ function cfgAppLoad(){
 function cfgAppSave(d){
   cfgAppCache = d;
   localStorage.setItem(CFG_APP_KEY, JSON.stringify(d));
-  fetch(cfgAppUrl('?id=eq.1'), {
+  return fetch(cfgAppUrl('?id=eq.1'), {
     method:'PATCH', headers: sbHeaders(),
     body: JSON.stringify({ dados:d, updated_at:new Date().toISOString() })
   }).then(async res=>{
-    if(res.ok) return;
-    // linha ainda não existe (id=1) — cria
-    await fetch(cfgAppUrl(''), { method:'POST', headers:{...sbHeaders(),'Prefer':'resolution=merge-duplicates'}, body: JSON.stringify({ id:1, dados:d }) });
-  }).catch(()=>{}); // sem tabela/internet: fica só no cache local mesmo
+    if(!res.ok) throw new Error('patch falhou');
+    // Com Prefer: return=representation, se nenhuma linha bateu o filtro (id=1 ainda
+    // não existe) a resposta vem OK só que com um array vazio — precisa criar a linha.
+    const linhas = await res.json().catch(()=>[]);
+    if(Array.isArray(linhas) && linhas.length===0) throw new Error('nenhuma linha existente');
+    return true;
+  }).catch(async ()=>{
+    // linha ainda não existe (id=1) ou PATCH falhou — tenta criar
+    const res2 = await fetch(cfgAppUrl(''), { method:'POST', headers:{...sbHeaders(),'Prefer':'resolution=merge-duplicates,return=representation'}, body: JSON.stringify({ id:1, dados:d }) });
+    if(!res2.ok) throw new Error('não foi possível salvar no Supabase');
+    return true;
+  });
 }
 async function cfgAppCarregarNuvem(){
   if(!temConfig()){ cfgAppCache = cfgAppLoad(); return; }

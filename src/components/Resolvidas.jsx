@@ -68,7 +68,7 @@ export default function Resolvidas() {
         ) : entradas.map((e) => {
           const Icone = e.resultado === 'green' ? CheckCircle2 : e.resultado === 'red' ? XCircle : e.resultado === 'void' ? Undo2 : Coins;
           const cor = e.resultado === 'green' ? 'var(--verde2)' : e.resultado === 'red' ? 'var(--perigo)' : e.resultado === 'void' ? 'var(--texto2)' : 'var(--ouro)';
-          const val = e.resultado === 'green' ? `+R$ ${(e.ganhoCarteira || 0).toFixed(2)}` : e.resultado === 'red' ? `-R$ ${(e.stake || 0).toFixed(2)}` : e.resultado === 'void' ? 'Void' : 'Cash Out';
+          const val = e.resultado === 'green' ? `+R$ ${(e.ganhoCarteira || 0).toFixed(2)}` : e.resultado === 'red' ? `-R$ ${(e.stake || 0).toFixed(2)}` : e.resultado === 'void' ? 'Void' : `${(e.ganhoCarteira || 0) >= 0 ? '+' : '-'}R$ ${Math.abs(e.ganhoCarteira || 0).toFixed(2)}`;
           const rotuloAposta = ROTULO_APOSTA[e.tipoAposta] || 'Simples';
           const corAposta = COR_APOSTA[e.tipoAposta] || 'var(--texto2)';
           return (

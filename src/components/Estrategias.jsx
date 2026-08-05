@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { TrendingUp, Target, ShieldHalf, CalendarRange, Trophy, Goal, Clock, History, Timer, Layers, Home, Plane, LayoutGrid, ShieldCheck, Award, ChevronDown, X, Check, ShieldQuestion, Users } from 'lucide-react';
+import { TrendingUp, Target, ShieldHalf, CalendarRange, Trophy, Goal, Clock, History, Timer, Layers, Home, Plane, LayoutGrid, ShieldCheck, Award, ChevronDown, X, Check, ShieldQuestion, Users, Shield } from 'lucide-react';
 
 // ══ Estratégias — 3 sub-abas: Linha do Tempo / Cenários / Equipes ══
 //
@@ -485,9 +485,13 @@ export default function Estrategias() {
             <div className="card">
               <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><ShieldHalf size={14} /> Comparativo entre as Equipes</div>
               <div className="table-wrap">
-                <table>
+                <table className="tabela-comparativo">
                   <thead>
-                    <tr><th>Estatística</th><th className="td-c">{mandanteE}</th><th className="td-c">{visitanteE}</th></tr>
+                    <tr>
+                      <th></th>
+                      <th className="td-c" title={mandanteE}><EscudoImg nome={mandanteE} size={24} /></th>
+                      <th className="td-c" title={visitanteE}><EscudoImg nome={visitanteE} size={24} /></th>
+                    </tr>
                   </thead>
                   <tbody>
                     <tr>
@@ -504,6 +508,11 @@ export default function Estrategias() {
                       <td>Sofre no 2º Tempo</td>
                       <td className="td-c">{resultado.comparativo.mandante?.pctSofre2T ?? '—'}%</td>
                       <td className="td-c">{resultado.comparativo.visitante?.pctSofre2T ?? '—'}%</td>
+                    </tr>
+                    <tr>
+                      <td>Ambas Marcam</td>
+                      <td className="td-c">{resultado.comparativo.mandante?.pctAmbasMarcam ?? '—'}%</td>
+                      <td className="td-c">{resultado.comparativo.visitante?.pctAmbasMarcam ?? '—'}%</td>
                     </tr>
                     <tr>
                       <td>Média 1º Gol</td>

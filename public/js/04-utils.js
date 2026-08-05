@@ -108,10 +108,6 @@ function toast(msg, erro=false) {
   texto.textContent = msg; // via textContent, não innerHTML — evita quebrar com caracteres especiais em mensagens de erro
   t.append(icone, texto);
   window.renderIcons?.(t);
-  // Posiciona o toast medindo a altura real da barra de navegação de baixo
-  // (em vez de um valor fixo no CSS, que não bate com todo aparelho/área segura)
-  const navH = document.querySelector('.quicknav')?.offsetHeight || 60;
-  t.style.bottom = (navH + 14) + 'px';
   t.className = erro ? 'show erro' : 'show';
   _toastTimeoutId = setTimeout(()=>{ t.className=''; _toastTimeoutId=null; }, 2400);
 }
@@ -143,7 +139,7 @@ function nivelConfianca(pct){
 function barraConfianca(pct, casa, vis, confCasa, confVis){
   const nivel = nivelConfianca(pct);
   return `<div class="conf-wrap">
-    <div class="conf-label"><span>${nivel.emoji} ${nivel.nome} — dados coletados ${pct}%</span></div>
+    <div class="conf-label"><span>${nivel.nome} — dados coletados ${pct}%</span></div>
     <div class="conf-bar"><div class="conf-fill" style="width:${pct}%;background:${nivel.cor}"></div></div>
     <div class="lambda-note" style="margin-top:6px">${casa}: ${confCasa}% dos jogos com dado · ${vis}: ${confVis}% dos jogos com dado</div>
   </div>`;

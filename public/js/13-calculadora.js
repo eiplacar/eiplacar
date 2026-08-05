@@ -363,13 +363,20 @@ async function lancarEntrada(){
   const tot = d.saldo||0;
   if(tot<=0){ toast('Saldo da carteira zerado — faça um depósito na aba Banca'); return; }
   if(tipoAposta!=='sistema') stake = Math.round(tot*pct/100*100)/100;
-  const lucroB  = res==='green' ? (tipoAposta==='sistema' ? lucroInformado : Math.round(stake*(odd-1)*100)/100) : 0;
+  // Cash Out entra no mesmo cálculo do Green (lucro/prejuízo real = retorno recebido − stake),
+  // já que o valor do cash out não segue a odd cheia — é o que a casa realmente pagou.
+  const contaComoGreen = res==='green' || res==='cashout';
+  const retornoInformadoEl = numBR(document.getElementById('eRetorno')?.value);
+  const lucroB  = contaComoGreen
+    ? (tipoAposta==='sistema' ? lucroInformado : (retornoInformadoEl>0 ? Math.round((retornoInformadoEl-stake)*100)/100 : Math.round(stake*(odd-1)*100)/100))
+    : 0;
   const protecaoAtiva = d.protecaoAtiva!==false;
   const protecaoPct   = d.protecaoPct??10;
   // Green: parte do lucro vai automaticamente pra Reserva (proteção da banca), o resto fica na Carteira.
-  // Red: o stake sai direto da Carteira. Void/Cash Out: não mexe em nada (ajuste manual se precisar).
-  const reservaCorte  = res==='green' ? Math.round(lucroB*(protecaoAtiva?protecaoPct:0)/100*100)/100 : 0;
-  const ganhoCarteira = res==='green' ? Math.round((lucroB-reservaCorte)*100)/100 : 0;
+  // Cash Out: mesma lógica do Green, só que com o valor que a pessoa realmente recebeu (Retorno).
+  // Red: o stake sai direto da Carteira. Void: não mexe em nada.
+  const reservaCorte  = (contaComoGreen && lucroB>0) ? Math.round(lucroB*(protecaoAtiva?protecaoPct:0)/100*100)/100 : 0;
+  const ganhoCarteira = contaComoGreen ? Math.round((lucroB-reservaCorte)*100)/100 : 0;
   const percaCarteira = res==='red'   ? stake : 0;
 
   d.reserva = Math.round(((d.reserva||0)+reservaCorte)*100)/100;
@@ -450,7 +457,7 @@ function editarEntrada(id){
   document.getElementById('editEOdd').value       = e.odd || '';
   document.getElementById('editEStake').value     = e.stake || '';
   // Retorno já salvo (se a entrada tiver um green registrado, stake+lucro; senão Stake × Odd)
-  const retornoSalvo = e.resultado==='green' ? (e.stake||0)+(e.lucro||0) : (e.stake||0)*(e.odd||0);
+  const retornoSalvo = (e.resultado==='green'||e.resultado==='cashout') ? (e.stake||0)+(e.lucro||0) : (e.stake||0)*(e.odd||0);
   document.getElementById('editERetorno').value = retornoSalvo ? retornoSalvo.toFixed(2).replace('.',',') : '';
   document.getElementById('editEResultado').value = e.resultado || 'green';
   document.getElementById('editEData').value      = e.data || '';
@@ -496,7 +503,7 @@ function salvarEdicaoEntrada(){
   if(!novoStakeInformado || novoStakeInformado<=0) { toast('Informe o valor apostado'); return; }
 
   // Reverte o efeito antigo na carteira/reserva e remove a entrada, pra recalcular do zero
-  if(antiga.resultado==='green'){
+  if(antiga.resultado==='green' || antiga.resultado==='cashout'){
     d.reserva = Math.round(((d.reserva||0)-(antiga.reservaCorte||0))*100)/100;
     d.saldo   = Math.round(((d.saldo||0)-(antiga.ganhoCarteira||0))*100)/100;
   } else if(antiga.resultado==='red'){
@@ -507,15 +514,20 @@ function salvarEdicaoEntrada(){
   const tot   = d.saldo||0;
   const stake = Math.round(novoStakeInformado*100)/100;
   const pct   = tot>0 ? Math.round((stake/tot)*1000)/10 : antiga.pct;
-  // Retorno: se a pessoa corrigiu na mão (ex: a casa pagou um valor diferente do Stake × Odd),
-  // usa o que tá no campo; senão cai no cálculo padrão Stake × Odd.
+  // Retorno: se a pessoa corrigiu na mão (ex: a casa pagou um valor diferente do Stake × Odd,
+  // ou é um Cash Out — que só existe com valor informado na mão mesmo), usa o que tá no campo;
+  // senão cai no cálculo padrão Stake × Odd.
   const retornoInformado = numBR(document.getElementById('editERetorno').value);
   const retorno = retornoInformado>0 ? retornoInformado : stake*novoOdd;
-  const lucroB = novoRes==='green' ? Math.round((retorno-stake)*100)/100 : 0;
+  // Cash Out entra no mesmo cálculo do Green (lucro/prejuízo real = retorno recebido − stake),
+  // já que o valor do cash out não segue a odd cheia — é o que a casa realmente pagou.
+  const contaComoGreen = novoRes==='green' || novoRes==='cashout';
+  const lucroB = contaComoGreen ? Math.round((retorno-stake)*100)/100 : 0;
   const protecaoAtiva = d.protecaoAtiva!==false;
   const protecaoPct   = d.protecaoPct??10;
-  const reservaCorte  = novoRes==='green' ? Math.round(lucroB*(protecaoAtiva?protecaoPct:0)/100*100)/100 : 0;
-  const ganhoCarteira = novoRes==='green' ? Math.round((lucroB-reservaCorte)*100)/100 : 0;
+  // Reserva só corta em cima de lucro de verdade (se o cash out saiu no prejuízo, não tira reserva)
+  const reservaCorte  = (contaComoGreen && lucroB>0) ? Math.round(lucroB*(protecaoAtiva?protecaoPct:0)/100*100)/100 : 0;
+  const ganhoCarteira = contaComoGreen ? Math.round((lucroB-reservaCorte)*100)/100 : 0;
   const percaCarteira = novoRes==='red'   ? stake : 0;
 
   d.reserva = Math.round(((d.reserva||0)+reservaCorte)*100)/100;
@@ -929,13 +941,14 @@ function statsTimeRecente(time, camp, limite, linhaOver, modo){
       somaChutesGol=0, nChutesGol=0, somaChutesGolSofridos=0, nChutesGolSofridos=0,
       somaEscanteios=0, nEscanteios=0, somaCartoes=0, nCartoes=0,
       htVenceu=0, nHT=0, marca1T=0, marca2T=0, sofre2T=0,
-      somaMinPrimeiroGol=0, nMinPrimeiroGol=0, over=0;
+      somaMinPrimeiroGol=0, nMinPrimeiroGol=0, over=0, ambasMarcaram=0;
   jogos.forEach(j=>{
     const isCasa = j.casa===time;
     const marcados = isCasa ? (j.gC||0) : (j.gV||0);
     const sofridos = isCasa ? (j.gV||0) : (j.gC||0);
     somaMarcados+=marcados; somaSofridos+=sofridos;
     if(marcados>sofridos) vit++; else if(marcados===sofridos) emp++; else der++;
+    if(marcados>0 && sofridos>0) ambasMarcaram++;
     if(linhaBTTS){ if(marcados>0 && sofridos>0) over++; }
     else if(linhaOver!=null && (marcados+sofridos)>linhaOver) over++;
     const rank = isCasa ? j.rankC : j.rankV;
@@ -974,6 +987,7 @@ function statsTimeRecente(time, camp, limite, linhaOver, modo){
     pctMarca1T: Math.round((marca1T/n)*100),
     pctMarca2T: Math.round((marca2T/n)*100),
     pctSofre2T: Math.round((sofre2T/n)*100),
+    pctAmbasMarcam: Math.round((ambasMarcaram/n)*100),
     avgMinPrimeiroGol: nMinPrimeiroGol ? somaMinPrimeiroGol/nMinPrimeiroGol : null,
     pctOverLinha: linhaOver!=null ? Math.round((over/n)*100) : null,
   };

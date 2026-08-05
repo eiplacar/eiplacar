@@ -463,6 +463,94 @@ function ordenarBrasileirao(linhas, jogos){
   return resultado;
 }
 
+// Mini-tabela (pontos/saldo/gols/gols fora) só dos jogos ENTRE os times do grupo
+// informado — usada pelos critérios "confronto direto" das ligas estrangeiras.
+function miniConfrontoDireto(grupo, jogos){
+  const nomes = grupo.map(t=>t.nome);
+  const entreSi = jogos.filter(j=>nomes.includes(j.casa) && nomes.includes(j.vis));
+  const mini = {};
+  nomes.forEach(n=>{ mini[n] = { pts:0, gp:0, gc:0, golsFora:0 }; });
+  entreSi.forEach(j=>{
+    const mc = mini[j.casa], mv = mini[j.vis];
+    mc.gp += (j.gC||0); mc.gc += (j.gV||0);
+    mv.gp += (j.gV||0); mv.gc += (j.gC||0);
+    mv.golsFora += (j.gV||0); // gol marcado pelo visitante jogando fora
+    if(j.gC>j.gV) mc.pts+=3; else if(j.gC<j.gV) mv.pts+=3; else { mc.pts++; mv.pts++; }
+  });
+  Object.keys(mini).forEach(n=>{ mini[n].sg = mini[n].gp - mini[n].gc; });
+  return mini;
+}
+
+// Aplica uma cadeia de critérios de desempate em sequência: reordena o grupo pelo
+// 1º critério, reagrupa quem ainda empatou, e resolve cada subgrupo empatado com
+// os critérios seguintes — recursivamente. Critérios tipo "confronto" recalculam
+// a mini-tabela sempre em cima do grupo empatado NAQUELE ponto da cadeia (que pode
+// já ser menor que o grupo original, se critérios anteriores já separaram alguns times).
+// O que sobrar empatado no fim (regra de sorteio/jogo-desempate/playoff) fica na
+// ordem que já estava — não dá pra simular esse desempate.
+function aplicarCriterios(grupo, criterios, jogos){
+  if(grupo.length<=1 || !criterios.length) return grupo;
+  const [crit, ...resto] = criterios;
+  const valor = crit.tipo==='confronto'
+    ? (()=>{ const mini = miniConfrontoDireto(grupo, jogos); return t=>mini[t.nome][crit.campo]; })()
+    : (t=>t[crit.campo]);
+
+  const ordenado = [...grupo].sort((a,b)=>valor(b)-valor(a));
+  const subgrupos = [];
+  let atual = [ordenado[0]];
+  for(let i=1;i<ordenado.length;i++){
+    if(valor(ordenado[i])===valor(atual[0])) atual.push(ordenado[i]);
+    else { subgrupos.push(atual); atual=[ordenado[i]]; }
+  }
+  subgrupos.push(atual);
+  return subgrupos.flatMap(sg => aplicarCriterios(sg, resto, jogos));
+}
+
+// Critérios OFICIAIS de desempate de cada liga estrangeira coberta (fonte: regulamento
+// de cada campeonato). Sempre que o grupo empata em todos os critérios listados, o que
+// sobra é decidido por sorteio/jogo de desempate/playoff — não simulável, fica como está.
+const CRITERIOS_LIGA = {
+  'Premier League': [ // Inglaterra
+    {tipo:'geral', campo:'pts'}, {tipo:'geral', campo:'sg'}, {tipo:'geral', campo:'gp'},
+    {tipo:'confronto', campo:'pts'}, {tipo:'confronto', campo:'golsFora'},
+  ],
+  'La Liga': [ // Espanha
+    {tipo:'geral', campo:'pts'},
+    {tipo:'confronto', campo:'pts'}, {tipo:'confronto', campo:'sg'},
+    {tipo:'geral', campo:'sg'}, {tipo:'geral', campo:'gp'},
+  ],
+  'Bundesliga': [ // Alemanha
+    {tipo:'geral', campo:'pts'}, {tipo:'geral', campo:'sg'}, {tipo:'geral', campo:'gp'},
+    {tipo:'confronto', campo:'pts'}, {tipo:'confronto', campo:'gp'}, {tipo:'confronto', campo:'golsFora'},
+  ],
+  'Serie A': [ // Itália (sem acento — diferente da "Série A" do Brasil)
+    {tipo:'geral', campo:'pts'},
+    {tipo:'confronto', campo:'pts'}, {tipo:'confronto', campo:'sg'},
+    {tipo:'geral', campo:'sg'}, {tipo:'geral', campo:'gp'},
+  ],
+  'Ligue 1': [ // França
+    {tipo:'geral', campo:'pts'}, {tipo:'geral', campo:'sg'},
+    {tipo:'confronto', campo:'pts'}, {tipo:'confronto', campo:'sg'},
+    {tipo:'geral', campo:'gp'}, {tipo:'geral', campo:'v'}, {tipo:'geral', campo:'vFora'},
+    {tipo:'geral', campo:'fairPlay'},
+  ],
+  'Eredivisie': [ // Holanda
+    {tipo:'geral', campo:'pts'}, {tipo:'geral', campo:'sg'}, {tipo:'geral', campo:'gp'},
+    {tipo:'confronto', campo:'pts'},
+  ],
+};
+CRITERIOS_LIGA['Bundesliga 2'] = CRITERIOS_LIGA['Bundesliga']; // mesmos critérios da Bundesliga
+
+function ordenarPorCriteriosOficiais(linhas, jogos, camp){
+  const criterios = CRITERIOS_LIGA[camp];
+  if(!criterios) return null;
+  // fairPlay: quanto MENOS cartão, melhor — inverte o sinal pra caber no "maior valor vence" da cadeia
+  const comFairPlay = linhas.map(l=>({ ...l, fairPlay: -(l.vermelhos*3 + l.amarelos) }));
+  // Agrupa tudo junto de início (sem pré-agrupar por pts como no Brasileirão) — a cadeia de
+  // critérios já cuida de separar por pontos no 1º passo e ir refinando os empates.
+  return aplicarCriterios(comFairPlay, criterios, jogos);
+}
+
 function computeClassificacao(camp){
   if(/copa do mundo|amistoso/i.test(camp)) return { estado:'sem-classificacao', camp };
 
@@ -477,7 +565,7 @@ function computeClassificacao(camp){
   });
 
   const tab = {};
-  function linhaTime(nome){ return tab[nome] || (tab[nome] = {j:0,v:0,e:0,d:0,gp:0,gc:0,vermelhos:0,amarelos:0}); }
+  function linhaTime(nome){ return tab[nome] || (tab[nome] = {j:0,v:0,e:0,d:0,gp:0,gc:0,vermelhos:0,amarelos:0,vFora:0}); }
   jogos.forEach(j=>{
     const c = linhaTime(j.casa), v = linhaTime(j.vis);
     c.j++; v.j++;
@@ -486,7 +574,7 @@ function computeClassificacao(camp){
     c.vermelhos += (j.vermelhosC||0); v.vermelhos += (j.vermelhosV||0);
     c.amarelos  += (j.amarelosC||0);  v.amarelos  += (j.amarelosV||0);
     if(j.gC>j.gV){ c.v++; v.d++; }
-    else if(j.gC<j.gV){ v.v++; c.d++; }
+    else if(j.gC<j.gV){ v.v++; v.vFora++; c.d++; }
     else { c.e++; v.e++; }
   });
 
@@ -503,8 +591,13 @@ function computeClassificacao(camp){
     // Brasileirão: API não entrega mais o rank (plano gratuito não libera a temporada
     // atual), então a posição É calculada manualmente com os critérios oficiais da CBF.
     linhas = ordenarBrasileirao(linhas, jogos).map((l,i)=>({ ...l, rank: i+1 }));
+  } else if(CRITERIOS_LIGA[camp]){
+    // Ligas estrangeiras cobertas: calcula com os critérios OFICIAIS de cada uma, sem
+    // depender do rank da API (se a API falhar ou não trouxer rank, o app não fica sem
+    // classificação nem usa uma ordenação genérica errada — calcula sozinho, igual ao Brasileirão).
+    linhas = ordenarPorCriteriosOficiais(linhas, jogos, camp).map((l,i)=>({ ...l, rank: i+1 }));
   } else {
-    // Outras ligas: usa o rank da API quando disponível; sem rank, cai no fallback
+    // Ligas não cobertas: usa o rank da API quando disponível; sem rank, cai no fallback
     // simples por pontos (critérios de desempate variam liga a liga, não implementados aqui).
     linhas = linhas.sort((a,b)=>{
       const chaveA = a.rank!=null ? a.rank : (100000-a.pts);

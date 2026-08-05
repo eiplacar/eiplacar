@@ -1,5 +1,5 @@
 import { useState, useEffect, Fragment } from 'react';
-import { X, ChevronRight, ChevronLeft } from 'lucide-react';
+import { X, ChevronRight, ChevronLeft, Target, Square, Flag, Plus, Goal } from 'lucide-react';
 
 // ══ Seletor de Mercado (bottom sheet) ══
 //
@@ -14,11 +14,11 @@ import { X, ChevronRight, ChevronLeft } from 'lucide-react';
 // o que fazer com o texto (aqui, escrever em #eMercado e chamar atualizarResumoEntrada()).
 
 const CATEGORIAS = [
-  { id: 'gols', label: 'Gols', icone: '⚽' },
-  { id: 'cartoes', label: 'Cartões', icone: '🟨' },
-  { id: 'escanteios', label: 'Escanteios', icone: '🚩' },
-  { id: 'resultado', label: 'Resultado', icone: '🎯' },
-  { id: 'outros', label: 'Outros', icone: '➕' },
+  { id: 'gols', label: 'Gols', Icone: Goal },
+  { id: 'cartoes', label: 'Cartões', Icone: Square },
+  { id: 'escanteios', label: 'Escanteios', Icone: Flag },
+  { id: 'resultado', label: 'Resultado', Icone: Target },
+  { id: 'outros', label: 'Outros', Icone: Plus },
 ];
 
 const LINHAS = {
@@ -142,7 +142,7 @@ export default function SeletorMercado({ aberto, operacao = 'bet', onFechar, onS
             {CATEGORIAS.map((c) => (
               <button key={c.id} type="button" onClick={() => abrirCategoria(c.id)}
                 style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '14px 12px', borderRadius: 10, border: '1px solid var(--c3)', background: 'var(--c1)', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                <span style={{ fontSize: 18 }}>{c.icone}</span> {c.label}
+                <c.Icone size={18} /> {c.label}
               </button>
             ))}
           </div>
