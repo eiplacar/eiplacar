@@ -216,8 +216,10 @@ function BarraProgressoCenario({ pct }) {
 // genérico de escudo enquanto não tem nada salvo pra esse nome.
 function EscudoImg({ nome, size = 26 }) {
   const url = window.getEscudo ? window.getEscudo(nome) : null;
-  if (url) return <img src={url} alt="" style={{ width: size, height: size, objectFit: 'contain', display: 'block' }} />;
-  return <ShieldQuestion size={size * 0.7} color="var(--texto2)" />;
+  // margin: '0 auto' é o que de fato centraliza — sendo display:block, o
+  // text-align:center do <th> pai não tem efeito nenhum sobre ele sozinho.
+  if (url) return <img src={url} alt="" style={{ width: size, height: size, objectFit: 'contain', display: 'block', margin: '0 auto' }} />;
+  return <ShieldQuestion size={size * 0.7} color="var(--texto2)" style={{ display: 'block', margin: '0 auto' }} />;
 }
 
 // Bottom-sheet com a lista de opções (usado pelos seletores de Mandante/Visitante dentro do formulário de Filtros Avançados).
@@ -463,7 +465,13 @@ export default function Estrategias() {
                     <div key={c.id} className="sel-card" style={{ padding: '10px 8px', textAlign: 'center' }}>
                       <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>{c.placar} aos {c.minuto}'</div>
                       <div style={{ fontSize: 20, fontWeight: 800, color: corPct(dado.pct) }}>{dado.pct != null ? dado.pct + '%' : '—'}</div>
-                      <div style={{ fontSize: 9.5, color: 'var(--texto2)', marginBottom: 6 }}>Confirmaram {mercadoLabel} ({dado.jogos} jogos)</div>
+                      {/* Quebra sempre nas mesmas 2 linhas — não deixa o navegador decidir
+                          onde cortar, senão um card quebra "torto" (94 numa linha, jogos)
+                          na outra) enquanto o outro cabe tudo numa linha só. */}
+                      <div style={{ fontSize: 9.5, color: 'var(--texto2)', marginBottom: 6, lineHeight: 1.4 }}>
+                        <div>Confirmaram {mercadoLabel}</div>
+                        <div>({dado.jogos} jogos)</div>
+                      </div>
                       <BarraProgressoCenario pct={dado.pct} />
                     </div>
                   );
@@ -488,9 +496,15 @@ export default function Estrategias() {
                 <table className="tabela-comparativo">
                   <thead>
                     <tr>
-                      <th></th>
-                      <th className="td-c" title={mandanteE}><EscudoImg nome={mandanteE} size={24} /></th>
-                      <th className="td-c" title={visitanteE}><EscudoImg nome={visitanteE} size={24} /></th>
+                      <th>Time</th>
+                      <th className="td-c" title={mandanteE}>
+                        <EscudoImg nome={mandanteE} size={24} />
+                        <div className="th-nome-time">{mandanteE}</div>
+                      </th>
+                      <th className="td-c" title={visitanteE}>
+                        <EscudoImg nome={visitanteE} size={24} />
+                        <div className="th-nome-time">{visitanteE}</div>
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
