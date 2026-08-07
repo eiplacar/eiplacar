@@ -208,9 +208,17 @@ export const handler = async function () {
       headers: { Authorization: `Bearer ${apiKey}` },
     });
     const json = await resp.json();
-    console.log(`Resposta GOAL API (fixtures liga=${ligaId}):`, { httpStatus: resp.status, success: json.success, totalRecebido: (json.data || []).length });
+    const dados = json.data || [];
+    console.log(`Resposta GOAL API (fixtures liga=${ligaId}):`, { httpStatus: resp.status, success: json.success, totalRecebido: dados.length });
+    // DIAGNÓSTICO — o "status=FINISHED" pode não estar sendo respeitado pela API
+    // (suspeita: toda liga bate exatamente no limite de 20, mesmo ligas que não têm
+    // 20 jogos finalizados nessa altura da temporada). Loga a ficha CRUA do 1º jogo
+    // devolvido (todos os campos, não só os que o código já lê) pra descobrir o nome
+    // real do campo de status/placar e o formato/ordem das datas que estão voltando.
+    if (dados[0]) console.log(`  ↳ Amostra crua do 1º jogo (liga=${ligaId}):`, JSON.stringify(dados[0]));
+    if (dados.length) console.log(`  ↳ matchDate de todos os ${dados.length} jogos:`, dados.map((f) => f.matchDate));
     if (!json.success) continue;
-    todosFixtures = todosFixtures.concat(json.data || []);
+    todosFixtures = todosFixtures.concat(dados);
   }
 
   const fixtures = todosFixtures.filter((f) => NOMES_CAMP_POR_LIGA.has(f.leagueId) && datasValidas.has(f.matchDate));
