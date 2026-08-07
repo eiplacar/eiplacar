@@ -11,9 +11,11 @@ function renderDados(resetPagina) {
   if (resetPagina) window.dadosResetPagina?.();
   window.dadosReactRefresh?.();
   window.analiseReactRefresh?.();
+  window.classificacaoRefresh?.(); // Classificação também depende de jogosCache — atualiza junto
 }
 function popularFiltroRodada() {
   window.jogosCache = jogosCache;
   window.dadosReactRefresh?.();
   window.analiseReactRefresh?.();
+  window.classificacaoRefresh?.();
 }

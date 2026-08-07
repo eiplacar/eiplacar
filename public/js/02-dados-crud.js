@@ -11,7 +11,7 @@ function fecharMenuBanca() { document.getElementById('modalMenuBanca').classList
 async function carregarJogos(jaTentouRenovar) {
   if (!temConfig()) {
     setSyncStatus('config', 'Sem conexão com o banco de dados');
-    jogosCache = []; renderAll(); return;
+    jogosCache = []; window.jogosVersion=(window.jogosVersion||0)+1; renderAll(); return;
   }
   setSyncStatus('sync', 'Carregando...');
   try {
@@ -30,6 +30,7 @@ async function carregarJogos(jaTentouRenovar) {
       from += PAGE_SIZE;
     }
     jogosCache = todos.map(j => ({ ...j, gols: j.gols || [] }));
+    window.jogosVersion = (window.jogosVersion||0)+1;
     setSyncStatus('ok', `${jogosCache.length} jogo(s) sincronizado(s)`);
     atualizarHeader(); renderAll(); sugCamp();
   } catch(e) {
@@ -191,7 +192,14 @@ async function confirmarEdicaoJogo(){
   if(!atualizado) return;
 
   const idx = jogosCache.findIndex(j=>j.id===jogoEditandoId);
-  if(idx>-1) jogosCache[idx] = { ...jogosCache[idx], ...atualizado, gols: atualizado.gols || jogosCache[idx].gols || [] };
+  // Reatribui jogosCache pra um array NOVO (em vez de só trocar o item no índice) —
+  // assim qualquer tela que dependa da referência do array (não só do tamanho dele)
+  // também percebe que um jogo mudou, mesmo que a contagem de jogos continue igual.
+  if(idx>-1) jogosCache = jogosCache.map((j,i)=> i===idx ? { ...j, ...atualizado, gols: atualizado.gols || j.gols || [] } : j);
+  // jogosVersion muda em toda edição/adição/remoção — inclusive quando só o CONTEÚDO de
+  // um jogo já existente muda (ex.: corrigir o placar), que não altera jogosCache.length.
+  // Classificação e a coluna Rk da Aba Dados usam isso pra saber que precisam recalcular.
+  window.jogosVersion = (window.jogosVersion||0)+1;
 
   fecharModalEditar();
   renderDados(); atualizarHeader(); renderGeral(); sugCamp();

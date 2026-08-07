@@ -119,8 +119,10 @@ export default function ListaPartidas() {
       }
     });
     return mapa;
+    // jogosVersion muda em toda edição/adição/remoção — inclusive quando só o CONTEÚDO de
+    // um jogo já existente muda (ex.: corrigir o placar), que não altera jogosCache.length.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allCamps, jogosCache.length]);
+  }, [allCamps, jogosCache.length, window.jogosVersion]);
 
   const listaCamps = useMemo(() => {
     const especiais = window.comEspeciaisPorUltimo;

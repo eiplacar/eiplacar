@@ -62,26 +62,14 @@ export default function AnaliseResultado() {
     return <div className="empty"><div className="icon"><Search size={26} /></div><p>Sem jogos encontrados com os filtros selecionados.<br />Tente ajustar o local ou a quantidade.</p></div>;
   }
 
-  const { casa, vis, filtro, sC, sV, lambdaC, lambdaV, pVit, pEmp, pDer, o15, o25, o35, o45, temHT, o05HT, o15HT, o25HT, o35HT, o45HT, resultadoHT, pBtts, mcc, top10, maxPP, momStats, golsComb, picoIdx, baixoIdx, totalMom } = data;
+  const { casa, vis, filtro, sC, sV, lambdaC, lambdaV, pVit, pEmp, pDer, o15, o25, o35, o45, temHT, usaHT, pBtts, mcc, top10, maxPP, momStats, golsComb, picoIdx, baixoIdx, totalMom } = data;
   const modoTempo = data.modoTempo || 'ft';
   const calDot = window.calDot || (() => 'facil');
   const calLbl = window.calLbl || (() => '—');
   const renderMinTabela = window.renderMinTabela || (() => '');
   const barraConfianca = window.barraConfianca || (() => '');
 
-  const golsHT = temHT ? [
-    { l: 'Mais de 0.5 gols no HT', p: o05HT, c: 'var(--verde2)' },
-    { l: 'Menos de 0.5 gols no HT', p: 100 - o05HT, c: 'var(--perigo)' },
-    { l: 'Mais de 1.5 gols no HT', p: o15HT, c: 'var(--verde2)' },
-    { l: 'Menos de 1.5 gols no HT', p: 100 - o15HT, c: 'var(--perigo)' },
-    { l: 'Mais de 2.5 gols no HT', p: o25HT, c: 'var(--verde2)' },
-    { l: 'Menos de 2.5 gols no HT', p: 100 - o25HT, c: 'var(--perigo)' },
-    { l: 'Mais de 3.5 gols no HT', p: o35HT, c: 'var(--verde2)' },
-    { l: 'Menos de 3.5 gols no HT', p: 100 - o35HT, c: 'var(--perigo)' },
-    { l: 'Mais de 4.5 gols no HT', p: o45HT, c: 'var(--verde2)' },
-    { l: 'Menos de 4.5 gols no HT', p: 100 - o45HT, c: 'var(--perigo)' },
-  ] : [];
-  const golsFT = [
+  const golsMercado = [
     { l: 'Mais de 1.5 gols', p: o15, c: 'var(--verde2)' }, { l: 'Menos de 1.5 gols', p: 100 - o15, c: 'var(--perigo)' },
     { l: 'Mais de 2.5 gols', p: o25, c: 'var(--verde2)' }, { l: 'Menos de 2.5 gols', p: 100 - o25, c: 'var(--perigo)' },
     { l: 'Mais de 3.5 gols', p: o35, c: 'var(--verde2)' }, { l: 'Menos de 3.5 gols', p: 100 - o35, c: 'var(--perigo)' },
@@ -97,44 +85,40 @@ export default function AnaliseResultado() {
       </div>
 
       <div className={`sub-page ${tab === 'prob' ? 'active' : ''}`}>
+        {modoTempo === 'ht' && !temHT && (
+          <div className="sec" style={{ borderColor: 'var(--ouro)' }}>
+            <div style={{ fontSize: 11, color: 'var(--ouro)', display: 'flex', alignItems: 'center', gap: 6 }}><AlertTriangle size={13} /> Sem gols de 1º tempo cadastrados pra {sC.ntHT === 0 ? casa : vis} ainda — mostrando o Resultado Final abaixo.</div>
+          </div>
+        )}
+
         <div className="sec">
           <div className="sec-title"><MapPin size={14} style={{ marginRight: 4 }} />Base da análise</div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <div style={{ flex: 1, background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 8, padding: '8px 12px', fontSize: 12 }}>
               <span style={{ color: 'var(--verde2)', fontWeight: 800 }}>{casa}</span><br />
               <span style={{ color: 'var(--texto2)' }}>{localLbl(filtro.casa.local)} · {sC.nt} jogo(s)</span><br />
-              <span style={{ color: 'var(--ouro)', fontWeight: 700, fontSize: 15 }}>λ {sC.lambdaAjustado}</span>
+              <span style={{ color: 'var(--ouro)', fontWeight: 700, fontSize: 15 }}>λ {lambdaC}</span>
             </div>
             <div style={{ flex: 1, background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 8, padding: '8px 12px', fontSize: 12 }}>
               <span style={{ color: 'var(--perigo)', fontWeight: 800 }}>{vis}</span><br />
               <span style={{ color: 'var(--texto2)' }}>{localLbl(filtro.vis.local)} · {sV.nt} jogo(s)</span><br />
-              <span style={{ color: 'var(--ouro)', fontWeight: 700, fontSize: 15 }}>λ {sV.lambdaAjustado}</span>
+              <span style={{ color: 'var(--ouro)', fontWeight: 700, fontSize: 15 }}>λ {lambdaV}</span>
             </div>
           </div>
-          <div style={{ fontSize: 10, color: 'var(--texto2)', marginTop: 6 }}>Gols pela força do adversário em cada jogo (ranking).</div>
+          <div style={{ fontSize: 10, color: 'var(--texto2)', marginTop: 6 }}>{usaHT ? 'Gols esperados no 1º tempo (Gols HT).' : 'Gols pela força do adversário em cada jogo (ranking).'}</div>
         </div>
 
         <div className="sec">
           <div className="sec-title"><Trophy size={14} style={{ marginRight: 4 }} />Resultado Provável {modoTempo === 'ht' ? '— 1º Tempo' : '— Final'}</div>
-          {modoTempo === 'ht' && !temHT ? (
-            <div className="empty" style={{ padding: 14 }}><p style={{ fontSize: 12 }}>Sem gols de 1º tempo registrados pra esses times ainda. Cadastre o placar do 1º tempo em Adicionar Partida pra liberar essa visão.</p></div>
-          ) : (
-            <>
-              <div className="prob-resultado">
-                <div className="prob-box"><div className="pb-label">{casa}</div><div className="pb-pct" style={{ color: 'var(--verde2)' }}>{modoTempo === 'ht' ? resultadoHT.pVit : pVit}%</div><div className="pb-sub">VITÓRIA</div></div>
-                <div className="prob-box"><div className="pb-label">Empate</div><div className="pb-pct" style={{ color: 'var(--ouro)' }}>{modoTempo === 'ht' ? resultadoHT.pEmp : pEmp}%</div><div className="pb-sub">EMPATE</div></div>
-                <div className="prob-box"><div className="pb-label">{vis}</div><div className="pb-pct" style={{ color: 'var(--perigo)' }}>{modoTempo === 'ht' ? resultadoHT.pDer : pDer}%</div><div className="pb-sub">VITÓRIA</div></div>
-              </div>
-              <div className="bar-wrap">
-                {(() => { const v = modoTempo === 'ht' ? resultadoHT.pVit : pVit, e = modoTempo === 'ht' ? resultadoHT.pEmp : pEmp, d = modoTempo === 'ht' ? resultadoHT.pDer : pDer; return (
-                  <>
-                    <div className="bar-labels"><span>{casa} {v}%</span><span>Empate {e}%</span><span>{vis} {d}%</span></div>
-                    <div className="bar-track"><div className="bs v" style={{ width: `${v}%` }} /><div className="bs e" style={{ width: `${e}%` }} /><div className="bs d" style={{ width: `${d}%` }} /></div>
-                  </>
-                ); })()}
-              </div>
-            </>
-          )}
+          <div className="prob-resultado">
+            <div className="prob-box"><div className="pb-label">{casa}</div><div className="pb-pct" style={{ color: 'var(--verde2)' }}>{pVit}%</div><div className="pb-sub">VITÓRIA</div></div>
+            <div className="prob-box"><div className="pb-label">Empate</div><div className="pb-pct" style={{ color: 'var(--ouro)' }}>{pEmp}%</div><div className="pb-sub">EMPATE</div></div>
+            <div className="prob-box"><div className="pb-label">{vis}</div><div className="pb-pct" style={{ color: 'var(--perigo)' }}>{pDer}%</div><div className="pb-sub">VITÓRIA</div></div>
+          </div>
+          <div className="bar-wrap">
+            <div className="bar-labels"><span>{casa} {pVit}%</span><span>Empate {pEmp}%</span><span>{vis} {pDer}%</span></div>
+            <div className="bar-track"><div className="bs v" style={{ width: `${pVit}%` }} /><div className="bs e" style={{ width: `${pEmp}%` }} /><div className="bs d" style={{ width: `${pDer}%` }} /></div>
+          </div>
         </div>
 
         <div className="sec">
@@ -161,21 +145,10 @@ export default function AnaliseResultado() {
           </div>
         </div>
 
-        {/* Mercado de Gols HT só aparece no modo 1º Tempo, e o de Gols (jogo inteiro)
-            só no modo Resultado Final — cada modo mostra só a linha do tempo certo. */}
-        {modoTempo === 'ht' && (
-          <div className="sec">
-            <div className="sec-title"><Goal size={14} style={{ marginRight: 4 }} />Mercado de Gols HT</div>
-            {temHT ? golsHT.map((m) => <GolRow key={m.l} label={m.l} pct={m.p} cor={m.c} />) : <div className="empty" style={{ padding: 12 }}><p style={{ fontSize: 12 }}>Sem gols de 1º tempo registrados pra esses times ainda.</p></div>}
-          </div>
-        )}
-
-        {modoTempo === 'ft' && (
-          <div className="sec">
-            <div className="sec-title"><Goal size={14} style={{ marginRight: 4 }} />Mercado de Gols</div>
-            {golsFT.map((m) => <GolRow key={m.l} label={m.l} pct={m.p} cor={m.c} />)}
-          </div>
-        )}
+        <div className="sec">
+          <div className="sec-title"><Goal size={14} style={{ marginRight: 4 }} />Mercado de Gols {modoTempo === 'ht' ? '— 1º Tempo' : ''}</div>
+          {golsMercado.map((m) => <GolRow key={m.l} label={m.l} pct={m.p} cor={m.c} />)}
+        </div>
 
         <div className="sec">
           <div className="sec-title"><Handshake size={14} style={{ marginRight: 4 }} />Ambas Marcam</div>

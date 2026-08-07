@@ -52,7 +52,8 @@ async function salvarJogo() {
   const salvo = await inserirJogo(jogo);
   if (!salvo) return;
 
-  jogosCache.unshift({ ...salvo, gols: salvo.gols || [] });
+  jogosCache = [{ ...salvo, gols: salvo.gols || [] }, ...jogosCache];
+  window.jogosVersion = (window.jogosVersion||0)+1;
   ['iCamp','iPais','iRodada','iLocal','iCasa','iVis','iRC','iRV','iHTC','iHTV','iChutesC','iChutesV','iChutesGolC','iChutesGolV','iEscanteiosC','iEscanteiosV','iAmarelosC','iAmarelosV','iVermelhosC','iVermelhosV'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('iGC').value=0; document.getElementById('iGV').value=0;
   golsTemp=[]; syncNomes(); renderCampo(); renderGolsLista();
@@ -75,6 +76,7 @@ async function deletarJogo(id) {
   const ok = await deletarJogoNuvem(id);
   if (!ok) return;
   jogosCache = jogosCache.filter(j=>j.id!==id);
+  window.jogosVersion = (window.jogosVersion||0)+1;
   renderDados(); atualizarHeader(); renderGeral();
   toast('Removido');
 }

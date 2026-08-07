@@ -259,30 +259,24 @@ function computeAnalise(casa, vis, camp, filtroAtual){
   const sC=statsTime(casa,filtroAtual.casa.local,camp,filtroAtual.casa.qty);
   const sV=statsTime(vis, filtroAtual.vis.local, camp,filtroAtual.vis.qty);
   if(sC.nt===0||sV.nt===0) return { estado:'sem-jogos' };
-  const modoTempo = filtroAtual.modoTempo === 'ht' ? 'ht' : 'ft'; // 'ft' = Resultado Final, 'ht' = Resultado 1º Tempo
-  const lambdaC=sC.lambdaIndice||sC.lambdaAjustado||sC.lambda||0.5, lambdaV=sV.lambdaIndice||sV.lambdaAjustado||sV.lambda||0.5;
+
+  const modoTempo = filtroAtual.modoTempo === 'ht' ? 'ht' : 'ft'; // 'ft' = Resultado Final, 'ht' = 1º Tempo
+  const temHT = (sC.ntHT>0 && sV.ntHT>0);
+  const usaHT = modoTempo==='ht' && temHT; // sem dado HT nos dois times, cai pro jogo inteiro
+
+  // A aba inteira (Probabilidade + Estatísticas) usa a MESMA fórmula de sempre — só troca
+  // qual "gols esperados por jogo" entra na conta: o do jogo inteiro (padrão) ou só o do
+  // 1º tempo (Gols HT). Cantos/Cartões continuam sempre pelo jogo inteiro (não tem esse
+  // dado por tempo).
+  const lambdaC = usaHT ? sC.lambdaHT : (sC.lambdaIndice||sC.lambdaAjustado||sC.lambda||0.5);
+  const lambdaV = usaHT ? sV.lambdaHT : (sV.lambdaIndice||sV.lambdaAjustado||sV.lambda||0.5);
+
   const MAX=10;
-  function probResultado(lC,lV){
-    let pV=0,pE=0,pD=0;
-    for(let i=0;i<=MAX;i++) for(let j=0;j<=MAX;j++){ const p=poisson(lC,i)*poisson(lV,j); if(i>j) pV+=p; else if(i===j) pE+=p; else pD+=p; }
-    const s=pV+pE+pD; pV=Math.round(pV/s*100); pE=Math.round(pE/s*100); pD=100-pV-pE;
-    return { pVit:pV, pEmp:pE, pDer:pD };
-  }
-  const { pVit, pEmp, pDer } = probResultado(lambdaC, lambdaV);
+  let pVit=0,pEmp=0,pDer=0;
+  for(let i=0;i<=MAX;i++) for(let j=0;j<=MAX;j++){ const p=poisson(lambdaC,i)*poisson(lambdaV,j); if(i>j) pVit+=p; else if(i===j) pEmp+=p; else pDer+=p; }
+  const s=pVit+pEmp+pDer; pVit=Math.round(pVit/s*100); pEmp=Math.round(pEmp/s*100); pDer=100-pVit-pEmp;
   function probOver(lC,lV,n){ let u=0; for(let i=0;i<=MAX;i++) for(let j=0;j<=MAX;j++) if(i+j<=n) u+=poisson(lC,i)*poisson(lV,j); return Math.round((1-u)*100); }
   const o15=probOver(lambdaC,lambdaV,1), o25=probOver(lambdaC,lambdaV,2), o35=probOver(lambdaC,lambdaV,3), o45=probOver(lambdaC,lambdaV,4);
-  // Gols HT (1º tempo) — só calcula se os dois times tiverem gols de 1º tempo registrados.
-  // Mesmas 4 linhas do mercado de gols normal (0.5 a real. o padrão pedido foi até 4.5,
-  // mesmo que na prática 3.5+/4.5 no intervalo seja raríssimo — o cálculo é o mesmo probOver).
-  const temHT = (sC.ntHT>0 && sV.ntHT>0);
-  const o05HT = temHT ? probOver(sC.lambdaHT, sV.lambdaHT, 0) : null;
-  const o15HT = temHT ? probOver(sC.lambdaHT, sV.lambdaHT, 1) : null;
-  const o25HT = temHT ? probOver(sC.lambdaHT, sV.lambdaHT, 2) : null;
-  const o35HT = temHT ? probOver(sC.lambdaHT, sV.lambdaHT, 3) : null;
-  const o45HT = temHT ? probOver(sC.lambdaHT, sV.lambdaHT, 4) : null;
-  // Resultado (V/E/D) do 1º tempo, pela mesma distribuição de Poisson mas usando o
-  // "gols esperados até os 45min" de cada time (lambdaHT) em vez do jogo inteiro.
-  const resultadoHT = temHT ? probResultado(sC.lambdaHT, sV.lambdaHT) : null;
   const pMC=1-poisson(lambdaC,0), pMV=1-poisson(lambdaV,0), pBtts=Math.round(pMC*pMV*100);
   const mcc = mercadosCantosCartoes(sC, sV);
 
@@ -290,32 +284,17 @@ function computeAnalise(casa, vis, camp, filtroAtual){
   ultimaAnalise = {
     casa, vis, liga: camp||'',
     mercados: [
-      { nome: 'Vitória Mandante', prob: pVit },
-      { nome: 'Empate',           prob: pEmp },
-      { nome: 'Vitória Visitante',prob: pDer },
-      { nome: 'Over 1.5',       prob: o15  },
-      { nome: 'Under 1.5',      prob: 100-o15 },
-      { nome: 'Over 2.5',       prob: o25  },
-      { nome: 'Under 2.5',      prob: 100-o25 },
-      { nome: 'Over 3.5',       prob: o35  },
-      { nome: 'Under 3.5',      prob: 100-o35 },
-      { nome: 'Over 4.5',       prob: o45  },
-      { nome: 'Under 4.5',      prob: 100-o45 },
-      ...(temHT ? [
-        { nome: 'Gols HT Over 0.5',  prob: o05HT },
-        { nome: 'Gols HT Under 0.5', prob: 100-o05HT },
-        { nome: 'Gols HT Over 1.5',  prob: o15HT },
-        { nome: 'Gols HT Under 1.5', prob: 100-o15HT },
-        { nome: 'Gols HT Over 2.5',  prob: o25HT },
-        { nome: 'Gols HT Under 2.5', prob: 100-o25HT },
-        { nome: 'Gols HT Over 3.5',  prob: o35HT },
-        { nome: 'Gols HT Under 3.5', prob: 100-o35HT },
-        { nome: 'Gols HT Over 4.5',  prob: o45HT },
-        { nome: 'Gols HT Under 4.5', prob: 100-o45HT },
-        { nome: 'Vitória Mandante HT', prob: resultadoHT.pVit },
-        { nome: 'Empate HT',           prob: resultadoHT.pEmp },
-        { nome: 'Vitória Visitante HT',prob: resultadoHT.pDer },
-      ] : []),
+      { nome: modoTempo==='ht' ? 'Vitória Mandante HT' : 'Vitória Mandante', prob: pVit },
+      { nome: modoTempo==='ht' ? 'Empate HT' : 'Empate',                     prob: pEmp },
+      { nome: modoTempo==='ht' ? 'Vitória Visitante HT' : 'Vitória Visitante', prob: pDer },
+      { nome: `${modoTempo==='ht'?'Gols HT ':''}Over 1.5`,  prob: o15  },
+      { nome: `${modoTempo==='ht'?'Gols HT ':''}Under 1.5`, prob: 100-o15 },
+      { nome: `${modoTempo==='ht'?'Gols HT ':''}Over 2.5`,  prob: o25  },
+      { nome: `${modoTempo==='ht'?'Gols HT ':''}Under 2.5`, prob: 100-o25 },
+      { nome: `${modoTempo==='ht'?'Gols HT ':''}Over 3.5`,  prob: o35  },
+      { nome: `${modoTempo==='ht'?'Gols HT ':''}Under 3.5`, prob: 100-o35 },
+      { nome: `${modoTempo==='ht'?'Gols HT ':''}Over 4.5`,  prob: o45  },
+      { nome: `${modoTempo==='ht'?'Gols HT ':''}Under 4.5`, prob: 100-o45 },
       { nome: 'Ambas Marcam',   prob: pBtts },
       { nome: 'Ambas Não Marc.',prob: 100-pBtts },
       // Cantos e cartões só existem fechados pra partida inteira — no modo 1º Tempo
@@ -345,9 +324,9 @@ function computeAnalise(casa, vis, camp, filtroAtual){
 
   return {
     estado:'ok', casa, vis, camp,
-    filtro: { casa:{...filtroAtual.casa}, vis:{...filtroAtual.vis} }, modoTempo,
+    filtro: { casa:{...filtroAtual.casa}, vis:{...filtroAtual.vis} }, modoTempo, temHT, usaHT,
     sC, sV, lambdaC, lambdaV, pVit, pEmp, pDer, o15, o25, o35, o45,
-    temHT, o05HT, o15HT, o25HT, o35HT, o45HT, resultadoHT, pBtts, mcc, top10, maxPP,
+    pBtts, mcc, top10, maxPP,
     momStats, golsComb, picoIdx, baixoIdx, totalMom,
   };
 }
