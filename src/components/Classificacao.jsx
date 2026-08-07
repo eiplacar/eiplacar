@@ -25,6 +25,7 @@ function CampeonatoOptions({ camps }) {
 export default function Classificacao() {
   const [, setTick] = useState(0);
   const [camp, setCamp] = useState('');
+  const [modo, setModo] = useState('geral'); // 'geral' | 'casa' | 'visitante'
 
   useEffect(() => {
     window.classificacaoRefresh = () => setTick((t) => t + 1);
@@ -43,24 +44,34 @@ export default function Classificacao() {
   const campAtivo = camps.includes(camp) ? camp : (camps[0] || '');
 
   const data = useMemo(
-    () => (window.computeClassificacao ? window.computeClassificacao(campAtivo) : { estado: 'sem-jogos' }),
+    () => (window.computeClassificacao ? window.computeClassificacao(campAtivo, modo) : { estado: 'sem-jogos' }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [campAtivo, jogosCache.length]
+    [campAtivo, modo, jogosCache.length]
   );
 
   return (
     <>
       <div className="sel-card" style={{ padding: '12px 16px' }}>
         <div className="sel-card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Trophy size={13} /> Liga</div>
-        <select value={campAtivo} onChange={(e) => setCamp(e.target.value)}>
+        <select value={campAtivo} onChange={(e) => setCamp(e.target.value)} style={{ marginBottom: 10 }}>
           {camps.length === 0
             ? <option value="">Nenhum campeonato com classificação ainda</option>
             : <CampeonatoOptions camps={camps} />}
         </select>
+        <div style={{ display: 'flex', gap: 4 }}>
+          <button className={`local-btn ${modo === 'geral' ? 'active-all' : ''}`} onClick={() => setModo('geral')} style={{ flex: 1, padding: '7px 4px', fontSize: 12 }}>Geral</button>
+          <button className={`local-btn ${modo === 'casa' ? 'active-casa' : ''}`} onClick={() => setModo('casa')} style={{ flex: 1, padding: '7px 4px', fontSize: 12 }}>Em casa</button>
+          <button className={`local-btn ${modo === 'visitante' ? 'active-fora' : ''}`} onClick={() => setModo('visitante')} style={{ flex: 1, padding: '7px 4px', fontSize: 12 }}>Visitante</button>
+        </div>
       </div>
 
       <div className="card">
         <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><BarChart3 size={14} /> Tabela</div>
+        {modo !== 'geral' && data.estado === 'ok' && (
+          <div style={{ fontSize: 10, color: 'var(--texto2)', marginBottom: 8 }}>
+            Só jogos {modo === 'casa' ? 'como mandante' : 'como visitante'} — posição calculada por pontos, não é a posição oficial da temporada.
+          </div>
+        )}
         <div className="table-wrap">
           <table>
             <thead><tr><th>Pos</th><th>Time</th><th>Pts</th><th>J</th><th>V</th><th>E</th><th>D</th><th>GP</th><th>GC</th><th>SG</th></tr></thead>

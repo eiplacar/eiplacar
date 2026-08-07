@@ -37,6 +37,7 @@ export default function SeletorAnalise() {
   const [qtyUnicoDisplay, setQtyUnicoDisplay] = useState('');
   const [filtroCasa, setFiltroCasa] = useState({ local: 'all', qty: 0 });
   const [filtroVis, setFiltroVis] = useState({ local: 'all', qty: 0 });
+  const [modoTempo, setModoTempo] = useState('ft'); // 'ft' = Resultado Final · 'ht' = Resultado 1º Tempo
 
   useEffect(() => {
     window.analiseReactRefresh = () => setTick((t) => t + 1);
@@ -72,8 +73,9 @@ export default function SeletorAnalise() {
     window.filtro.casa.qty = filtroCasa.qty;
     window.filtro.vis.local = filtroVis.local;
     window.filtro.vis.qty = filtroVis.qty;
+    window.filtro.modoTempo = modoTempo;
     window.renderAnalise?.();
-  }, [timeCasa, timeVis, campeonato, filtroCasa, filtroVis]);
+  }, [timeCasa, timeVis, campeonato, filtroCasa, filtroVis, modoTempo]);
 
   function onChangeCampeonato(e) { setCampeonato(e.target.value); }
   function onChangeTimeCasa(e) { setTimeCasa(e.target.value); setFiltroCasa((f) => ({ ...f, qty: 0 })); setQtyUnicoDisplay(''); }
@@ -97,7 +99,7 @@ export default function SeletorAnalise() {
 
   function ctxTag(nome, filtro) {
     if (!nome) return null;
-    const locLabel = filtro.local === 'all' ? 'Total' : filtro.local === 'casa' ? 'Em casa' : 'Fora';
+    const locLabel = filtro.local === 'all' ? 'Geral' : filtro.local === 'casa' ? 'Em casa' : 'Fora';
     const qtyLabel = filtro.qty > 0 ? `Últ. ${filtro.qty} jogo(s)` : 'Todos os jogos';
     return <div className="ctx-tag" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><CheckCircle2 size={11} /> {nome} · {locLabel} · {qtyLabel}</div>;
   }
@@ -132,6 +134,14 @@ export default function SeletorAnalise() {
       {/* 2º CONFRONTO — card único, sem cor de time. Mandante sempre à esquerda, visitante à direita */}
       <div style={{ background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 14, padding: 14, marginBottom: 10 }}>
 
+        {/* Resultado Final × Resultado 1º Tempo — decide se a Probabilidade e os
+            mercados de resultado usam o placar do jogo inteiro ou só o 1º tempo
+            (mesma base de dados, Gols HT, já cadastrada em Adicionar Partida). */}
+        <div style={{ display: 'flex', gap: 4, marginBottom: 12 }}>
+          <button className={`local-btn ${modoTempo === 'ft' ? 'active-all' : ''}`} onClick={() => setModoTempo('ft')} style={{ ...btnStyleLocal, flex: 1 }}>Resultado Final</button>
+          <button className={`local-btn ${modoTempo === 'ht' ? 'active-all' : ''}`} onClick={() => setModoTempo('ht')} style={{ ...btnStyleLocal, flex: 1 }}>1º Tempo</button>
+        </div>
+
         {/* Cabeçalho: escudo + mandante × visitante + escudo */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 8, marginBottom: 14 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
@@ -161,7 +171,7 @@ export default function SeletorAnalise() {
           </div>
 
           <div style={{ display: 'flex', gap: 4, marginBottom: 10 }}>
-            <button className={`local-btn ${localUnicoAtivo === 'all' ? 'active-all' : ''}`} onClick={() => escolherLocal('all')} style={{ ...btnStyleLocal, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}><RotateCcw size={12} /> Total</button>
+            <button className={`local-btn ${localUnicoAtivo === 'all' ? 'active-all' : ''}`} onClick={() => escolherLocal('all')} style={{ ...btnStyleLocal, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}><RotateCcw size={12} /> Geral</button>
             <button className={`local-btn ${localUnicoAtivo === 'casa' ? 'active-casa' : ''}`} onClick={() => escolherLocal('casa')} style={{ ...btnStyleLocal, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}><Home size={12} /> Em casa</button>
             <button className={`local-btn ${localUnicoAtivo === 'fora' ? 'active-fora' : ''}`} onClick={() => escolherLocal('fora')} style={{ ...btnStyleLocal, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}><Plane size={12} /> Fora</button>
           </div>

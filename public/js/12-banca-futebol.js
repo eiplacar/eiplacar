@@ -551,7 +551,8 @@ function ordenarPorCriteriosOficiais(linhas, jogos, camp){
   return aplicarCriterios(comFairPlay, criterios, jogos);
 }
 
-function computeClassificacao(camp){
+function computeClassificacao(camp, modo){
+  modo = modo === 'casa' || modo === 'visitante' ? modo : 'geral';
   if(/copa do mundo|amistoso/i.test(camp)) return { estado:'sem-classificacao', camp };
 
   const jogos = camp ? jogosCache.filter(j=>j.camp===camp) : [];
@@ -566,16 +567,21 @@ function computeClassificacao(camp){
 
   const tab = {};
   function linhaTime(nome){ return tab[nome] || (tab[nome] = {j:0,v:0,e:0,d:0,gp:0,gc:0,vermelhos:0,amarelos:0,vFora:0}); }
+  const incluiCasa = modo!=='visitante';
+  const incluiVis  = modo!=='casa';
   jogos.forEach(j=>{
-    const c = linhaTime(j.casa), v = linhaTime(j.vis);
-    c.j++; v.j++;
-    c.gp += (j.gC||0); c.gc += (j.gV||0);
-    v.gp += (j.gV||0); v.gc += (j.gC||0);
-    c.vermelhos += (j.vermelhosC||0); v.vermelhos += (j.vermelhosV||0);
-    c.amarelos  += (j.amarelosC||0);  v.amarelos  += (j.amarelosV||0);
-    if(j.gC>j.gV){ c.v++; v.d++; }
-    else if(j.gC<j.gV){ v.v++; v.vFora++; c.d++; }
-    else { c.e++; v.e++; }
+    if(incluiCasa){
+      const c = linhaTime(j.casa);
+      c.j++; c.gp += (j.gC||0); c.gc += (j.gV||0);
+      c.vermelhos += (j.vermelhosC||0); c.amarelos += (j.amarelosC||0);
+      if(j.gC>j.gV) c.v++; else if(j.gC<j.gV) c.d++; else c.e++;
+    }
+    if(incluiVis){
+      const v = linhaTime(j.vis);
+      v.j++; v.gp += (j.gV||0); v.gc += (j.gC||0);
+      v.vermelhos += (j.vermelhosV||0); v.amarelos += (j.amarelosV||0);
+      if(j.gV>j.gC){ v.v++; v.vFora++; } else if(j.gV<j.gC) v.d++; else v.e++;
+    }
   });
 
   const ehBrasileirao = /brasileir[ãa]o/i.test(camp);
@@ -587,7 +593,13 @@ function computeClassificacao(camp){
     return { nome, pts, ...t, sg: t.gp-t.gc, rank };
   });
 
-  if(ehBrasileirao){
+  if(modo!=='geral'){
+    // "Em casa" / "Visitante" são recortes (só parte dos jogos de cada time), não a
+    // temporada inteira — os critérios OFICIAIS de desempate (que dependem do
+    // confronto direto entre todos) não fazem sentido aqui. Ordena só por
+    // pontos/saldo/gols pró, e a posição não usa o rank oficial da API.
+    linhas = linhas.sort((a,b)=> b.pts-a.pts || b.sg-a.sg || b.gp-a.gp).map((l,i)=>({ ...l, rank:i+1 }));
+  } else if(ehBrasileirao){
     // Brasileirão: API não entrega mais o rank (plano gratuito não libera a temporada
     // atual), então a posição É calculada manualmente com os critérios oficiais da CBF.
     linhas = ordenarBrasileirao(linhas, jogos).map((l,i)=>({ ...l, rank: i+1 }));
@@ -607,9 +619,11 @@ function computeClassificacao(camp){
     });
   }
 
-  linhas = linhas.map(l=>({ ...l, zona: zonaPosicao(camp, l.rank) }));
+  // As zonas (G4, rebaixamento etc.) só valem pra posição oficial da temporada
+  // inteira — não fazem sentido recalculadas em cima de um recorte casa/visitante.
+  linhas = linhas.map(l=>({ ...l, zona: modo==='geral' ? zonaPosicao(camp, l.rank) : null }));
 
-  return { estado:'ok', camp, linhas, zonas: zonasDaLiga(camp) };
+  return { estado:'ok', camp, modo, linhas, zonas: modo==='geral' ? zonasDaLiga(camp) : null };
 }
 window.computeClassificacao = computeClassificacao;
 

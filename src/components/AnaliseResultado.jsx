@@ -38,7 +38,7 @@ function HtmlChunk({ html }) {
   return <div ref={ref} dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
-const localLbl = (loc) => (loc === 'all' ? 'Total' : loc === 'casa' ? 'Em casa' : 'Fora');
+const localLbl = (loc) => (loc === 'all' ? 'Geral' : loc === 'casa' ? 'Em casa' : 'Fora');
 
 export default function AnaliseResultado() {
   const [, setTick] = useState(0);
@@ -62,7 +62,8 @@ export default function AnaliseResultado() {
     return <div className="empty"><div className="icon"><Search size={26} /></div><p>Sem jogos encontrados com os filtros selecionados.<br />Tente ajustar o local ou a quantidade.</p></div>;
   }
 
-  const { casa, vis, filtro, sC, sV, lambdaC, lambdaV, pVit, pEmp, pDer, o15, o25, o35, o45, temHT, o05HT, o15HT, pBtts, mcc, top10, maxPP, momStats, golsComb, picoIdx, baixoIdx, totalMom } = data;
+  const { casa, vis, filtro, sC, sV, lambdaC, lambdaV, pVit, pEmp, pDer, o15, o25, o35, o45, temHT, o05HT, o15HT, o25HT, o35HT, o45HT, resultadoHT, pBtts, mcc, top10, maxPP, momStats, golsComb, picoIdx, baixoIdx, totalMom } = data;
+  const modoTempo = data.modoTempo || 'ft';
   const calDot = window.calDot || (() => 'facil');
   const calLbl = window.calLbl || (() => '—');
   const renderMinTabela = window.renderMinTabela || (() => '');
@@ -73,6 +74,12 @@ export default function AnaliseResultado() {
     { l: 'Menos de 0.5 gols no HT', p: 100 - o05HT, c: 'var(--perigo)' },
     { l: 'Mais de 1.5 gols no HT', p: o15HT, c: 'var(--verde2)' },
     { l: 'Menos de 1.5 gols no HT', p: 100 - o15HT, c: 'var(--perigo)' },
+    { l: 'Mais de 2.5 gols no HT', p: o25HT, c: 'var(--verde2)' },
+    { l: 'Menos de 2.5 gols no HT', p: 100 - o25HT, c: 'var(--perigo)' },
+    { l: 'Mais de 3.5 gols no HT', p: o35HT, c: 'var(--verde2)' },
+    { l: 'Menos de 3.5 gols no HT', p: 100 - o35HT, c: 'var(--perigo)' },
+    { l: 'Mais de 4.5 gols no HT', p: o45HT, c: 'var(--verde2)' },
+    { l: 'Menos de 4.5 gols no HT', p: 100 - o45HT, c: 'var(--perigo)' },
   ] : [];
   const golsFT = [
     { l: 'Mais de 1.5 gols', p: o15, c: 'var(--verde2)' }, { l: 'Menos de 1.5 gols', p: 100 - o15, c: 'var(--perigo)' },
@@ -108,16 +115,26 @@ export default function AnaliseResultado() {
         </div>
 
         <div className="sec">
-          <div className="sec-title"><Trophy size={14} style={{ marginRight: 4 }} />Resultado Provável</div>
-          <div className="prob-resultado">
-            <div className="prob-box"><div className="pb-label">{casa}</div><div className="pb-pct" style={{ color: 'var(--verde2)' }}>{pVit}%</div><div className="pb-sub">VITÓRIA</div></div>
-            <div className="prob-box"><div className="pb-label">Empate</div><div className="pb-pct" style={{ color: 'var(--ouro)' }}>{pEmp}%</div><div className="pb-sub">EMPATE</div></div>
-            <div className="prob-box"><div className="pb-label">{vis}</div><div className="pb-pct" style={{ color: 'var(--perigo)' }}>{pDer}%</div><div className="pb-sub">VITÓRIA</div></div>
-          </div>
-          <div className="bar-wrap">
-            <div className="bar-labels"><span>{casa} {pVit}%</span><span>Empate {pEmp}%</span><span>{vis} {pDer}%</span></div>
-            <div className="bar-track"><div className="bs v" style={{ width: `${pVit}%` }} /><div className="bs e" style={{ width: `${pEmp}%` }} /><div className="bs d" style={{ width: `${pDer}%` }} /></div>
-          </div>
+          <div className="sec-title"><Trophy size={14} style={{ marginRight: 4 }} />Resultado Provável {modoTempo === 'ht' ? '— 1º Tempo' : '— Final'}</div>
+          {modoTempo === 'ht' && !temHT ? (
+            <div className="empty" style={{ padding: 14 }}><p style={{ fontSize: 12 }}>Sem gols de 1º tempo registrados pra esses times ainda. Cadastre o placar do 1º tempo em Adicionar Partida pra liberar essa visão.</p></div>
+          ) : (
+            <>
+              <div className="prob-resultado">
+                <div className="prob-box"><div className="pb-label">{casa}</div><div className="pb-pct" style={{ color: 'var(--verde2)' }}>{modoTempo === 'ht' ? resultadoHT.pVit : pVit}%</div><div className="pb-sub">VITÓRIA</div></div>
+                <div className="prob-box"><div className="pb-label">Empate</div><div className="pb-pct" style={{ color: 'var(--ouro)' }}>{modoTempo === 'ht' ? resultadoHT.pEmp : pEmp}%</div><div className="pb-sub">EMPATE</div></div>
+                <div className="prob-box"><div className="pb-label">{vis}</div><div className="pb-pct" style={{ color: 'var(--perigo)' }}>{modoTempo === 'ht' ? resultadoHT.pDer : pDer}%</div><div className="pb-sub">VITÓRIA</div></div>
+              </div>
+              <div className="bar-wrap">
+                {(() => { const v = modoTempo === 'ht' ? resultadoHT.pVit : pVit, e = modoTempo === 'ht' ? resultadoHT.pEmp : pEmp, d = modoTempo === 'ht' ? resultadoHT.pDer : pDer; return (
+                  <>
+                    <div className="bar-labels"><span>{casa} {v}%</span><span>Empate {e}%</span><span>{vis} {d}%</span></div>
+                    <div className="bar-track"><div className="bs v" style={{ width: `${v}%` }} /><div className="bs e" style={{ width: `${e}%` }} /><div className="bs d" style={{ width: `${d}%` }} /></div>
+                  </>
+                ); })()}
+              </div>
+            </>
+          )}
         </div>
 
         <div className="sec">
@@ -144,15 +161,21 @@ export default function AnaliseResultado() {
           </div>
         </div>
 
-        <div className="sec">
-          <div className="sec-title"><Goal size={14} style={{ marginRight: 4 }} />Mercado de Gols HT</div>
-          {temHT ? golsHT.map((m) => <GolRow key={m.l} label={m.l} pct={m.p} cor={m.c} />) : <div className="empty" style={{ padding: 12 }}><p style={{ fontSize: 12 }}>Sem gols de 1º tempo registrados pra esses times ainda.</p></div>}
-        </div>
+        {/* Mercado de Gols HT só aparece no modo 1º Tempo, e o de Gols (jogo inteiro)
+            só no modo Resultado Final — cada modo mostra só a linha do tempo certo. */}
+        {modoTempo === 'ht' && (
+          <div className="sec">
+            <div className="sec-title"><Goal size={14} style={{ marginRight: 4 }} />Mercado de Gols HT</div>
+            {temHT ? golsHT.map((m) => <GolRow key={m.l} label={m.l} pct={m.p} cor={m.c} />) : <div className="empty" style={{ padding: 12 }}><p style={{ fontSize: 12 }}>Sem gols de 1º tempo registrados pra esses times ainda.</p></div>}
+          </div>
+        )}
 
-        <div className="sec">
-          <div className="sec-title"><Goal size={14} style={{ marginRight: 4 }} />Mercado de Gols</div>
-          {golsFT.map((m) => <GolRow key={m.l} label={m.l} pct={m.p} cor={m.c} />)}
-        </div>
+        {modoTempo === 'ft' && (
+          <div className="sec">
+            <div className="sec-title"><Goal size={14} style={{ marginRight: 4 }} />Mercado de Gols</div>
+            {golsFT.map((m) => <GolRow key={m.l} label={m.l} pct={m.p} cor={m.c} />)}
+          </div>
+        )}
 
         <div className="sec">
           <div className="sec-title"><Handshake size={14} style={{ marginRight: 4 }} />Ambas Marcam</div>
@@ -163,37 +186,41 @@ export default function AnaliseResultado() {
           <div className="lambda-note">λ {casa}: {lambdaC} · λ {vis}: {lambdaV}</div>
         </div>
 
-        <div className="sec">
-          <div className="sec-title"><Flag size={14} style={{ marginRight: 4 }} />Mercado de Cantos</div>
-          {mcc.temCantos ? (
-            <>
-              {mcc.cantos.map((c) => (
-                <div key={c.linha}>
-                  <GolRow label={`Mais de ${c.linha} cantos`} pct={c.over} cor="var(--verde2)" />
-                  <GolRow label={`Menos de ${c.linha} cantos`} pct={100 - c.over} cor="var(--perigo)" />
-                </div>
-              ))}
-              <div className="lambda-note">Total esperado: {mcc.lambdaCantos} cantos/jogo ({casa}+{vis})</div>
-              <HtmlChunk html={barraConfianca(mcc.confCantos, casa, vis, sC.confCantos, sV.confCantos)} />
-            </>
-          ) : <div className="empty" style={{ padding: 14 }}><p>Sem dados de cantos cadastrados para um ou ambos os times.</p></div>}
-        </div>
+        {modoTempo === 'ft' && (
+          <div className="sec">
+            <div className="sec-title"><Flag size={14} style={{ marginRight: 4 }} />Mercado de Cantos</div>
+            {mcc.temCantos ? (
+              <>
+                {mcc.cantos.map((c) => (
+                  <div key={c.linha}>
+                    <GolRow label={`Mais de ${c.linha} cantos`} pct={c.over} cor="var(--verde2)" />
+                    <GolRow label={`Menos de ${c.linha} cantos`} pct={100 - c.over} cor="var(--perigo)" />
+                  </div>
+                ))}
+                <div className="lambda-note">Total esperado: {mcc.lambdaCantos} cantos/jogo ({casa}+{vis})</div>
+                <HtmlChunk html={barraConfianca(mcc.confCantos, casa, vis, sC.confCantos, sV.confCantos)} />
+              </>
+            ) : <div className="empty" style={{ padding: 14 }}><p>Sem dados de cantos cadastrados para um ou ambos os times.</p></div>}
+          </div>
+        )}
 
-        <div className="sec">
-          <div className="sec-title"><Square size={14} style={{ marginRight: 4, color: 'var(--ouro)' }} />Mercado de Cartões</div>
-          {mcc.temCartoes ? (
-            <>
-              {mcc.cartoes.map((c) => (
-                <div key={c.linha}>
-                  <GolRow label={`Mais de ${c.linha} cartões`} pct={c.over} cor="var(--verde2)" />
-                  <GolRow label={`Menos de ${c.linha} cartões`} pct={100 - c.over} cor="var(--perigo)" />
-                </div>
-              ))}
-              <div className="lambda-note">Total esperado: {mcc.lambdaCartoes} cartões/jogo (amarelos + vermelhos, {casa}+{vis})</div>
-              <HtmlChunk html={barraConfianca(mcc.confCartoes, casa, vis, sC.confCartoes, sV.confCartoes)} />
-            </>
-          ) : <div className="empty" style={{ padding: 14 }}><p>Sem dados de cartões cadastrados para um ou ambos os times.</p></div>}
-        </div>
+        {modoTempo === 'ft' && (
+          <div className="sec">
+            <div className="sec-title"><Square size={14} style={{ marginRight: 4, color: 'var(--ouro)' }} />Mercado de Cartões</div>
+            {mcc.temCartoes ? (
+              <>
+                {mcc.cartoes.map((c) => (
+                  <div key={c.linha}>
+                    <GolRow label={`Mais de ${c.linha} cartões`} pct={c.over} cor="var(--verde2)" />
+                    <GolRow label={`Menos de ${c.linha} cartões`} pct={100 - c.over} cor="var(--perigo)" />
+                  </div>
+                ))}
+                <div className="lambda-note">Total esperado: {mcc.lambdaCartoes} cartões/jogo (amarelos + vermelhos, {casa}+{vis})</div>
+                <HtmlChunk html={barraConfianca(mcc.confCartoes, casa, vis, sC.confCartoes, sV.confCartoes)} />
+              </>
+            ) : <div className="empty" style={{ padding: 14 }}><p>Sem dados de cartões cadastrados para um ou ambos os times.</p></div>}
+          </div>
+        )}
 
         {golsComb.length > 0 && (
           <div className="sec">
