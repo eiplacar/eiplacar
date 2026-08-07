@@ -36,10 +36,8 @@ export default function Classificacao() {
   const sortNatural = window.sortNatural || ((arr) => [...arr].sort());
   const camps = useMemo(
     () => sortNatural([...new Set(jogosCache.map((j) => j.camp))]).filter((c) => !/copa do mundo|amistoso/i.test(c)),
-    // jogosVersion muda em toda edição/adição/remoção — inclusive quando só o CONTEÚDO de
-    // um jogo já existente muda (ex.: corrigir o placar), que não altera jogosCache.length.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [jogosCache.length, window.jogosVersion]
+    [jogosCache.length]
   );
 
   // Se o campeonato escolhido não existe mais na lista (ou nada foi escolhido ainda), cai no primeiro
@@ -48,7 +46,7 @@ export default function Classificacao() {
   const data = useMemo(
     () => (window.computeClassificacao ? window.computeClassificacao(campAtivo, modo) : { estado: 'sem-jogos' }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [campAtivo, modo, jogosCache.length, window.jogosVersion]
+    [campAtivo, modo, jogosCache.length]
   );
 
   return (

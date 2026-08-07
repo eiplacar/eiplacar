@@ -40,36 +40,39 @@ const PAIS_POR_LIGA = new Map([
   ['cmr77dw3900f5rx06j05wgzv4', 'Europa'],
 ]);
 
-// A GOAL API cobre o mundo inteiro (500+ ligas), então uma busca por data
-// sem filtro de liga pode ter centenas de jogos — por isso pagina em blocos
-// de 100 até acabar (ou até a trava de segurança de 1000 jogos no total).
+// A GOAL API cobre o mundo inteiro (500+ ligas). Buscar tudo por "date" sem leagueId
+// parece só devolver as ligas mais populares — ligas menores (ex: 2. Bundesliga,
+// Eredivisie) não apareciam mesmo estando na lista de permitidas. O outro arquivo,
+// atualizar-jogos-finalizados.js, já tinha descoberto (comentário lá) que a API ignora
+// o filtro "date" quando combinado com "leagueId" — então aqui adotamos o MESMO padrão
+// que já funciona pra ele: busca por liga (leagueId), sem "date", e filtra a data
+// aqui no código (via matchDate). Mais chamadas (1 por liga permitida), mas garante
+// que TODAS as ligas configuradas apareçam, não só as grandes.
 async function buscarTodosFixturesDoDia(apiKey, data) {
-  const LIMITE_POR_PAGINA = 100;
-  const MAX_PAGINAS = 10;
+  const LIMITE_POR_LIGA = 30; // cobre folgado a "rodada" de qualquer liga em torno da data buscada
   let todos = [];
-  let offset = 0;
 
-  for (let pagina = 0; pagina < MAX_PAGINAS; pagina++) {
-    const resp = await fetch(`${GOAL_API_URL}/fixtures?date=${data}&limit=${LIMITE_POR_PAGINA}&offset=${offset}`, {
+  for (const ligaId of LIGAS_PERMITIDAS) {
+    const resp = await fetch(`${GOAL_API_URL}/fixtures?leagueId=${ligaId}&limit=${LIMITE_POR_LIGA}`, {
       headers: { Authorization: `Bearer ${apiKey}` },
     });
 
     if (!resp.ok) {
-      throw new Error(`GOAL API respondeu com erro ${resp.status}`);
+      console.log(`GOAL API respondeu com erro ${resp.status} pra liga ${ligaId}`);
+      continue; // não derruba a busca inteira por causa de 1 liga com problema
     }
 
     const json = await resp.json();
     if (!json.success) {
-      throw new Error(json.message || 'GOAL API recusou a chamada');
+      console.log(`GOAL API recusou a chamada pra liga ${ligaId}:`, json.message);
+      continue;
     }
 
+    console.log(`Liga ${ligaId}: ${(json.data || []).length} fixture(s) recebido(s), datas:`, [...new Set((json.data || []).map((f) => f.matchDate))]);
     todos = todos.concat(json.data || []);
-
-    if (!json.pagination?.hasMore) break;
-    offset += LIMITE_POR_PAGINA;
   }
 
-  return todos;
+  return todos.filter((f) => f.matchDate === data);
 }
 
 // A GOAL API não deixa explícito o fuso horário do "matchTime" — assumindo
@@ -130,6 +133,7 @@ export const handler = async function (event) {
 
   try {
     const todosFixtures = await buscarTodosFixturesDoDia(apiKey, data);
+    console.log(`Total de fixtures recebidos (todas as ligas permitidas, filtrados pra ${data}):`, todosFixtures.length);
 
     const jogos = todosFixtures
       .filter((f) => LIGAS_PERMITIDAS.has(f.leagueId))

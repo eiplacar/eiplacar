@@ -79,6 +79,15 @@ function statsTime(nome, local, camp, qty){
   const lambdaHT    = ntHT?r2(gmHT/ntHT):0;
   const lambdaDefHT = ntHT?r2(gsHT/ntHT):0;
 
+  // ── Desempenho (V/E/D) e médias casa/fora do 1º tempo — só jogos com golsHT preenchido ──
+  const comoCasaHT = como_casa.filter(j=>j.golsHT_C!=null && j.golsHT_V!=null);
+  const comoVisHT  = como_vis.filter(j=>j.golsHT_C!=null && j.golsHT_V!=null);
+  const ncHT = comoCasaHT.length, nvHT = comoVisHT.length;
+  const gmCasaHT = comoCasaHT.reduce((s,j)=>s+j.golsHT_C,0), gsCasaHT = comoCasaHT.reduce((s,j)=>s+j.golsHT_V,0);
+  const gmVisHT  = comoVisHT.reduce((s,j)=>s+j.golsHT_V,0),  gsVisHT  = comoVisHT.reduce((s,j)=>s+j.golsHT_C,0);
+  const vedCasaHT = comoCasaHT.reduce((acc,j)=>{ if(j.golsHT_C>j.golsHT_V) acc.v++; else if(j.golsHT_C===j.golsHT_V) acc.e++; else acc.d++; return acc; }, {v:0,e:0,d:0});
+  const vedForaHT = comoVisHT.reduce((acc,j)=>{ if(j.golsHT_V>j.golsHT_C) acc.v++; else if(j.golsHT_V===j.golsHT_C) acc.e++; else acc.d++; return acc; }, {v:0,e:0,d:0});
+
   // ── Ajuste pela força do adversário enfrentado em cada jogo ──
   // Para cada jogo, calcula um fator de dificuldade (acima de 1 = adversário forte, abaixo de 1 = fraco).
   // O lambda ajustado escala o lambda simples pela média desses fatores.
@@ -113,6 +122,13 @@ function statsTime(nome, local, camp, qty){
   const todosGols=jogos.flatMap(j=>(j.gols||[]).map(g=>({ min:g.min, marcado:(j.casa===nome&&g.time==='casa')||(j.vis===nome&&g.time==='vis') })));
   const jogosComMin=jogos.filter(j=>(j.gols||[]).length>0).length;
   const minStats=periodos4.map(p=>({ l:p.l, ico:p.ico, marc:todosGols.filter(g=>g.marcado&&g.min>=p.s&&g.min<=p.e).length, sofr:todosGols.filter(g=>!g.marcado&&g.min>=p.s&&g.min<=p.e).length }));
+
+  // ── Minutos dos gols restritos ao 1º tempo (min<=45) — mesma base de dados, só filtrada ──
+  // Os cartões e escanteios não têm minuto registrado (só total do jogo), por isso não dá
+  // pra fazer essa mesma visão pra eles. Gols têm minuto real, então dá pra recortar.
+  const todosGolsHT = todosGols.filter(g=>g.min!=null && g.min<=45);
+  const jogosComMinHT = jogos.filter(j=>(j.gols||[]).some(g=>g.min!=null && g.min<=45)).length;
+  const minStatsHT = periodos4.slice(0,2).map(p=>({ l:p.l, ico:p.ico, marc:todosGolsHT.filter(g=>g.marcado&&g.min>=p.s&&g.min<=p.e).length, sofr:todosGolsHT.filter(g=>!g.marcado&&g.min>=p.s&&g.min<=p.e).length }));
 
   // ── Sequência de gols por jogo (marcados e sofridos separados) ──
   // Para cada jogo com minutos, pegar os minutos em ordem
@@ -203,7 +219,9 @@ function statsTime(nome, local, camp, qty){
   // Reconverte o índice (relativo à média=1) para gols/jogo, com limites de sanidade.
   const lambdaIndice = Math.max(0.1, Math.min(6, r2(liga.gols * indiceForca)));
 
-  return { nome, nt, nc, nv, local, qty, mediaGM_casa:nc?r2(gmCasa/nc):0, mediaGS_casa:nc?r2(gsCasa/nc):0, mediaGM_vis:nv?r2(gmVis/nv):0, mediaGS_vis:nv?r2(gsVis/nv):0, vedCasa, vedFora, lambda, lambdaDef, lambdaAjustado, lambdaDefAjustado, lambdaHT, lambdaDefHT, ntHT, lambdaIndice, indiceForca, mediaChutesGolMarc, mediaChutesTotMarc, mediaCantosMarc, mediaVermProprio, mediaAmarProprio, confCantos, confCartoes, confChutes, rankMedAdv, calendario, minStats, jogosComMin, todosGols, mediasGolJogo, mediasMarc, mediasSofr, mediaMinMarc, mediaMinSofr, jogosComGols:jogosComGols.length };
+  return { nome, nt, nc, nv, local, qty, mediaGM_casa:nc?r2(gmCasa/nc):0, mediaGS_casa:nc?r2(gsCasa/nc):0, mediaGM_vis:nv?r2(gmVis/nv):0, mediaGS_vis:nv?r2(gsVis/nv):0, vedCasa, vedFora,
+    ncHT, nvHT, mediaGM_casaHT:ncHT?r2(gmCasaHT/ncHT):0, mediaGS_casaHT:ncHT?r2(gsCasaHT/ncHT):0, mediaGM_visHT:nvHT?r2(gmVisHT/nvHT):0, mediaGS_visHT:nvHT?r2(gsVisHT/nvHT):0, vedCasaHT, vedForaHT,
+    lambda, lambdaDef, lambdaAjustado, lambdaDefAjustado, lambdaHT, lambdaDefHT, ntHT, lambdaIndice, indiceForca, mediaChutesGolMarc, mediaChutesTotMarc, mediaCantosMarc, mediaVermProprio, mediaAmarProprio, confCantos, confCartoes, confChutes, rankMedAdv, calendario, minStats, jogosComMin, minStatsHT, jogosComMinHT, todosGols, mediasGolJogo, mediasMarc, mediasSofr, mediaMinMarc, mediaMinSofr, jogosComGols:jogosComGols.length };
 }
 
 
@@ -214,13 +232,16 @@ let ultimaAnalise = null;
 // Continua devolvendo um pedaço de HTML pronto (é só uma tabelinha visual, sem
 // lógica de negócio) — o componente React injeta isso com dangerouslySetInnerHTML,
 // igual já se fazia com escudos de time.
-function renderMinTabela(s){
-  if(!s.jogosComMin) return `<div class="empty" style="padding:16px"><div class="icon" style="font-size:24px"><span data-ic="clock" data-ic-size="24"></span></div><p>Sem minutos de gols registrados.</p></div>`;
-  const picoM=s.minStats.indexOf(s.minStats.reduce((a,b)=>b.marc>a.marc?b:a));
-  const picoS=s.minStats.indexOf(s.minStats.reduce((a,b)=>b.sofr>a.sofr?b:a));
-  const totMarc=s.minStats.reduce((a,b)=>a+b.marc,0);
-  const totSofr=s.minStats.reduce((a,b)=>a+b.sofr,0);
-  const cards=s.minStats.map((p,i)=>{
+function renderMinTabela(s, modoTempo){
+  const ht = modoTempo==='ht';
+  const minStats = ht ? s.minStatsHT : s.minStats;
+  const jogosComMin = ht ? s.jogosComMinHT : s.jogosComMin;
+  if(!jogosComMin) return `<div class="empty" style="padding:16px"><div class="icon" style="font-size:24px"><span data-ic="clock" data-ic-size="24"></span></div><p>Sem minutos de gols${ht?' no 1º tempo':''} registrados.</p></div>`;
+  const picoM=minStats.indexOf(minStats.reduce((a,b)=>b.marc>a.marc?b:a));
+  const picoS=minStats.indexOf(minStats.reduce((a,b)=>b.sofr>a.sofr?b:a));
+  const totMarc=minStats.reduce((a,b)=>a+b.marc,0);
+  const totSofr=minStats.reduce((a,b)=>a+b.sofr,0);
+  const cards=minStats.map((p,i)=>{
     const isPicoM=(i===picoM), isPicoS=(i===picoS);
     const cls=isPicoM?'pico-marc':isPicoS?'pico-sofr':'';
     const tag=isPicoM?'<div class="pc-tag"><span data-ic="target" data-ic-size="11"></span> Pico Marc.</div>':isPicoS?'<div class="pc-tag"><span data-ic="goalNet" data-ic-size="11"></span> Pico Sofr.</div>':'';
@@ -234,8 +255,8 @@ function renderMinTabela(s){
   return `<div class="periodo-cards">${cards}</div>
   <div class="min-insight" style="margin-top:10px">
     <span data-ic="target" data-ic-size="12"></span> Total marcados: <strong>${totMarc}</strong> &nbsp;·&nbsp; <span data-ic="goalNet" data-ic-size="12"></span> Total sofridos: <strong>${totSofr}</strong><br>
-    Marca mais: <strong>${s.minStats[picoM].l}</strong> &nbsp;·&nbsp; Sofre mais: <strong>${s.minStats[picoS].l}</strong><br>
-    <span style="color:var(--texto2)">${s.jogosComMin} jogo(s) com minutos registrados</span>
+    Marca mais: <strong>${minStats[picoM].l}</strong> &nbsp;·&nbsp; Sofre mais: <strong>${minStats[picoS].l}</strong><br>
+    <span style="color:var(--texto2)">${jogosComMin} jogo(s) com minutos registrados${ht?' no 1º tempo':''}</span>
   </div>`;
 }
 function calNivel(r, tamCamp){
@@ -259,42 +280,65 @@ function computeAnalise(casa, vis, camp, filtroAtual){
   const sC=statsTime(casa,filtroAtual.casa.local,camp,filtroAtual.casa.qty);
   const sV=statsTime(vis, filtroAtual.vis.local, camp,filtroAtual.vis.qty);
   if(sC.nt===0||sV.nt===0) return { estado:'sem-jogos' };
-
-  const modoTempo = filtroAtual.modoTempo === 'ht' ? 'ht' : 'ft'; // 'ft' = Resultado Final, 'ht' = 1º Tempo
-  const temHT = (sC.ntHT>0 && sV.ntHT>0);
-  const usaHT = modoTempo==='ht' && temHT; // sem dado HT nos dois times, cai pro jogo inteiro
-
-  // A aba inteira (Probabilidade + Estatísticas) usa a MESMA fórmula de sempre — só troca
-  // qual "gols esperados por jogo" entra na conta: o do jogo inteiro (padrão) ou só o do
-  // 1º tempo (Gols HT). Cantos/Cartões continuam sempre pelo jogo inteiro (não tem esse
-  // dado por tempo).
-  const lambdaC = usaHT ? sC.lambdaHT : (sC.lambdaIndice||sC.lambdaAjustado||sC.lambda||0.5);
-  const lambdaV = usaHT ? sV.lambdaHT : (sV.lambdaIndice||sV.lambdaAjustado||sV.lambda||0.5);
-
+  const modoTempo = filtroAtual.modoTempo === 'ht' ? 'ht' : 'ft'; // 'ft' = Resultado Final, 'ht' = Resultado 1º Tempo
+  const lambdaC=sC.lambdaIndice||sC.lambdaAjustado||sC.lambda||0.5, lambdaV=sV.lambdaIndice||sV.lambdaAjustado||sV.lambda||0.5;
   const MAX=10;
-  let pVit=0,pEmp=0,pDer=0;
-  for(let i=0;i<=MAX;i++) for(let j=0;j<=MAX;j++){ const p=poisson(lambdaC,i)*poisson(lambdaV,j); if(i>j) pVit+=p; else if(i===j) pEmp+=p; else pDer+=p; }
-  const s=pVit+pEmp+pDer; pVit=Math.round(pVit/s*100); pEmp=Math.round(pEmp/s*100); pDer=100-pVit-pEmp;
+  function probResultado(lC,lV){
+    let pV=0,pE=0,pD=0;
+    for(let i=0;i<=MAX;i++) for(let j=0;j<=MAX;j++){ const p=poisson(lC,i)*poisson(lV,j); if(i>j) pV+=p; else if(i===j) pE+=p; else pD+=p; }
+    const s=pV+pE+pD; pV=Math.round(pV/s*100); pE=Math.round(pE/s*100); pD=100-pV-pE;
+    return { pVit:pV, pEmp:pE, pDer:pD };
+  }
+  const { pVit, pEmp, pDer } = probResultado(lambdaC, lambdaV);
   function probOver(lC,lV,n){ let u=0; for(let i=0;i<=MAX;i++) for(let j=0;j<=MAX;j++) if(i+j<=n) u+=poisson(lC,i)*poisson(lV,j); return Math.round((1-u)*100); }
   const o15=probOver(lambdaC,lambdaV,1), o25=probOver(lambdaC,lambdaV,2), o35=probOver(lambdaC,lambdaV,3), o45=probOver(lambdaC,lambdaV,4);
+  // Gols HT (1º tempo) — só calcula se os dois times tiverem gols de 1º tempo registrados.
+  // Mesmas 4 linhas do mercado de gols normal (0.5 a real. o padrão pedido foi até 4.5,
+  // mesmo que na prática 3.5+/4.5 no intervalo seja raríssimo — o cálculo é o mesmo probOver).
+  const temHT = (sC.ntHT>0 && sV.ntHT>0);
+  const o05HT = temHT ? probOver(sC.lambdaHT, sV.lambdaHT, 0) : null;
+  const o15HT = temHT ? probOver(sC.lambdaHT, sV.lambdaHT, 1) : null;
+  const o25HT = temHT ? probOver(sC.lambdaHT, sV.lambdaHT, 2) : null;
+  const o35HT = temHT ? probOver(sC.lambdaHT, sV.lambdaHT, 3) : null;
+  const o45HT = temHT ? probOver(sC.lambdaHT, sV.lambdaHT, 4) : null;
+  // Resultado (V/E/D) do 1º tempo, pela mesma distribuição de Poisson mas usando o
+  // "gols esperados até os 45min" de cada time (lambdaHT) em vez do jogo inteiro.
+  const resultadoHT = temHT ? probResultado(sC.lambdaHT, sV.lambdaHT) : null;
   const pMC=1-poisson(lambdaC,0), pMV=1-poisson(lambdaV,0), pBtts=Math.round(pMC*pMV*100);
+  // Ambas Marcam no 1º Tempo — mesma fórmula, usando o lambda HT de cada time.
+  const pBttsHT = temHT ? Math.round((1-poisson(sC.lambdaHT,0))*(1-poisson(sV.lambdaHT,0))*100) : null;
   const mcc = mercadosCantosCartoes(sC, sV);
 
   // Salvar globalmente para a calculadora
   ultimaAnalise = {
     casa, vis, liga: camp||'',
     mercados: [
-      { nome: modoTempo==='ht' ? 'Vitória Mandante HT' : 'Vitória Mandante', prob: pVit },
-      { nome: modoTempo==='ht' ? 'Empate HT' : 'Empate',                     prob: pEmp },
-      { nome: modoTempo==='ht' ? 'Vitória Visitante HT' : 'Vitória Visitante', prob: pDer },
-      { nome: `${modoTempo==='ht'?'Gols HT ':''}Over 1.5`,  prob: o15  },
-      { nome: `${modoTempo==='ht'?'Gols HT ':''}Under 1.5`, prob: 100-o15 },
-      { nome: `${modoTempo==='ht'?'Gols HT ':''}Over 2.5`,  prob: o25  },
-      { nome: `${modoTempo==='ht'?'Gols HT ':''}Under 2.5`, prob: 100-o25 },
-      { nome: `${modoTempo==='ht'?'Gols HT ':''}Over 3.5`,  prob: o35  },
-      { nome: `${modoTempo==='ht'?'Gols HT ':''}Under 3.5`, prob: 100-o35 },
-      { nome: `${modoTempo==='ht'?'Gols HT ':''}Over 4.5`,  prob: o45  },
-      { nome: `${modoTempo==='ht'?'Gols HT ':''}Under 4.5`, prob: 100-o45 },
+      { nome: 'Vitória Mandante', prob: pVit },
+      { nome: 'Empate',           prob: pEmp },
+      { nome: 'Vitória Visitante',prob: pDer },
+      { nome: 'Over 1.5',       prob: o15  },
+      { nome: 'Under 1.5',      prob: 100-o15 },
+      { nome: 'Over 2.5',       prob: o25  },
+      { nome: 'Under 2.5',      prob: 100-o25 },
+      { nome: 'Over 3.5',       prob: o35  },
+      { nome: 'Under 3.5',      prob: 100-o35 },
+      { nome: 'Over 4.5',       prob: o45  },
+      { nome: 'Under 4.5',      prob: 100-o45 },
+      ...(temHT ? [
+        { nome: 'Gols HT Over 0.5',  prob: o05HT },
+        { nome: 'Gols HT Under 0.5', prob: 100-o05HT },
+        { nome: 'Gols HT Over 1.5',  prob: o15HT },
+        { nome: 'Gols HT Under 1.5', prob: 100-o15HT },
+        { nome: 'Gols HT Over 2.5',  prob: o25HT },
+        { nome: 'Gols HT Under 2.5', prob: 100-o25HT },
+        { nome: 'Gols HT Over 3.5',  prob: o35HT },
+        { nome: 'Gols HT Under 3.5', prob: 100-o35HT },
+        { nome: 'Vitória Mandante HT', prob: resultadoHT.pVit },
+        { nome: 'Empate HT',           prob: resultadoHT.pEmp },
+        { nome: 'Vitória Visitante HT',prob: resultadoHT.pDer },
+        { nome: 'Ambas Marcam HT',     prob: pBttsHT },
+        { nome: 'Ambas Não Marc. HT',  prob: 100-pBttsHT },
+      ] : []),
       { nome: 'Ambas Marcam',   prob: pBtts },
       { nome: 'Ambas Não Marc.',prob: 100-pBtts },
       // Cantos e cartões só existem fechados pra partida inteira — no modo 1º Tempo
@@ -316,18 +360,32 @@ function computeAnalise(casa, vis, camp, filtroAtual){
 
   const placares=[]; for(let i=0;i<=8;i++) for(let j=0;j<=8;j++) placares.push({g1:i,g2:j,p:poisson(lambdaC,i)*poisson(lambdaV,j)});
   placares.sort((a,b)=>b.p-a.p); const top10=placares.slice(0,10); const maxPP=top10[0]?.p||1;
+  // Placar exato do 1º Tempo — mesma distribuição de Poisson, com o lambda HT de cada time.
+  let top10HT=null, maxPPHT=null;
+  if(temHT){
+    const placaresHT=[]; for(let i=0;i<=8;i++) for(let j=0;j<=8;j++) placaresHT.push({g1:i,g2:j,p:poisson(sC.lambdaHT,i)*poisson(sV.lambdaHT,j)});
+    placaresHT.sort((a,b)=>b.p-a.p); top10HT=placaresHT.slice(0,10); maxPPHT=top10HT[0]?.p||1;
+  }
   const golsComb=[...sC.todosGols,...sV.todosGols];
   const momStats=periodos4.map(p=>({ l:p.l,ico:p.ico,count:golsComb.filter(g=>g.min>=p.s&&g.min<=p.e).length }));
   const picoIdx=momStats.indexOf(momStats.reduce((a,b)=>b.count>a.count?b:a));
   const baixoIdx=momStats.indexOf(momStats.reduce((a,b)=>b.count<a.count?b:a));
   const totalMom=momStats.reduce((a,b)=>a+b.count,0)||1;
+  // Momentos prováveis de gol restritos ao 1º tempo — só os 2 primeiros períodos (1-45').
+  // Cartões/escanteios não têm minuto registrado, então não dá pra fazer o mesmo pra eles.
+  const golsCombHT=golsComb.filter(g=>g.min!=null&&g.min<=45);
+  const momStatsHT=periodos4.slice(0,2).map(p=>({ l:p.l,ico:p.ico,count:golsCombHT.filter(g=>g.min>=p.s&&g.min<=p.e).length }));
+  const picoIdxHT=momStatsHT.indexOf(momStatsHT.reduce((a,b)=>b.count>a.count?b:a));
+  const baixoIdxHT=momStatsHT.indexOf(momStatsHT.reduce((a,b)=>b.count<a.count?b:a));
+  const totalMomHT=momStatsHT.reduce((a,b)=>a+b.count,0)||1;
 
   return {
     estado:'ok', casa, vis, camp,
-    filtro: { casa:{...filtroAtual.casa}, vis:{...filtroAtual.vis} }, modoTempo, temHT, usaHT,
+    filtro: { casa:{...filtroAtual.casa}, vis:{...filtroAtual.vis} }, modoTempo,
     sC, sV, lambdaC, lambdaV, pVit, pEmp, pDer, o15, o25, o35, o45,
-    pBtts, mcc, top10, maxPP,
+    temHT, o05HT, o15HT, o25HT, o35HT, o45HT, resultadoHT, pBtts, pBttsHT, mcc, top10, maxPP, top10HT, maxPPHT,
     momStats, golsComb, picoIdx, baixoIdx, totalMom,
+    momStatsHT, golsCombHT, picoIdxHT, baixoIdxHT, totalMomHT,
   };
 }
 window.computeAnalise = computeAnalise;

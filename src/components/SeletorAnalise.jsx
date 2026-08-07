@@ -134,10 +134,9 @@ export default function SeletorAnalise() {
       {/* 2º CONFRONTO — card único, sem cor de time. Mandante sempre à esquerda, visitante à direita */}
       <div style={{ background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 14, padding: 14, marginBottom: 10 }}>
 
-        {/* Resultado Final × Resultado 1º Tempo — decide se a análise inteira (Probabilidade,
-            Índice de Força, Mercado de Gols, Placar Exato, Momentos...) usa o placar do jogo
-            inteiro ou só o 1º tempo (mesma base de dados, Gols HT, já cadastrada em Adicionar
-            Partida). Cantos/Cartões continuam só no Resultado Final — não tem esse dado por tempo. */}
+        {/* Resultado Final × Resultado 1º Tempo — decide se a Probabilidade e os
+            mercados de resultado usam o placar do jogo inteiro ou só o 1º tempo
+            (mesma base de dados, Gols HT, já cadastrada em Adicionar Partida). */}
         <div style={{ display: 'flex', gap: 4, marginBottom: 12 }}>
           <button className={`local-btn ${modoTempo === 'ft' ? 'active-all' : ''}`} onClick={() => setModoTempo('ft')} style={{ ...btnStyleLocal, flex: 1 }}>Resultado Final</button>
           <button className={`local-btn ${modoTempo === 'ht' ? 'active-all' : ''}`} onClick={() => setModoTempo('ht')} style={{ ...btnStyleLocal, flex: 1 }}>1º Tempo</button>
