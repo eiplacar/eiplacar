@@ -10,19 +10,25 @@
 const GOAL_API_URL = 'https://api.goal-api.com/v1';
 
 // Ligas que aparecem na busca — IDs da GOAL API (não são mais números
-// simples como na API-Football, e sim strings tipo "cmr77dvww...").
-const LIGAS_PERMITIDAS = new Set([
-  'cmr77dvww00bfrx061thkr8z4', // Série A (Brasil)
-  'cmr77dvww00bgrx06cb9fmnv0', // Série B (Brasil)
-  'cmr77dvkr005nrx06lp7rvp49', // Premier League (Inglaterra)
-  'cmr77dvnt006nrx063v3w622e', // La Liga (Espanha)
-  'cmr77dvgm0002rx06rt2uqxii', // Bundesliga (Alemanha)
-  'cmr77dvgm0001rx060h6ivt4p', // Bundesliga 2
-  'cmr77dvpd006yrx06zig7907g', // Serie A (Itália)
-  'cmr77dvqg007crx06q1kaceyo', // Ligue 1 (França)
-  'cmr77dvrh007vrx0664phtxs5', // Eredivisie (Holanda)
-  'cmr77dw3900f5rx06j05wgzv4', // UEFA Champions League
+// simples como na API-Football, e sim strings tipo "cmr77dvww...") →
+// nome do campeonato que aparece no app. Mesma lista/nomes de
+// atualizar-jogos-finalizados.js — importante manter os dois iguais,
+// senão um jogo salvo por uma função e outro pela outra ficam com
+// nomes de campeonato diferentes ("Serie A" vs "Brasileirão Série A")
+// e o app trata como campeonatos distintos.
+const NOMES_CAMP_POR_LIGA = new Map([
+  ['cmr77dvww00bfrx061thkr8z4', 'Brasileirão Série A'],
+  ['cmr77dvww00bgrx06cb9fmnv0', 'Brasileirão Série B'],
+  ['cmr77dvkr005nrx06lp7rvp49', 'Premier League'],
+  ['cmr77dvnt006nrx063v3w622e', 'La Liga'],
+  ['cmr77dvgm0002rx06rt2uqxii', 'Bundesliga'],
+  ['cmr77dvgm0001rx060h6ivt4p', '2. Bundesliga'],
+  ['cmr77dvpd006yrx06zig7907g', 'Serie A'],
+  ['cmr77dvqg007crx06q1kaceyo', 'Ligue 1'],
+  ['cmr77dvrh007vrx0664phtxs5', 'Eredivisie'],
+  ['cmr77dw3900f5rx06j05wgzv4', 'UEFA Champions League'],
 ]);
+const LIGAS_PERMITIDAS = new Set(NOMES_CAMP_POR_LIGA.keys());
 
 // País de cada liga, pelo mesmo ID — não depende do nome (GOAL API manda o
 // nome dela mesma, "leagueName", que não necessariamente bate com o nome
@@ -139,7 +145,7 @@ export const handler = async function (event) {
       .filter((f) => LIGAS_PERMITIDAS.has(f.leagueId))
       .map((f) => ({
         id: f.id,
-        campeonato: f.leagueName,
+        campeonato: NOMES_CAMP_POR_LIGA.get(f.leagueId) || f.leagueName,
         pais: PAIS_POR_LIGA.get(f.leagueId) || '',
         rodada: formatarRodada(f.matchRound),
         casa: f.homeTeamName,

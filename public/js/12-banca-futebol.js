@@ -539,7 +539,7 @@ const CRITERIOS_LIGA = {
     {tipo:'confronto', campo:'pts'},
   ],
 };
-CRITERIOS_LIGA['Bundesliga 2'] = CRITERIOS_LIGA['Bundesliga']; // mesmos critérios da Bundesliga
+CRITERIOS_LIGA['2. Bundesliga'] = CRITERIOS_LIGA['Bundesliga']; // mesmos critérios da Bundesliga
 
 function ordenarPorCriteriosOficiais(linhas, jogos, camp){
   const criterios = CRITERIOS_LIGA[camp];

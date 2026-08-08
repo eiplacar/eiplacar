@@ -20,12 +20,12 @@ const GOAL_API_URL = 'https://api.goal-api.com/v1';
 // IDs das ligas na GOAL API → nome do campeonato que aparece no app.
 // Mesma lista de 10 ligas usada em jogos-do-dia.js.
 const NOMES_CAMP_POR_LIGA = new Map([
-  ['cmr77dvww00bfrx061thkr8z4', 'Série A'],
-  ['cmr77dvww00bgrx06cb9fmnv0', 'Série B'],
+  ['cmr77dvww00bfrx061thkr8z4', 'Brasileirão Série A'],
+  ['cmr77dvww00bgrx06cb9fmnv0', 'Brasileirão Série B'],
   ['cmr77dvkr005nrx06lp7rvp49', 'Premier League'],
   ['cmr77dvnt006nrx063v3w622e', 'La Liga'],
   ['cmr77dvgm0002rx06rt2uqxii', 'Bundesliga'],
-  ['cmr77dvgm0001rx060h6ivt4p', 'Bundesliga 2'],
+  ['cmr77dvgm0001rx060h6ivt4p', '2. Bundesliga'],
   ['cmr77dvpd006yrx06zig7907g', 'Serie A'],
   ['cmr77dvqg007crx06q1kaceyo', 'Ligue 1'],
   ['cmr77dvrh007vrx0664phtxs5', 'Eredivisie'],
