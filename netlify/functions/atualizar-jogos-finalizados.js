@@ -202,27 +202,32 @@ export const handler = async function () {
   // (bug/limitação observada) — em vez disso devolve os jogos mais recentes
   // daquela liga, do mais novo pro mais antigo. Por isso buscamos por liga
   // (poucas chamadas, uma por liga) e filtramos a data aqui no código.
+  //
+  // Removido o "&status=FINISHED" da URL: como só tínhamos visto jogos do passado
+  // (que são finalizados de qualquer jeito, com ou sem filtro), não dava pra saber
+  // se esse parâmetro realmente filtra alguma coisa na API. Agora buscamos tudo
+  // (agendado, ao vivo, finalizado) e conferimos o status aqui no código — mais
+  // seguro e também deixa ver o status real dos jogos de hoje que ainda não bateram.
   let todosFixtures = [];
   for (const ligaId of NOMES_CAMP_POR_LIGA.keys()) {
-    const resp = await fetch(`${GOAL_API_URL}/fixtures?leagueId=${ligaId}&status=FINISHED&limit=20`, {
+    const resp = await fetch(`${GOAL_API_URL}/fixtures?leagueId=${ligaId}&limit=30`, {
       headers: { Authorization: `Bearer ${apiKey}` },
     });
     const json = await resp.json();
     const dados = json.data || [];
     console.log(`Resposta GOAL API (fixtures liga=${ligaId}):`, { httpStatus: resp.status, success: json.success, totalRecebido: dados.length });
-    // DIAGNÓSTICO — o "status=FINISHED" pode não estar sendo respeitado pela API
-    // (suspeita: toda liga bate exatamente no limite de 20, mesmo ligas que não têm
-    // 20 jogos finalizados nessa altura da temporada). Loga a ficha CRUA do 1º jogo
-    // devolvido (todos os campos, não só os que o código já lê) pra descobrir o nome
-    // real do campo de status/placar e o formato/ordem das datas que estão voltando.
-    if (dados[0]) console.log(`  ↳ Amostra crua do 1º jogo (liga=${ligaId}):`, JSON.stringify(dados[0]));
-    if (dados.length) console.log(`  ↳ matchDate de todos os ${dados.length} jogos:`, dados.map((f) => f.matchDate));
+    // DIAGNÓSTICO — mostra só os jogos com matchDate de hoje/ontem, com o status
+    // e horário exatos que a API está reportando pra eles agora.
+    const doDia = dados.filter((f) => datasValidas.has(f.matchDate));
+    if (doDia.length) {
+      console.log(`  ↳ Jogos de hoje/ontem nessa liga (${doDia.length}):`, doDia.map((f) => ({ jogo: `${f.homeTeamName} x ${f.awayTeamName}`, matchDate: f.matchDate, matchTime: f.matchTime, matchStatus: f.matchStatus, matchLive: f.matchLive, placar: `${f.homeTeamScore}-${f.awayTeamScore}` })));
+    }
     if (!json.success) continue;
     todosFixtures = todosFixtures.concat(dados);
   }
 
-  const fixtures = todosFixtures.filter((f) => NOMES_CAMP_POR_LIGA.has(f.leagueId) && datasValidas.has(f.matchDate));
-  console.log('Jogos após filtro de ligas permitidas:', fixtures.length, fixtures.map((f) => `${NOMES_CAMP_POR_LIGA.get(f.leagueId)} - ${f.homeTeamName} x ${f.awayTeamName}`));
+  const fixtures = todosFixtures.filter((f) => NOMES_CAMP_POR_LIGA.has(f.leagueId) && datasValidas.has(f.matchDate) && f.matchStatus === 'FINISHED');
+  console.log('Jogos após filtro de ligas permitidas + finalizados:', fixtures.length, fixtures.map((f) => `${NOMES_CAMP_POR_LIGA.get(f.leagueId)} - ${f.homeTeamName} x ${f.awayTeamName}`));
 
   if (fixtures.length === 0) {
     return { statusCode: 200, body: JSON.stringify({ ok: true, mensagem: 'Nenhum jogo finalizado hoje nos campeonatos escolhidos.' }) };
