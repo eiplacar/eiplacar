@@ -183,3 +183,16 @@ window.res = res;
 window.r2 = r2;
 window.sortNatural = sortNatural;
 
+// ── Helpers de entrada (Banca/Calculadora) — Cash Out não é resultado à parte:
+// jogo novo já grava resolvido como 'green'/'red'/'void' (comparando Retorno x Stake),
+// mas entrada ANTIGA salva antes desse ajuste (localStorage é por navegador, não dá
+// pra migrar central) ainda pode ter o valor literal 'cashout' salvo — por isso os dois
+// helpers abaixo tratam esse valor antigo como equivalente a green, do jeito que sempre
+// foi computado financeiramente. Usar sempre esses helpers em vez de comparar
+// e.resultado==='green'/'red' na unha, pra não esquecer esse caso antigo em algum lugar.
+function contaComoGreenEntrada(e){ return e.resultado==='green' || e.resultado==='cashout'; }
+function valorPerdaEntrada(e){ return e.resultado==='red' ? (e.percaCarteira ?? e.stake ?? 0) : 0; }
+window.contaComoGreenEntrada = contaComoGreenEntrada;
+window.valorPerdaEntrada = valorPerdaEntrada;
+
+

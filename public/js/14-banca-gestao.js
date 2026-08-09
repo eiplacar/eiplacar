@@ -7,12 +7,12 @@ function computeCarteira(){
   const d = bpLoad();
   const depositos = (d.movimentos||[]).filter(m=>m.tipo==='deposito').reduce((s,m)=>s+m.valor,0);
   const retiradas = (d.movimentos||[]).filter(m=>m.tipo==='retirada').reduce((s,m)=>s+m.valor,0);
-  const greens = d.entradas.filter(e=>e.resultado==='green').length;
+  const greens = d.entradas.filter(e=>contaComoGreenEntrada(e)).length;
   const reds   = d.entradas.filter(e=>e.resultado==='red').length;
   const validas = greens+reds;
   const taxaAcerto = validas ? Math.round((greens/validas)*100) : 0;
-  const lucroTotal = d.entradas.filter(e=>e.resultado==='green').reduce((s,e)=>s+(e.lucro||0),0);
-  const prejTotal  = d.entradas.filter(e=>e.resultado==='red').reduce((s,e)=>s+(e.stake||0),0);
+  const lucroTotal = d.entradas.filter(e=>contaComoGreenEntrada(e)).reduce((s,e)=>s+(e.lucro||0),0);
+  const prejTotal  = d.entradas.filter(e=>e.resultado==='red').reduce((s,e)=>s+valorPerdaEntrada(e),0);
   const pl = Math.round((lucroTotal-prejTotal)*100)/100;
   const capitalInicial = Math.round((depositos-retiradas)*100)/100;
   const roi = capitalInicial>0 ? Math.round((pl/capitalInicial)*1000)/10 : 0;
@@ -111,7 +111,8 @@ function computeResumoBanca(){
   d.entradas.forEach(e=>{
     if(!e.data) return;
     if(e.resultado==='green') porDia[e.data] = (porDia[e.data]||0) + (e.lucro||0);
-    else if(e.resultado==='red') porDia[e.data] = (porDia[e.data]||0) - (e.stake||0);
+    else if(e.resultado==='red') porDia[e.data] = (porDia[e.data]||0) - valorPerdaEntrada(e);
+    else if(e.resultado==='cashout') porDia[e.data] = (porDia[e.data]||0) + (e.lucro||0); // entrada antiga (ver comentário do helper em 04-utils.js)
   });
 
   let maiorLucroDia = null, maiorPrejuizoDia = null;
@@ -122,14 +123,14 @@ function computeResumoBanca(){
   });
 
   const entradasHoje = d.entradas.filter(e=>e.data===hoje && e.resultado);
-  const greensHoje = entradasHoje.filter(e=>e.resultado==='green').length;
+  const greensHoje = entradasHoje.filter(e=>contaComoGreenEntrada(e)).length;
   const redsHoje = entradasHoje.filter(e=>e.resultado==='red').length;
   const validasHoje = greensHoje+redsHoje;
   const taxaAcertoHoje = validasHoje ? Math.round((greensHoje/validasHoje)*100) : 0;
   const plHoje = Math.round((porDia[hoje]||0)*100)/100;
 
   const entradasMes = d.entradas.filter(e=>(e.data||'').slice(0,7)===mesAtual && e.resultado);
-  const greensMes = entradasMes.filter(e=>e.resultado==='green').length;
+  const greensMes = entradasMes.filter(e=>contaComoGreenEntrada(e)).length;
   const redsMes = entradasMes.filter(e=>e.resultado==='red').length;
   const validasMes = greensMes+redsMes;
   const taxaAcertoMes = validasMes ? Math.round((greensMes/validasMes)*100) : 0;
@@ -190,7 +191,7 @@ function computeEvolucao(){
       else if(m.tipo==='reserva_carteira'){ reserva -= m.valor; saldo += m.valor; }
     } else {
       const e = ev.e;
-      if(e.resultado==='green'){
+      if(contaComoGreenEntrada(e)){
         const corte = protecaoAtiva ? Math.round((e.lucro||0)*protecaoPct/100*100)/100 : 0;
         saldo += (e.lucro||0)-corte;
         reserva += corte;
@@ -198,10 +199,11 @@ function computeEvolucao(){
         const mesKey = (e.data||'').slice(0,7);
         if(mesKey) porMes[mesKey] = (porMes[mesKey]||0) + ((e.lucro||0)-corte);
       } else if(e.resultado==='red'){
-        saldo -= (e.stake||0);
+        const perda = valorPerdaEntrada(e);
+        saldo -= perda;
         seqAtual = seqAtual<=0 ? seqAtual-1 : -1;
         const mesKey = (e.data||'').slice(0,7);
-        if(mesKey) porMes[mesKey] = (porMes[mesKey]||0) - (e.stake||0);
+        if(mesKey) porMes[mesKey] = (porMes[mesKey]||0) - perda;
       }
       melhorSeq = Math.max(melhorSeq, seqAtual);
       piorSeq = Math.min(piorSeq, seqAtual);

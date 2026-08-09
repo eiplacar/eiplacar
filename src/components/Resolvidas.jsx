@@ -66,9 +66,18 @@ export default function Resolvidas() {
         {entradas.length === 0 ? (
           <div className="empty"><div className="icon"><Target size={22} /></div><p>{resumo ? 'Nenhuma entrada nesse filtro.' : 'Nenhuma entrada ainda.'}</p></div>
         ) : entradas.map((e) => {
-          const Icone = e.resultado === 'green' ? CheckCircle2 : e.resultado === 'red' ? XCircle : e.resultado === 'void' ? Undo2 : Coins;
-          const cor = e.resultado === 'green' ? 'var(--verde2)' : e.resultado === 'red' ? 'var(--perigo)' : e.resultado === 'void' ? 'var(--texto2)' : 'var(--ouro)';
-          const val = e.resultado === 'green' ? `+R$ ${(e.ganhoCarteira || 0).toFixed(2)}` : e.resultado === 'red' ? `-R$ ${(e.stake || 0).toFixed(2)}` : e.resultado === 'void' ? 'Void' : `${(e.ganhoCarteira || 0) >= 0 ? '+' : '-'}R$ ${Math.abs(e.ganhoCarteira || 0).toFixed(2)}`;
+          // Entrada antiga salva antes desse ajuste (cash out sempre virava "green" nas contas,
+          // independente do valor) — mantém o jeito antigo de mostrar, só pra essas.
+          const ehCashoutAntigo = e.resultado === 'cashout';
+          let Icone, cor, val;
+          if (ehCashoutAntigo) {
+            Icone = Coins; cor = 'var(--ouro)';
+            val = `${(e.ganhoCarteira || 0) >= 0 ? '+' : '-'}R$ ${Math.abs(e.ganhoCarteira || 0).toFixed(2)}`;
+          } else {
+            Icone = e.resultado === 'green' ? CheckCircle2 : e.resultado === 'red' ? XCircle : Undo2;
+            cor = e.resultado === 'green' ? 'var(--verde2)' : e.resultado === 'red' ? 'var(--perigo)' : 'var(--texto2)';
+            val = e.resultado === 'green' ? `+R$ ${(e.ganhoCarteira || 0).toFixed(2)}` : e.resultado === 'red' ? `-R$ ${(e.percaCarteira ?? e.stake ?? 0).toFixed(2)}` : 'Void';
+          }
           const rotuloAposta = ROTULO_APOSTA[e.tipoAposta] || 'Simples';
           const corAposta = COR_APOSTA[e.tipoAposta] || 'var(--texto2)';
           return (
@@ -79,6 +88,9 @@ export default function Resolvidas() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                     <span style={{ fontWeight: 700, fontSize: 13 }}>{e.desc}</span>
                     <span style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', color: corAposta, border: `1px solid ${corAposta}`, borderRadius: 4, padding: '1px 5px' }}>{rotuloAposta}</span>
+                    {(e.foiCashout || ehCashoutAntigo) && (
+                      <span style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', color: 'var(--ouro)', border: '1px solid var(--ouro)', borderRadius: 4, padding: '1px 5px', display: 'flex', alignItems: 'center', gap: 3 }}><Coins size={9} /> Cash Out</span>
+                    )}
                   </div>
                   <div style={{ fontSize: 10, color: 'var(--texto2)' }}>{e.data} · Odd {e.odd} · {e.pct}% · Stake R$ {(e.stake || 0).toFixed(2)}</div>
                 </div>
@@ -86,7 +98,7 @@ export default function Resolvidas() {
                 <button onClick={() => window.editarEntrada(e.id)} style={{ background: 'none', border: '1px solid var(--c3)', borderRadius: 5, padding: '3px 7px', color: 'var(--texto2)', cursor: 'pointer' }}><Pencil size={12} /></button>
                 <button onClick={() => window.excluirEntrada(e.id)} className="btn-danger" style={{ padding: '3px 7px' }}><Trash2 size={12} /></button>
               </div>
-              {e.resultado === 'green' && (
+              {(e.resultado === 'green' || ehCashoutAntigo) && (
                 <div style={{ fontSize: 10, color: 'var(--texto2)', paddingLeft: 26 }}>Reserva: R$ {(e.reservaCorte || 0).toFixed(2)} · Carteira: R$ {(e.ganhoCarteira || 0).toFixed(2)}</div>
               )}
             </div>

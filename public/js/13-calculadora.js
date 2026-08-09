@@ -363,27 +363,38 @@ async function lancarEntrada(){
   const tot = d.saldo||0;
   if(tot<=0){ toast('Saldo da carteira zerado — faça um depósito na aba Banca'); return; }
   if(tipoAposta!=='sistema') stake = Math.round(tot*pct/100*100)/100;
-  // Cash Out entra no mesmo cálculo do Green (lucro/prejuízo real = retorno recebido − stake),
-  // já que o valor do cash out não segue a odd cheia — é o que a casa realmente pagou.
-  const contaComoGreen = res==='green' || res==='cashout';
+  // Cash Out não é um resultado à parte pra fins de estatística — vira Green ou Red na
+  // hora de salvar, comparando o que a pessoa realmente recebeu (Retorno) com o Stake:
+  // recebeu mais que apostou = Green; recebeu menos = Red; exatamente igual = Void
+  // (nem ganhou nem perdeu). Sem isso, o Cash Out ficava de fora da taxa de acerto e
+  // do gráfico de Evolução, que só contavam resultado==='green'/'red'.
   const retornoInformadoEl = numBR(document.getElementById('eRetorno')?.value);
+  let resFinal = res;
+  if(res==='cashout'){
+    if(!retornoInformadoEl){ toast('Informe o Retorno recebido no Cash Out'); return; }
+    resFinal = retornoInformadoEl > stake ? 'green' : (retornoInformadoEl < stake ? 'red' : 'void');
+  }
+  const contaComoGreen = resFinal==='green';
   const lucroB  = contaComoGreen
     ? (tipoAposta==='sistema' ? lucroInformado : (retornoInformadoEl>0 ? Math.round((retornoInformadoEl-stake)*100)/100 : Math.round(stake*(odd-1)*100)/100))
     : 0;
   const protecaoAtiva = d.protecaoAtiva!==false;
   const protecaoPct   = d.protecaoPct??10;
   // Green: parte do lucro vai automaticamente pra Reserva (proteção da banca), o resto fica na Carteira.
-  // Cash Out: mesma lógica do Green, só que com o valor que a pessoa realmente recebeu (Retorno).
+  // Cash Out: mesma lógica do Green/Red conforme resFinal acima, com o valor que a pessoa realmente recebeu (Retorno).
   // Red: o stake sai direto da Carteira. Void: não mexe em nada.
   const reservaCorte  = (contaComoGreen && lucroB>0) ? Math.round(lucroB*(protecaoAtiva?protecaoPct:0)/100*100)/100 : 0;
   const ganhoCarteira = contaComoGreen ? Math.round((lucroB-reservaCorte)*100)/100 : 0;
-  const percaCarteira = res==='red'   ? stake : 0;
+  // Red "normal" perde o stake inteiro; Cash Out no prejuízo (resFinal='red' vindo de cashout)
+  // só perde a diferença entre o que apostou e o que recebeu de volta — por isso usa o Retorno
+  // informado, não o stake cheio.
+  const percaCarteira = resFinal==='red' ? (res==='cashout' ? Math.max(0, Math.round((stake-retornoInformadoEl)*100)/100) : stake) : 0;
 
   d.reserva = Math.round(((d.reserva||0)+reservaCorte)*100)/100;
   d.saldo   = Math.round(((d.saldo||0)+ganhoCarteira-percaCarteira)*100)/100;
   d.entradas.unshift({
-    id:Date.now(), desc, pct, odd, stake, resultado:res, operacao,
-    lucro:lucroB, reservaCorte, ganhoCarteira,
+    id:Date.now(), desc, pct, odd, stake, resultado:resFinal, foiCashout: res==='cashout', operacao,
+    lucro:lucroB, reservaCorte, ganhoCarteira, percaCarteira,
     liga, mercado, times, tipo, tipoAposta,
     minuto: tipo==='live' ? (parseInt(document.getElementById('eMinuto').value)||null) : null,
     data: document.getElementById('eDataEntrada').value || hojeBR() // corrigido pro fuso de Brasília (ver 04-utils.js)
@@ -409,7 +420,7 @@ async function lancarEntrada(){
 
   window.resolvidasRefresh?.();
   window.bancaRefresh?.();
-  toast(res==='green'?'Green!':res==='red'?'Red!':res==='void'?'Void!':'Cash Out registrado');
+  toast(res==='green'?'Green!':res==='red'?'Red!':res==='void'?'Void!':`Cash Out registrado (${resFinal==='green'?'Green':resFinal==='red'?'Red':'Void'})`);
 }
 
 function excluirEntrada(id){
@@ -419,11 +430,11 @@ function excluirEntrada(id){
     const d = bpLoad();
     const e = d.entradas.find(x=>x.id===id);
     if(e){
-      if(e.resultado==='green'){
+      if(contaComoGreenEntrada(e)){
         d.reserva = Math.round(((d.reserva||0)-(e.reservaCorte||0))*100)/100;
         d.saldo   = Math.round(((d.saldo||0)-(e.ganhoCarteira||0))*100)/100;
       } else if(e.resultado==='red'){
-        d.saldo   = Math.round(((d.saldo||0)+(e.stake||0))*100)/100;
+        d.saldo   = Math.round(((d.saldo||0)+(e.percaCarteira??e.stake??0))*100)/100;
       }
       d.entradas = d.entradas.filter(x=>x.id!==id);
     }
@@ -456,10 +467,12 @@ function editarEntrada(id){
   document.getElementById('editEMinutoWrap').style.display = (e.tipo==='live') ? 'block' : 'none';
   document.getElementById('editEOdd').value       = e.odd || '';
   document.getElementById('editEStake').value     = e.stake || '';
-  // Retorno já salvo (se a entrada tiver um green registrado, stake+lucro; senão Stake × Odd)
-  const retornoSalvo = (e.resultado==='green'||e.resultado==='cashout') ? (e.stake||0)+(e.lucro||0) : (e.stake||0)*(e.odd||0);
+  // Retorno já salvo — fórmula única que vale pra Green, Red, Void e Cash Out (resolvido em
+  // qualquer um desses três na hora de salvar): o que a pessoa recebeu de volta é
+  // Stake + Lucro − Perda (só um dos dois nunca é zero, dependendo do resultado).
+  const retornoSalvo = (e.stake||0) + (e.lucro||0) - valorPerdaEntrada(e);
   document.getElementById('editERetorno').value = retornoSalvo ? retornoSalvo.toFixed(2).replace('.',',') : '';
-  document.getElementById('editEResultado').value = e.resultado || 'green';
+  document.getElementById('editEResultado').value = e.foiCashout ? 'cashout' : (e.resultado || 'green');
   document.getElementById('editEData').value      = e.data || '';
   document.getElementById('modalEditarEntrada').classList.add('open');
 }
@@ -503,11 +516,11 @@ function salvarEdicaoEntrada(){
   if(!novoStakeInformado || novoStakeInformado<=0) { toast('Informe o valor apostado'); return; }
 
   // Reverte o efeito antigo na carteira/reserva e remove a entrada, pra recalcular do zero
-  if(antiga.resultado==='green' || antiga.resultado==='cashout'){
+  if(contaComoGreenEntrada(antiga)){
     d.reserva = Math.round(((d.reserva||0)-(antiga.reservaCorte||0))*100)/100;
     d.saldo   = Math.round(((d.saldo||0)-(antiga.ganhoCarteira||0))*100)/100;
   } else if(antiga.resultado==='red'){
-    d.saldo   = Math.round(((d.saldo||0)+(antiga.stake||0))*100)/100;
+    d.saldo   = Math.round(((d.saldo||0)+valorPerdaEntrada(antiga))*100)/100;
   }
   d.entradas.splice(idx,1);
 
@@ -519,16 +532,22 @@ function salvarEdicaoEntrada(){
   // senão cai no cálculo padrão Stake × Odd.
   const retornoInformado = numBR(document.getElementById('editERetorno').value);
   const retorno = retornoInformado>0 ? retornoInformado : stake*novoOdd;
-  // Cash Out entra no mesmo cálculo do Green (lucro/prejuízo real = retorno recebido − stake),
-  // já que o valor do cash out não segue a odd cheia — é o que a casa realmente pagou.
-  const contaComoGreen = novoRes==='green' || novoRes==='cashout';
+  // Cash Out não é resultado à parte pra fins de cálculo — vira Green/Red/Void aqui, comparando
+  // o Retorno com o Stake, do mesmo jeito que em lancarEntrada() (ver comentário lá).
+  let resFinal = novoRes;
+  if(novoRes==='cashout'){
+    resFinal = retorno > stake ? 'green' : (retorno < stake ? 'red' : 'void');
+  }
+  const contaComoGreen = resFinal==='green';
   const lucroB = contaComoGreen ? Math.round((retorno-stake)*100)/100 : 0;
   const protecaoAtiva = d.protecaoAtiva!==false;
   const protecaoPct   = d.protecaoPct??10;
   // Reserva só corta em cima de lucro de verdade (se o cash out saiu no prejuízo, não tira reserva)
   const reservaCorte  = (contaComoGreen && lucroB>0) ? Math.round(lucroB*(protecaoAtiva?protecaoPct:0)/100*100)/100 : 0;
   const ganhoCarteira = contaComoGreen ? Math.round((lucroB-reservaCorte)*100)/100 : 0;
-  const percaCarteira = novoRes==='red'   ? stake : 0;
+  // Red "normal" perde o stake inteiro; Cash Out no prejuízo só perde a diferença entre o
+  // que apostou e o que recebeu de volta (Retorno) — não o stake cheio.
+  const percaCarteira = resFinal==='red' ? (novoRes==='cashout' ? Math.max(0, Math.round((stake-retorno)*100)/100) : stake) : 0;
 
   d.reserva = Math.round(((d.reserva||0)+reservaCorte)*100)/100;
   d.saldo   = Math.round(((d.saldo||0)+ganhoCarteira-percaCarteira)*100)/100;
@@ -537,7 +556,7 @@ function salvarEdicaoEntrada(){
   d.entradas.splice(idx, 0, {
     ...antiga,
     desc, mercado:novoMercado, tipoAposta:novoTipoAposta, liga:novoLiga, times:novoTimes, tipo:novoTipo, minuto:novoMinuto,
-    odd:novoOdd, resultado:novoRes, stake, pct, lucro:lucroB, reservaCorte, ganhoCarteira,
+    odd:novoOdd, resultado:resFinal, foiCashout: novoRes==='cashout', stake, pct, lucro:lucroB, reservaCorte, ganhoCarteira, percaCarteira,
     data:novaData
   });
 
@@ -641,7 +660,7 @@ function renderLigas(){
     const minutos = lista.filter(e=>e.minuto!=null).map(e=>e.minuto);
     const minMedio = minutos.length ? Math.round(minutos.reduce((a,b)=>a+b,0)/minutos.length) : null;
     const oddMedia = r2(lista.reduce((a,e)=>a+e.odd,0)/lista.length);
-    const greens = lista.filter(e=>e.resultado==='green').length;
+    const greens = lista.filter(e=>contaComoGreenEntrada(e)).length;
     const reds   = lista.filter(e=>e.resultado==='red').length;
     const validas = greens+reds;
     const pctAcerto = validas ? Math.round((greens/validas)*100) : null;
@@ -878,7 +897,7 @@ function computeLigas(filtroTipo, filtroCamp, filtroMercado){
     const minutos = lista.filter(e=>e.minuto!=null).map(e=>e.minuto);
     const minMedio = minutos.length ? Math.round(minutos.reduce((a,b)=>a+b,0)/minutos.length) : null;
     const oddMedia = r2(lista.reduce((a,e)=>a+e.odd,0)/lista.length);
-    const greens = lista.filter(e=>e.resultado==='green').length;
+    const greens = lista.filter(e=>contaComoGreenEntrada(e)).length;
     const reds   = lista.filter(e=>e.resultado==='red').length;
     const validas = greens+reds;
     const pctAcerto = validas ? Math.round((greens/validas)*100) : null;
