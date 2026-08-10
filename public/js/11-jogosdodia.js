@@ -3,13 +3,39 @@
 // à lista "Jogos de Hoje" (aparece aqui e também no Dashboard). Cada jogo
 // some sozinho da lista 4 horas depois do horário marcado.
 // ═══════════════════════════════════════════════════
-const OPH_KEY = 'eiPlacar_jogosHoje_v1';
+// A lista "Jogos Agendados" é só local (não mexe no banco compartilhado — cada
+// jogo some sozinho 4h depois do horário, sem afetar mais ninguém). Só que a chave
+// do localStorage era fixa, igual pra qualquer conta: se organizador e membro usam
+// o mesmo aparelho/navegador (trocando de login), os dois enxergavam e mexiam na
+// MESMA lista guardada ali — parecia que apagar afetava todo mundo, mas na verdade
+// era o mesmo balde de armazenamento sendo compartilhado sem querer. Agora a chave
+// inclui o id de quem tá logado, então cada conta tem a sua lista, independente.
+function ophKey(){
+  const uid = (typeof perfilAtual !== 'undefined' && perfilAtual && perfilAtual.id) ? perfilAtual.id : 'anon';
+  return 'eiPlacar_jogosHoje_v1_' + uid;
+}
 function ophLoad(){
-  try { return JSON.parse(localStorage.getItem(OPH_KEY)) || []; }
+  try {
+    const chave = ophKey();
+    let bruto = localStorage.getItem(chave);
+    // Migração de uma vez só: se essa conta ainda não tem lista própria, mas existe
+    // a lista antiga (chave fixa, de antes desse ajuste), herda ela — só a primeira
+    // conta a abrir o app depois do ajuste pega os itens antigos; as demais começam
+    // do zero (evita duplicar a mesma lista velha em várias contas).
+    if(bruto==null){
+      const antiga = localStorage.getItem('eiPlacar_jogosHoje_v1');
+      if(antiga!=null){
+        localStorage.setItem(chave, antiga);
+        localStorage.removeItem('eiPlacar_jogosHoje_v1');
+        bruto = antiga;
+      }
+    }
+    return JSON.parse(bruto) || [];
+  }
   catch { return []; }
 }
 function ophSave(lista){
-  localStorage.setItem(OPH_KEY, JSON.stringify(lista));
+  localStorage.setItem(ophKey(), JSON.stringify(lista));
 }
 function ophExpirado(j){
   if(!j.horario) return false;

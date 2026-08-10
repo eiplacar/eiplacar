@@ -202,7 +202,7 @@
     <h2 style="font-size:15px;margin-bottom:12px"><span data-ic="pencil" data-ic-size="15"></span> Editar Entrada</h2>
     <div style="margin-bottom:10px"><label>Mercado</label><input type="text" id="editEMercado"></div>
     <div style="margin-bottom:10px"><label>Liga</label><input type="text" id="editELiga"></div>
-    <div style="margin-bottom:10px"><label>Confronto (Casa × Visitante)</label><input type="text" id="editETimes" placeholder="Opcional"></div>
+    <div style="margin-bottom:10px"><label>Jogo (Mandante × Visitante)</label><input type="text" id="editETimes" placeholder="Ex: Botafogo-SP × Avaí"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
       <div>
         <label>Tipo de Entrada</label>
@@ -220,6 +220,13 @@
           <option value="sistema">Sistema</option>
         </select>
       </div>
+    </div>
+    <div style="margin-bottom:10px">
+      <label>Operação</label>
+      <select id="editEOperacao">
+        <option value="bet">Bet</option>
+        <option value="exchange">Exchange</option>
+      </select>
     </div>
     <div id="editEMinutoWrap" style="margin-bottom:10px">
       <label>Minuto</label>

@@ -25,12 +25,14 @@ function popularTimesLigaEntrada(){
   atualizarTimesEntrada();
 }
 
-// Junta Mandante + Visitante escolhidos em #eTimes (usado no resumo, na descrição e no lançamento)
+// Junta Mandante + Visitante escolhidos em #eTimes (usado no resumo, na descrição e no lançamento).
+// Só mexe no campo se pelo menos um dos dois selects tiver valor — se os dois estão vazios
+// (ninguém usou o atalho ainda), não apaga o que a pessoa já tiver digitado na mão ali.
 function atualizarTimesEntrada(){
   const m = document.getElementById('eMandanteSel')?.value || '';
   const v = document.getElementById('eVisitanteSel')?.value || '';
   const eTimes = document.getElementById('eTimes');
-  if(eTimes) eTimes.value = (m && v) ? `${m} × ${v}` : (m || v || '');
+  if(eTimes && (m || v)) eTimes.value = (m && v) ? `${m} × ${v}` : (m || v);
   atualizarResumoEntrada();
 }
 
@@ -312,6 +314,7 @@ async function lancarEntrada(){
   const operacao = document.getElementById('eOperacao')?.value || 'bet';
   const desc     = mercado + (times?' · '+times:'') + (liga?' · '+liga:'');
   const res      = document.getElementById('eResultado').value;
+  if(!times){ toast('Informe o Jogo (Mandante × Visitante)'); return; }
   if(!res)  { toast('Selecione o resultado'); return; }
 
   // Sistema: valor investido e lucro são digitados direto, sem % da banca nem odd.
@@ -460,6 +463,7 @@ function editarEntrada(id){
   editERetornoManual = false;
   document.getElementById('editEMercado').value   = e.mercado || '';
   document.getElementById('editETipoAposta').value = e.tipoAposta || 'simples';
+  document.getElementById('editEOperacao').value  = e.operacao || 'bet';
   document.getElementById('editELiga').value      = e.liga || '';
   document.getElementById('editETimes').value     = e.times || '';
   document.getElementById('editETipo').value      = e.tipo || 'prelive';
@@ -502,6 +506,7 @@ function salvarEdicaoEntrada(){
 
   const novoMercado = document.getElementById('editEMercado').value.trim();
   const novoTipoAposta = document.getElementById('editETipoAposta').value;
+  const novaOperacao = document.getElementById('editEOperacao').value || 'bet';
   const novoLiga     = document.getElementById('editELiga').value.trim();
   const novoTimes    = document.getElementById('editETimes').value.trim();
   const novoTipo     = document.getElementById('editETipo').value;
@@ -512,6 +517,7 @@ function salvarEdicaoEntrada(){
   const novaData     = document.getElementById('editEData').value || antiga.data;
 
   if(!novoMercado){ toast('Informe o mercado'); return; }
+  if(!novoTimes){ toast('Informe o Jogo (Mandante × Visitante)'); return; }
   if(!novoOdd)     { toast('Informe a odd'); return; }
   if(!novoStakeInformado || novoStakeInformado<=0) { toast('Informe o valor apostado'); return; }
 
@@ -555,7 +561,7 @@ function salvarEdicaoEntrada(){
   const desc = novoMercado + (novoTimes?' · '+novoTimes:'') + (novoLiga?' · '+novoLiga:'');
   d.entradas.splice(idx, 0, {
     ...antiga,
-    desc, mercado:novoMercado, tipoAposta:novoTipoAposta, liga:novoLiga, times:novoTimes, tipo:novoTipo, minuto:novoMinuto,
+    desc, mercado:novoMercado, tipoAposta:novoTipoAposta, liga:novoLiga, times:novoTimes, tipo:novoTipo, minuto:novoMinuto, operacao:novaOperacao,
     odd:novoOdd, resultado:resFinal, foiCashout: novoRes==='cashout', stake, pct, lucro:lucroB, reservaCorte, ganhoCarteira, percaCarteira,
     data:novaData
   });

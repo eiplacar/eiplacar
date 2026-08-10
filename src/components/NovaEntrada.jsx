@@ -77,9 +77,15 @@ export default function NovaEntrada() {
         <input type="text" id="eLiga" list="campSugEntrada" placeholder="Ex: Premier League" onInput={() => { window.popularTimesLigaEntrada?.(); window.atualizarResumoEntrada?.(); }} />
       </div>
 
-      {/* Jogo — Mandante x Visitante (aparecem preenchidos com os times da liga escolhida) */}
+      {/* Jogo — Mandante × Visitante. Campo de texto sempre visível e editável na mão
+          (obrigatório); quando a Liga digitada bate com uma já conhecida, os selects
+          abaixo aparecem como atalho — escolher os dois já preenche o campo sozinho. */}
+      <div style={{ marginBottom: 12 }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Shield size={13} /> Jogo (Mandante × Visitante)</label>
+        <input type="text" id="eTimes" placeholder="Ex: Botafogo-SP × Avaí" onInput={() => window.atualizarResumoEntrada?.()} />
+      </div>
       <div id="blocoJogoEntrada" style={{ marginBottom: 12, display: 'none' }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Shield size={13} /> Jogo</label>
+        <div style={{ fontSize: 10, color: 'var(--texto2)', marginBottom: 4 }}>Ou escolha da lista:</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           <select id="eMandanteSel" onChange={() => window.atualizarTimesEntrada?.()}>
             <option value="">Mandante</option>
@@ -157,7 +163,6 @@ export default function NovaEntrada() {
         <option value="Cantos" />
         <option value="Cartões" />
       </datalist>
-      <input type="hidden" id="eTimes" defaultValue="" />
 
       {/* Operação: Bet ou Exchange */}
       <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}><ArrowLeftRight size={13} /> Operação</label>

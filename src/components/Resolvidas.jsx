@@ -88,6 +88,7 @@ export default function Resolvidas() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                     <span style={{ fontWeight: 700, fontSize: 13 }}>{e.desc}</span>
                     <span style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', color: corAposta, border: `1px solid ${corAposta}`, borderRadius: 4, padding: '1px 5px' }}>{rotuloAposta}</span>
+                    <span style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', color: 'var(--texto2)', border: '1px solid var(--c3)', borderRadius: 4, padding: '1px 5px' }}>{e.operacao === 'exchange' ? 'Exchange' : 'Bet'}</span>
                     {(e.foiCashout || ehCashoutAntigo) && (
                       <span style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', color: 'var(--ouro)', border: '1px solid var(--ouro)', borderRadius: 4, padding: '1px 5px', display: 'flex', alignItems: 'center', gap: 3 }}><Coins size={9} /> Cash Out</span>
                     )}
