@@ -308,15 +308,14 @@ export default function AnaliseResultado() {
         </div>
 
         <div className="sec">
-          <div className="sec-title"><Scale size={14} style={{ marginRight: 4 }} />Comportamento por Faixa de Força</div>
-          <div style={{ fontSize: 10, color: 'var(--texto2)', marginBottom: 10 }}>Como cada time se sai historicamente contra adversários do nível do rival de hoje (rank médio próprio de cada um).</div>
+          <div className="sec-title"><Scale size={14} style={{ marginRight: 4 }} />Desempenho Contra Adversários de Força Similar</div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             {[{ nome: casa, cor: 'var(--verde2)', faixa: faixaC, rankRival: sV.rankMedProprio }, { nome: vis, cor: 'var(--perigo)', faixa: faixaV, rankRival: sC.rankMedProprio }].map(({ nome, cor, faixa, rankRival }) => (
               <div key={nome} style={{ flex: 1, minWidth: 150, background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 8, padding: 10 }}>
-                <div style={{ fontSize: 12, color: cor, fontWeight: 700, marginBottom: 6 }}>{nome}</div>
+                <div style={{ fontSize: 12, color: cor, fontWeight: 700, marginBottom: 2 }}>{nome}</div>
                 {faixa ? (
                   <>
-                    <div style={{ fontSize: 10, color: 'var(--texto2)', marginBottom: 4 }}>vs adversários por volta do rank #{rankRival ?? '—'} ({faixa.jogos} jogo(s), rank médio da amostra #{faixa.rankMedioAmostra})</div>
+                    <div style={{ fontSize: 10, color: 'var(--texto2)', marginBottom: 6 }}>Contra adversários próximos do nível atual (rank #{rankRival ?? '—'} · {faixa.jogos} jogo(s))</div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontSize: 11, color: 'var(--texto2)' }}>{faixa.v}V {faixa.e}E {faixa.d}D</span>
                       <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--ouro)' }}>{faixa.aproveitamento}%</span>
@@ -330,23 +329,40 @@ export default function AnaliseResultado() {
 
         <div className="sec">
           <div className="sec-title"><TrendingUp size={14} style={{ marginRight: 4 }} />Tendência (Ganhando ou Perdendo Força)</div>
-          <div style={{ fontSize: 10, color: 'var(--texto2)', marginBottom: 10 }}>Compara a taxa de acerto nos últimos 5 jogos com os últimos 10 — não é só "quantos de 5", é se a sequência tá melhorando ou piorando.</div>
+          <div style={{ fontSize: 10, color: 'var(--texto2)', marginBottom: 10 }}>Compara os últimos 5 com os últimos 10 para identificar ganho ou perda de força.</div>
           {[{ nome: casa, cor: 'var(--verde2)', tend: tendC }, { nome: vis, cor: 'var(--perigo)', tend: tendV }].map(({ nome, cor, tend }) => (
             <div key={nome} style={{ marginBottom: 12 }}>
               <div style={{ fontSize: 12, color: cor, fontWeight: 700, marginBottom: 6 }}>{nome}</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {[{ lbl: 'Vitória', t: tend.vitoria }, { lbl: 'Over 1.5 Gols', t: tend.over15 }, { lbl: 'Ambas Marcam', t: tend.btts }].map(({ lbl, t }) => (
-                  <div key={lbl} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 8, padding: '6px 10px' }}>
-                    <span style={{ fontSize: 11, color: 'var(--texto2)', width: 100, flexShrink: 0 }}>{lbl}</span>
-                    {t ? (
-                      <>
-                        <span style={{ fontSize: 11, letterSpacing: 2 }}>{t.sequencia.map((h) => h ? '✅' : '❌').join('')}</span>
-                        <span style={{ fontSize: 10, color: 'var(--texto2)' }}>{t.hits10}/{t.total10} ({t.pct10}%)</span>
-                        <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, fontWeight: 800, color: t.tendencia === 'subindo' ? 'var(--verde2)' : t.tendencia === 'descendo' ? 'var(--perigo)' : 'var(--texto2)' }}>
-                          {t.tendencia === 'subindo' ? <TrendingUp size={12} /> : t.tendencia === 'descendo' ? <TrendingDown size={12} /> : <Minus size={12} />}
+                  <div key={lbl} style={{ background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 8, padding: '8px 10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: t ? 6 : 0 }}>
+                      <span style={{ fontSize: 11, color: 'var(--texto)', fontWeight: 700 }}>{lbl}</span>
+                      {t && (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 800, color: t.tendencia === 'subindo' ? 'var(--verde2)' : t.tendencia === 'descendo' ? 'var(--perigo)' : 'var(--texto2)' }}>
+                          {t.tendencia === 'subindo' ? '🟢' : t.tendencia === 'descendo' ? '🔴' : '⚪'}
                           {t.tendencia === 'subindo' ? 'Ganhando força' : t.tendencia === 'descendo' ? 'Perdendo força' : 'Estável'}
                         </span>
-                      </>
+                      )}
+                    </div>
+                    {t ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+                        <div>
+                          <div style={{ fontSize: 9, color: 'var(--texto2)' }}>Últimos 5</div>
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
+                            <span style={{ fontSize: 15, fontWeight: 800 }}>{t.hits5}/{t.total5}</span>
+                            <span style={{ fontSize: 10, color: 'var(--texto2)' }}>· {t.pct5}%</span>
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 9, color: 'var(--texto2)' }}>Últimos 10</div>
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
+                            <span style={{ fontSize: 15, fontWeight: 800 }}>{t.hits10}/{t.total10}</span>
+                            <span style={{ fontSize: 10, color: 'var(--texto2)' }}>· {t.pct10}%</span>
+                          </div>
+                        </div>
+                        <span style={{ fontSize: 13, letterSpacing: 3, marginLeft: 'auto' }}>{t.sequencia.map((h) => h ? '🟢' : '🔴').join(' ')}</span>
+                      </div>
                     ) : <span style={{ fontSize: 10, color: 'var(--texto2)' }}>Poucos jogos pra calcular ainda</span>}
                   </div>
                 ))}
@@ -354,6 +370,7 @@ export default function AnaliseResultado() {
             </div>
           ))}
         </div>
+
 
         <div className="sec">
           <div className="sec-title"><Trophy size={14} style={{ marginRight: 4 }} />Desempenho {modoTempo === 'ht' ? '— 1º Tempo' : ''}</div>
