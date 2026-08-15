@@ -132,7 +132,9 @@ function calcEntrada(){
     const lucro = numBR(document.getElementById('eSistemaLucro')?.value) || 0;
     if(!stake && !lucro){ el.innerHTML = 'Preencha o Valor Investido e o Lucro para ver o resumo'; return; }
     const pctStake = stake ? Math.round((lucro/stake*100)*10)/10 : null;
+    const opLbl = document.getElementById('eOperacao')?.value==='exchange' ? 'Exchange' : 'Bet';
     el.innerHTML=`<div style="display:flex;flex-direction:column;gap:9px">
+      <div style="display:flex;justify-content:space-between;align-items:center"><span style="color:var(--texto2)">Operação</span><strong>${opLbl}</strong></div>
       <div style="display:flex;justify-content:space-between;align-items:center"><span style="color:var(--texto2)">Lucro</span><strong style="color:#4dd87a">R$ ${lucro.toFixed(2).replace('.',',')}</strong></div>
       <div style="display:flex;justify-content:space-between;align-items:center"><span style="color:var(--texto2)">% sobre a Stake</span><strong style="color:${pctStake!=null&&pctStake<0?'var(--perigo)':'#4dd87a'}">${pctStake!=null?pctStake.toFixed(1).replace('.',','):'0,0'}%</strong></div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding-top:9px;border-top:1px solid var(--c3)"><span style="color:var(--texto2)">Retorno Total</span><strong style="color:var(--ouro)">R$ ${(stake+lucro).toFixed(2).replace('.',',')}</strong></div>
@@ -162,7 +164,9 @@ function calcEntrada(){
   // o que a pessoa acabou de digitar enquanto ela ainda está no meio de editar o valor).
   if(!usandoManual && retornoInputEl && retorno!=null) retornoInputEl.value = retorno.toFixed(2).replace('.',',');
 
+  const opLbl = document.getElementById('eOperacao')?.value==='exchange' ? 'Exchange' : 'Bet';
   el.innerHTML=`<div style="display:flex;flex-direction:column;gap:9px">
+    <div style="display:flex;justify-content:space-between;align-items:center"><span style="color:var(--texto2)">Operação</span><strong>${opLbl}</strong></div>
     <div style="display:flex;justify-content:space-between;align-items:center"><span style="color:var(--texto2)">Lucro</span><strong style="color:#4dd87a">R$ ${lucro!=null?lucro.toFixed(2).replace('.',','):'0,00'}</strong></div>
     <div style="display:flex;justify-content:space-between;align-items:center"><span style="color:var(--texto2)">% sobre a Stake</span><strong style="color:${pctStake!=null&&pctStake<0?'var(--perigo)':'#4dd87a'}">${pctStake!=null?pctStake.toFixed(1).replace('.',','):'0,0'}%</strong></div>
     <div style="display:flex;justify-content:space-between;align-items:center"><span style="color:var(--texto2)">% Banca</span><strong>${pct}%</strong></div>
@@ -186,9 +190,10 @@ function setTipoEntrada(tipo){
 }
 
 // Bet (casa de apostas normal) ou Exchange (corretora tipo Betfair) — por enquanto só
-// fica salvo junto com a entrada, sem afetar o cálculo.
+// fica salvo junto com a entrada, sem afetar o cálculo. O VALOR de verdade agora mora no
+// estado do React (NovaEntrada.jsx, controlando o input #eOperacao); essa função só cuida
+// do visual dos botões Bet/Exchange (que são DOM puro, fora do controle do React).
 function setOperacao(tipo){
-  const el = document.getElementById('eOperacao'); if(el) el.value = tipo;
   const bet  = document.getElementById('btnOperacaoBet');
   const exch = document.getElementById('btnOperacaoExchange');
   if(!bet || !exch) return;

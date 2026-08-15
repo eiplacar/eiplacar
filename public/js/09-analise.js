@@ -107,10 +107,15 @@ function statsTime(nome, local, camp, qty){
 
   const ranks=jogos.map(j=>j.casa===nome?j.rankV:j.rankC).filter(r=>r!=null);
   const rankMedAdv=ranks.length?r2(ranks.reduce((a,b)=>a+b,0)/ranks.length):null;
+  // Rank médio do PRÓPRIO time (não do adversário) — usa o rank que ele tinha em cada
+  // jogo, seja como mandante ou visitante. Serve de base pra comparar contra o rank do
+  // outro time no "Comportamento por Faixa de Força" logo abaixo.
+  const ranksProprio=jogos.map(j=>j.casa===nome?j.rankC:j.rankV).filter(r=>r!=null);
+  const rankMedProprio=ranksProprio.length?r2(ranksProprio.reduce((a,b)=>a+b,0)/ranksProprio.length):null;
   const calendario=jogos.map(j=>({
     adv:j.casa===nome?j.vis:j.casa, rank:j.casa===nome?j.rankV:j.rankC, data:j.data, camp:j.camp,
     tamCamp:tamanhoCampeonato(j.camp), casaNome:j.casa, visNome:j.vis, gC:j.gC, gV:j.gV,
-    rankCasa:j.rankC, rankVis:j.rankV,
+    rankCasa:j.rankC, rankVis:j.rankV, mandante:j.casa===nome,
     golsHT_C:j.golsHT_C ?? null, golsHT_V:j.golsHT_V ?? null,
     chutesC:j.chutesC ?? null, chutesV:j.chutesV ?? null,
     chutesGolC:j.chutesGolC ?? null, chutesGolV:j.chutesGolV ?? null,
@@ -221,7 +226,7 @@ function statsTime(nome, local, camp, qty){
 
   return { nome, nt, nc, nv, local, qty, mediaGM_casa:nc?r2(gmCasa/nc):0, mediaGS_casa:nc?r2(gsCasa/nc):0, mediaGM_vis:nv?r2(gmVis/nv):0, mediaGS_vis:nv?r2(gsVis/nv):0, vedCasa, vedFora,
     ncHT, nvHT, mediaGM_casaHT:ncHT?r2(gmCasaHT/ncHT):0, mediaGS_casaHT:ncHT?r2(gsCasaHT/ncHT):0, mediaGM_visHT:nvHT?r2(gmVisHT/nvHT):0, mediaGS_visHT:nvHT?r2(gsVisHT/nvHT):0, vedCasaHT, vedForaHT,
-    lambda, lambdaDef, lambdaAjustado, lambdaDefAjustado, lambdaHT, lambdaDefHT, ntHT, lambdaIndice, indiceForca, mediaChutesGolMarc, mediaChutesTotMarc, mediaCantosMarc, mediaVermProprio, mediaAmarProprio, confCantos, confCartoes, confChutes, rankMedAdv, calendario, minStats, jogosComMin, minStatsHT, jogosComMinHT, todosGols, mediasGolJogo, mediasMarc, mediasSofr, mediaMinMarc, mediaMinSofr, jogosComGols:jogosComGols.length };
+    lambda, lambdaDef, lambdaAjustado, lambdaDefAjustado, lambdaHT, lambdaDefHT, ntHT, lambdaIndice, indiceForca, mediaChutesGolMarc, mediaChutesTotMarc, mediaCantosMarc, mediaVermProprio, mediaAmarProprio, confCantos, confCartoes, confChutes, rankMedAdv, rankMedProprio, calendario, minStats, jogosComMin, minStatsHT, jogosComMinHT, todosGols, mediasGolJogo, mediasMarc, mediasSofr, mediaMinMarc, mediaMinSofr, jogosComGols:jogosComGols.length };
 }
 
 
@@ -270,6 +275,50 @@ function calNivel(r, tamCamp){
 function calDot(r, tamCamp){ const n=calNivel(r,tamCamp); return n||'facil'; }
 function calLbl(r, tamCamp){ const n=calNivel(r,tamCamp); return n==='dificil'?'difícil':n==='medio'?'médio':n==='facil'?'fácil':'—'; }
 
+// Comportamento do time contra adversários de uma faixa de força parecida com um rank-alvo
+// (normalmente o rank médio do outro time da partida sendo analisada) — ex: "Time X (rank 1)
+// contra adversários por volta do rank 11: qual a taxa de aproveitamento?". Pega os jogos do
+// calendário do time com o rank do adversário mais PRÓXIMO do alvo (ranks raramente se repetem
+// de um jogo pro outro, então "mais próximo" é melhor que "exatamente igual"), até N jogos, e
+// calcula V/E/D + aproveitamento (padrão do futebol: pontos ganhos ÷ pontos possíveis × 100).
+function aproveitamentoVsFaixaRank(calendario, rankAlvo, n=8){
+  if(!rankAlvo || !calendario?.length) return null;
+  const comRank = calendario.filter(c=>c.rank!=null && c.gC!=null && c.gV!=null);
+  if(!comRank.length) return null;
+  const maisProximos = [...comRank].sort((a,b)=>Math.abs(a.rank-rankAlvo)-Math.abs(b.rank-rankAlvo)).slice(0,n);
+  const ved = maisProximos.reduce((acc,c)=>{
+    const golsPro = c.mandante ? c.gC : c.gV, golsContra = c.mandante ? c.gV : c.gC;
+    if(golsPro>golsContra) acc.v++; else if(golsPro===golsContra) acc.e++; else acc.d++;
+    return acc;
+  }, {v:0,e:0,d:0});
+  const jg = maisProximos.length;
+  const aproveitamento = jg ? Math.round(((ved.v*3+ved.e)/(jg*3))*1000)/10 : 0;
+  const rankMedioAmostra = r2(maisProximos.reduce((s,c)=>s+c.rank,0)/jg);
+  return { jogos:jg, v:ved.v, e:ved.e, d:ved.d, aproveitamento, rankMedioAmostra };
+}
+
+// Tendência de um mercado (V/E/D, Over X.5, Ambas Marcam etc): compara a taxa de acerto nos
+// últimos 5 jogos contra os últimos 10 pra saber se o time tá GANHANDO ou PERDENDO força
+// recentemente — não adianta só olhar "quantos de 5" sem ver a ORDEM. calendario já vem do
+// mais recente pro mais antigo (ver jogosDoTime); testeHit(c) recebe um item do calendário e
+// devolve true/false (bateu o mercado ou não naquele jogo).
+function tendenciaMercado(calendario, testeHit, n=10){
+  const validos = calendario.filter(c=>c.gC!=null && c.gV!=null);
+  if(validos.length<3) return null;
+  const u10 = validos.slice(0,n);
+  const u5  = validos.slice(0,5);
+  const hits10 = u10.filter(testeHit).length;
+  const hits5  = u5.filter(testeHit).length;
+  const pct10 = Math.round((hits10/u10.length)*100);
+  const pct5  = Math.round((hits5/u5.length)*100);
+  const diff = pct5-pct10;
+  const tendencia = diff>=15 ? 'subindo' : diff<=-15 ? 'descendo' : 'estavel';
+  // sequência exibida do mais antigo pro mais recente (leitura de linha do tempo, igual o
+  // usuário pediu — ex: "V-V-V-E-D" com o "D" sendo o jogo mais recente)
+  const sequencia = [...u5].reverse().map(c=>testeHit(c));
+  return { total10:u10.length, hits10, pct10, total5:u5.length, hits5, pct5, sequencia, tendencia };
+}
+
 // ══ CALCULA ANÁLISE — motor puro, sem tocar em DOM nenhum ══
 // Recebe os times/campeonato/filtro escolhidos (vindos do SeletorAnalise.jsx) e devolve
 // um objeto com TUDO que a tela precisa. Quem desenha é o componente React:
@@ -280,6 +329,17 @@ function computeAnalise(casa, vis, camp, filtroAtual){
   const sC=statsTime(casa,filtroAtual.casa.local,camp,filtroAtual.casa.qty);
   const sV=statsTime(vis, filtroAtual.vis.local, camp,filtroAtual.vis.qty);
   if(sC.nt===0||sV.nt===0) return { estado:'sem-jogos' };
+  // Comportamento por Faixa de Força: como cada time se sai historicamente contra
+  // adversários do nível do RIVAL de hoje (usa o rank médio próprio de cada um como alvo
+  // pro outro — ver aproveitamentoVsFaixaRank acima).
+  const faixaC = aproveitamentoVsFaixaRank(sC.calendario, sV.rankMedProprio);
+  const faixaV = aproveitamentoVsFaixaRank(sV.calendario, sC.rankMedProprio);
+  // Tendência recente (ganhando/perdendo força) em 3 mercados-chave — ver tendenciaMercado() acima.
+  const testeVitoria = c => c.mandante ? c.gC>c.gV : c.gV>c.gC;
+  const testeOver15  = c => (c.gC+c.gV) >= 2;
+  const testeBtts    = c => c.gC>0 && c.gV>0;
+  const tendC = { vitoria: tendenciaMercado(sC.calendario, testeVitoria), over15: tendenciaMercado(sC.calendario, testeOver15), btts: tendenciaMercado(sC.calendario, testeBtts) };
+  const tendV = { vitoria: tendenciaMercado(sV.calendario, testeVitoria), over15: tendenciaMercado(sV.calendario, testeOver15), btts: tendenciaMercado(sV.calendario, testeBtts) };
   const modoTempo = filtroAtual.modoTempo === 'ht' ? 'ht' : 'ft'; // 'ft' = Resultado Final, 'ht' = Resultado 1º Tempo
   const lambdaC=sC.lambdaIndice||sC.lambdaAjustado||sC.lambda||0.5, lambdaV=sV.lambdaIndice||sV.lambdaAjustado||sV.lambda||0.5;
   const MAX=10;
@@ -383,6 +443,7 @@ function computeAnalise(casa, vis, camp, filtroAtual){
     estado:'ok', casa, vis, camp,
     filtro: { casa:{...filtroAtual.casa}, vis:{...filtroAtual.vis} }, modoTempo,
     sC, sV, lambdaC, lambdaV, pVit, pEmp, pDer, o15, o25, o35, o45,
+    faixaC, faixaV, tendC, tendV,
     temHT, o05HT, o15HT, o25HT, o35HT, o45HT, resultadoHT, pBtts, pBttsHT, mcc, top10, maxPP, top10HT, maxPPHT,
     momStats, golsComb, picoIdx, baixoIdx, totalMom,
     momStatsHT, golsCombHT, picoIdxHT, baixoIdxHT, totalMomHT,

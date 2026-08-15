@@ -29,11 +29,14 @@ import SeletorMercado from './SeletorMercado';
 export default function NovaEntrada() {
   const [seletorAberto, setSeletorAberto] = useState(false);
   const [seletorOperacao, setSeletorOperacao] = useState('bet');
+  const [operacaoAtual, setOperacaoAtual] = useState('bet'); // fonte única da verdade pro campo #eOperacao — ver input controlado abaixo
 
-  // Clicar em Bet ou Exchange já define a Operação (função de sempre, window.setOperacao)
+  // Clicar em Bet ou Exchange já define a Operação (função de sempre, window.setOperacao,
+  // que só cuida do visual dos botões — o valor de verdade vive aqui, no estado do React)
   // e abre o Seletor de Mercado guiado, no modo certo (Bet ou Exchange).
   function escolherOperacaoEAbrirSeletor(tipo) {
     window.setOperacao?.(tipo);
+    setOperacaoAtual(tipo);
     setSeletorOperacao(tipo);
     setSeletorAberto(true);
   }
@@ -176,7 +179,7 @@ export default function NovaEntrada() {
           Exchange
         </button>
       </div>
-      <input type="hidden" id="eOperacao" defaultValue="bet" />
+      <input type="hidden" id="eOperacao" value={operacaoAtual} readOnly />
 
       <SeletorMercado
         aberto={seletorAberto}
