@@ -62,7 +62,7 @@ export default function AnaliseResultado() {
     return <div className="empty"><div className="icon"><Search size={26} /></div><p>Sem jogos encontrados com os filtros selecionados.<br />Tente ajustar o local ou a quantidade.</p></div>;
   }
 
-  const { casa, vis, filtro, sC, sV, lambdaC, lambdaV, pVit, pEmp, pDer, o15, o25, o35, o45, temHT, o05HT, o15HT, o25HT, o35HT, o45HT, resultadoHT, pBtts, pBttsHT, mcc, top10, maxPP, top10HT, maxPPHT, momStats, golsComb, picoIdx, baixoIdx, totalMom, momStatsHT, golsCombHT, picoIdxHT, baixoIdxHT, totalMomHT, faixaC, faixaV, tendC, tendV } = data;
+  const { casa, vis, filtro, sC, sV, lambdaC, lambdaV, pVit, pEmp, pDer, o15, o25, o35, o45, temHT, o05HT, o15HT, o25HT, o35HT, o45HT, resultadoHT, pBtts, pBttsHT, mcc, top10, maxPP, top10HT, maxPPHT, momStats, golsComb, picoIdx, baixoIdx, totalMom, momStatsHT, golsCombHT, picoIdxHT, baixoIdxHT, totalMomHT, faixaC, faixaV, tendC, tendV, tendCHT, tendVHT } = data;
   const modoTempo = data.modoTempo || 'ft';
   const calDot = window.calDot || (() => 'facil');
   const calLbl = window.calLbl || (() => '—');
@@ -328,9 +328,9 @@ export default function AnaliseResultado() {
         </div>
 
         <div className="sec">
-          <div className="sec-title"><TrendingUp size={14} style={{ marginRight: 4 }} />Tendência (Ganhando ou Perdendo Força)</div>
+          <div className="sec-title"><TrendingUp size={14} style={{ marginRight: 4 }} />Tendência (Ganhando ou Perdendo Força) {modoTempo === 'ht' ? '— 1º Tempo' : ''}</div>
           <div style={{ fontSize: 10, color: 'var(--texto2)', marginBottom: 10 }}>Compara os últimos 5 com os últimos 10 para identificar ganho ou perda de força.</div>
-          {[{ nome: casa, cor: 'var(--verde2)', tend: tendC }, { nome: vis, cor: 'var(--perigo)', tend: tendV }].map(({ nome, cor, tend }) => (
+          {[{ nome: casa, cor: 'var(--verde2)', tend: modoTempo === 'ht' ? tendCHT : tendC }, { nome: vis, cor: 'var(--perigo)', tend: modoTempo === 'ht' ? tendVHT : tendV }].map(({ nome, cor, tend }) => (
             <div key={nome} style={{ marginBottom: 12 }}>
               <div style={{ fontSize: 12, color: cor, fontWeight: 700, marginBottom: 6 }}>{nome}</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -339,8 +339,8 @@ export default function AnaliseResultado() {
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: t ? 6 : 0 }}>
                       <span style={{ fontSize: 11, color: 'var(--texto)', fontWeight: 700 }}>{lbl}</span>
                       {t && (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 800, color: t.tendencia === 'subindo' ? 'var(--verde2)' : t.tendencia === 'descendo' ? 'var(--perigo)' : 'var(--texto2)' }}>
-                          {t.tendencia === 'subindo' ? '🟢' : t.tendencia === 'descendo' ? '🔴' : '⚪'}
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 800, color: t.tendencia === 'subindo' ? 'var(--verde2)' : t.tendencia === 'descendo' ? 'var(--perigo)' : 'var(--texto2)' }}>
+                          <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: t.tendencia === 'subindo' ? 'var(--verde2)' : t.tendencia === 'descendo' ? 'var(--perigo)' : 'var(--texto2)', flexShrink: 0 }} />
                           {t.tendencia === 'subindo' ? 'Ganhando força' : t.tendencia === 'descendo' ? 'Perdendo força' : 'Estável'}
                         </span>
                       )}
@@ -361,7 +361,11 @@ export default function AnaliseResultado() {
                             <span style={{ fontSize: 10, color: 'var(--texto2)' }}>· {t.pct10}%</span>
                           </div>
                         </div>
-                        <span style={{ fontSize: 13, letterSpacing: 3, marginLeft: 'auto' }}>{t.sequencia.map((h) => h ? '🟢' : '🔴').join(' ')}</span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
+                          {t.sequencia.map((h, i) => (
+                            <span key={i} style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: h ? 'var(--verde2)' : 'var(--perigo)' }} />
+                          ))}
+                        </span>
                       </div>
                     ) : <span style={{ fontSize: 10, color: 'var(--texto2)' }}>Poucos jogos pra calcular ainda</span>}
                   </div>

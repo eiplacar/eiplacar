@@ -301,9 +301,11 @@ function aproveitamentoVsFaixaRank(calendario, rankAlvo, n=8){
 // últimos 5 jogos contra os últimos 10 pra saber se o time tá GANHANDO ou PERDENDO força
 // recentemente — não adianta só olhar "quantos de 5" sem ver a ORDEM. calendario já vem do
 // mais recente pro mais antigo (ver jogosDoTime); testeHit(c) recebe um item do calendário e
-// devolve true/false (bateu o mercado ou não naquele jogo).
-function tendenciaMercado(calendario, testeHit, n=10){
-  const validos = calendario.filter(c=>c.gC!=null && c.gV!=null);
+// devolve true/false (bateu o mercado ou não naquele jogo). filtroValido escolhe quais jogos
+// entram na conta — por padrão exige placar final (gC/gV); no modo 1º Tempo, passamos um
+// filtro que exige golsHT_C/golsHT_V em vez disso (nem todo jogo salvo tem esse dado).
+function tendenciaMercado(calendario, testeHit, n=10, filtroValido=(c=>c.gC!=null && c.gV!=null)){
+  const validos = calendario.filter(filtroValido);
   if(validos.length<3) return null;
   const u10 = validos.slice(0,n);
   const u5  = validos.slice(0,5);
@@ -340,6 +342,14 @@ function computeAnalise(casa, vis, camp, filtroAtual){
   const testeBtts    = c => c.gC>0 && c.gV>0;
   const tendC = { vitoria: tendenciaMercado(sC.calendario, testeVitoria), over15: tendenciaMercado(sC.calendario, testeOver15), btts: tendenciaMercado(sC.calendario, testeBtts) };
   const tendV = { vitoria: tendenciaMercado(sV.calendario, testeVitoria), over15: tendenciaMercado(sV.calendario, testeOver15), btts: tendenciaMercado(sV.calendario, testeBtts) };
+  // Mesma tendência, só que calculada em cima do placar do 1º Tempo (golsHT_C/golsHT_V) —
+  // pro seletor "1º Tempo". Nem todo jogo salvo tem esse dado, então o filtroValido exige ele.
+  const filtroValidoHT = c => c.golsHT_C!=null && c.golsHT_V!=null;
+  const testeVitoriaHT = c => c.mandante ? c.golsHT_C>c.golsHT_V : c.golsHT_V>c.golsHT_C;
+  const testeOver15HT  = c => (c.golsHT_C+c.golsHT_V) >= 2;
+  const testeBttsHT    = c => c.golsHT_C>0 && c.golsHT_V>0;
+  const tendCHT = { vitoria: tendenciaMercado(sC.calendario, testeVitoriaHT, 10, filtroValidoHT), over15: tendenciaMercado(sC.calendario, testeOver15HT, 10, filtroValidoHT), btts: tendenciaMercado(sC.calendario, testeBttsHT, 10, filtroValidoHT) };
+  const tendVHT = { vitoria: tendenciaMercado(sV.calendario, testeVitoriaHT, 10, filtroValidoHT), over15: tendenciaMercado(sV.calendario, testeOver15HT, 10, filtroValidoHT), btts: tendenciaMercado(sV.calendario, testeBttsHT, 10, filtroValidoHT) };
   const modoTempo = filtroAtual.modoTempo === 'ht' ? 'ht' : 'ft'; // 'ft' = Resultado Final, 'ht' = Resultado 1º Tempo
   const lambdaC=sC.lambdaIndice||sC.lambdaAjustado||sC.lambda||0.5, lambdaV=sV.lambdaIndice||sV.lambdaAjustado||sV.lambda||0.5;
   const MAX=10;
@@ -443,7 +453,7 @@ function computeAnalise(casa, vis, camp, filtroAtual){
     estado:'ok', casa, vis, camp,
     filtro: { casa:{...filtroAtual.casa}, vis:{...filtroAtual.vis} }, modoTempo,
     sC, sV, lambdaC, lambdaV, pVit, pEmp, pDer, o15, o25, o35, o45,
-    faixaC, faixaV, tendC, tendV,
+    faixaC, faixaV, tendC, tendV, tendCHT, tendVHT,
     temHT, o05HT, o15HT, o25HT, o35HT, o45HT, resultadoHT, pBtts, pBttsHT, mcc, top10, maxPP, top10HT, maxPPHT,
     momStats, golsComb, picoIdx, baixoIdx, totalMom,
     momStatsHT, golsCombHT, picoIdxHT, baixoIdxHT, totalMomHT,
