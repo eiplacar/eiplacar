@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Trophy, Shield, Share2, CheckCircle2, Home, Plane, RotateCcw } from 'lucide-react';
+import { Trophy, Shield, Share2, CheckCircle2, Home, Plane, RotateCcw, X, Check, ShieldQuestion } from 'lucide-react';
 
 // ══ Seletor da Análise (Campeonato + Confronto) — terceiro módulo migrado para React ══
 //
@@ -27,6 +27,46 @@ function EscudoBox({ html }) {
   return <div className="escudo-sel" style={style}><Shield size={15} /></div>;
 }
 
+// Escudo do time (se já cadastrado na Aba Dados/Confrontos) ou um ícone genérico —
+// mesmo padrão usado na aba Estratégias, pra ficar igual em toda a lista de seleção.
+function EscudoImg({ nome, size = 22 }) {
+  const url = window.getEscudo ? window.getEscudo(nome) : null;
+  if (url) return <img src={url} alt="" style={{ width: size, height: size, objectFit: 'contain', flexShrink: 0 }} />;
+  return <ShieldQuestion size={size * 0.8} color="var(--texto2)" style={{ flexShrink: 0 }} />;
+}
+
+// Bottom-sheet com busca + escudo de cada time — bem mais rápido que rolar um
+// <select> nativo pra achar o time, principalmente em campeonatos com 20+ times.
+// Mesmo padrão (SeletorSheet) já usado na aba Estratégias pra Mandante/Visitante.
+function SeletorTimeSheet({ titulo, times, valorAtual, onSelecionar, onFechar }) {
+  const [busca, setBusca] = useState('');
+  const filtrados = busca ? times.filter((t) => t.toLowerCase().includes(busca.toLowerCase())) : times;
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 300, display: 'flex', alignItems: 'flex-end' }} onClick={onFechar}>
+      <div style={{ background: 'var(--c2)', width: '100%', maxHeight: '78vh', borderRadius: '16px 16px 0 0', padding: '14px 16px 20px', overflowY: 'auto', borderTop: '1px solid var(--c3)' }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <div style={{ fontWeight: 700, fontSize: 14 }}>{titulo}</div>
+          <button type="button" onClick={onFechar} style={{ background: 'none', border: 'none', color: 'var(--texto2)', padding: 4, cursor: 'pointer' }}><X size={20} /></button>
+        </div>
+        {times.length > 8 && (
+          <input autoFocus placeholder="Buscar time..." value={busca} onChange={(e) => setBusca(e.target.value)} style={{ width: '100%', marginBottom: 10 }} />
+        )}
+        <div>
+          {filtrados.map((t) => (
+            <div key={t} onClick={() => { onSelecionar(t); onFechar(); }}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 6px', borderBottom: '1px solid var(--c3)', cursor: 'pointer', borderRadius: 6, background: t === valorAtual ? 'rgba(77,216,122,0.08)' : 'transparent' }}>
+              <EscudoImg nome={t} size={24} />
+              <span style={{ flex: 1, fontSize: 13.5 }}>{t}</span>
+              {t === valorAtual && <Check size={16} color="var(--verde2)" />}
+            </div>
+          ))}
+          {!filtrados.length && <div style={{ textAlign: 'center', color: 'var(--texto2)', padding: 20, fontSize: 13 }}>Nada encontrado.</div>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SeletorAnalise() {
   const [, setTick] = useState(0);
   const [campeonato, setCampeonato] = useState('');
@@ -38,6 +78,7 @@ export default function SeletorAnalise() {
   const [filtroCasa, setFiltroCasa] = useState({ local: 'all', qty: 0 });
   const [filtroVis, setFiltroVis] = useState({ local: 'all', qty: 0 });
   const [modoTempo, setModoTempo] = useState('ft'); // 'ft' = Resultado Final · 'ht' = Resultado 1º Tempo
+  const [seletorAberto, setSeletorAberto] = useState(null); // null | 'casa' | 'vis'
 
   useEffect(() => {
     window.analiseReactRefresh = () => setTick((t) => t + 1);
@@ -78,8 +119,8 @@ export default function SeletorAnalise() {
   }, [timeCasa, timeVis, campeonato, filtroCasa, filtroVis, modoTempo]);
 
   function onChangeCampeonato(e) { setCampeonato(e.target.value); }
-  function onChangeTimeCasa(e) { setTimeCasa(e.target.value); setFiltroCasa((f) => ({ ...f, qty: 0 })); setQtyUnicoDisplay(''); }
-  function onChangeTimeVis(e) { setTimeVis(e.target.value); setFiltroVis((f) => ({ ...f, qty: 0 })); setQtyUnicoDisplay(''); }
+  function escolherTimeCasa(nome) { setTimeCasa(nome); setFiltroCasa((f) => ({ ...f, qty: 0 })); setQtyUnicoDisplay(''); }
+  function escolherTimeVis(nome) { setTimeVis(nome); setFiltroVis((f) => ({ ...f, qty: 0 })); setQtyUnicoDisplay(''); }
 
   function escolherLocal(local) {
     setLocalUnicoAtivo(local);
@@ -142,24 +183,34 @@ export default function SeletorAnalise() {
           <button className={`local-btn ${modoTempo === 'ht' ? 'active-all' : ''}`} onClick={() => setModoTempo('ht')} style={{ ...btnStyleLocal, flex: 1 }}>1º Tempo</button>
         </div>
 
-        {/* Cabeçalho: escudo + mandante × visitante + escudo */}
+        {/* Pontes ocultas — 09-analise.js e 10-compartilhar.js ainda leem #selCasa/#selVis
+            direto do DOM (JS puro, fora do React). Antes eram os <select> de verdade;
+            agora que viraram o SeletorTimeSheet (botão + bottom-sheet com busca/escudo),
+            ficam aqui como inputs escondidos, sempre sincronizados com o estado. */}
+        <input type="hidden" id="selCasa" value={timeCasa} readOnly />
+        <input type="hidden" id="selVis" value={timeVis} readOnly />
+
+        {/* Cabeçalho: escudo + mandante × visitante + escudo — clique abre o seletor com busca */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+          <button type="button" onClick={() => setSeletorAberto('casa')}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 8, padding: '6px', cursor: 'pointer', textAlign: 'left' }}>
             <EscudoBox html={escudoCasaHtml} />
-            <select id="selCasa" value={timeCasa} onChange={onChangeTimeCasa} style={{ flex: 1, minWidth: 0, background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 8, padding: '8px 6px', color: 'var(--texto)', fontSize: 12, fontWeight: 800, outline: 'none' }}>
-              <option value="">— Mandante —</option>
-              {times.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
-          </div>
+            <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: timeCasa ? 'var(--texto)' : 'var(--texto2)', fontSize: 12, fontWeight: 800 }}>{timeCasa || '— Mandante —'}</span>
+          </button>
           <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--texto2)' }}>×</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-            <select id="selVis" value={timeVis} onChange={onChangeTimeVis} style={{ flex: 1, minWidth: 0, background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 8, padding: '8px 6px', color: 'var(--texto)', fontSize: 12, fontWeight: 800, outline: 'none' }}>
-              <option value="">— Visitante —</option>
-              {times.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
+          <button type="button" onClick={() => setSeletorAberto('vis')}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 8, padding: '6px', cursor: 'pointer', textAlign: 'right', justifyContent: 'flex-end' }}>
+            <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: timeVis ? 'var(--texto)' : 'var(--texto2)', fontSize: 12, fontWeight: 800 }}>{timeVis || '— Visitante —'}</span>
             <EscudoBox html={escudoVisHtml} />
-          </div>
+          </button>
         </div>
+
+        {seletorAberto === 'casa' && (
+          <SeletorTimeSheet titulo="Escolha o Mandante" times={times} valorAtual={timeCasa} onSelecionar={escolherTimeCasa} onFechar={() => setSeletorAberto(null)} />
+        )}
+        {seletorAberto === 'vis' && (
+          <SeletorTimeSheet titulo="Escolha o Visitante" times={times} valorAtual={timeVis} onSelecionar={escolherTimeVis} onFechar={() => setSeletorAberto(null)} />
+        )}
 
         {/* Caixa de filtro única */}
         <div style={{ background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 10, padding: 10 }}>
