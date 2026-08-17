@@ -1102,6 +1102,44 @@ function cenarioLiga(camp, limite, placar, minuto, linha){
 }
 window.cenarioLiga = cenarioLiga;
 
+// Mesmo cálculo do cenarioLiga acima, só que em cima dos jogos das DUAS equipes da
+// partida (mandante + visitante), não da liga inteira — faz mais sentido pro cenário
+// de entrada refletir o comportamento desses dois times específicos, não do campeonato
+// como um todo. Junta os últimos N jogos de cada time (mesmo "limite"/modo usados no
+// resto da aba Equipes) e tira duplicata (se mandante e visitante já se enfrentaram
+// dentro da amostra, esse jogo apareceria nos dois lados).
+function cenarioEquipes(mandante, visitante, camp, limite, placar, minuto, linha, modoMandante, modoVisitante){
+  const [pCasa, pVis] = placar.split('x').map(Number);
+  const jM = mandante ? jogosDoTimeFiltrados(mandante, camp, limite, modoMandante) : [];
+  const jV = visitante ? jogosDoTimeFiltrados(visitante, camp, limite, modoVisitante) : [];
+  const vistos = new Set();
+  let jogos = [...jM, ...jV].filter(j=>{
+    if(vistos.has(j.id)) return false;
+    vistos.add(j.id);
+    const total = (j.gC||0)+(j.gV||0);
+    return total>0 && (j.gols||[]).length===total && (j.gols||[]).every(g=>g.min!=null);
+  });
+  jogos = [...jogos].sort((a,b)=> (a.data||'').localeCompare(b.data||'') || (a.id||0)-(b.id||0));
+  const doCenario = jogos.filter(j=>{
+    const cCasa = (j.gols||[]).filter(g=>g.time==='casa' && g.min<=minuto).length;
+    const cVis  = (j.gols||[]).filter(g=>g.time==='vis'  && g.min<=minuto).length;
+    return cCasa===pCasa && cVis===pVis;
+  });
+  if(!doCenario.length) return { jogos:0, confirmou:0, pct:null, serie:[] };
+  const confirmouJogo = linha==='btts'
+    ? (j)=> (j.gC||0)>0 && (j.gV||0)>0
+    : (j)=> ((j.gC||0)+(j.gV||0))>linha;
+  let acumHits = 0;
+  const evolucao = doCenario.map((j, idx)=>{
+    if(confirmouJogo(j)) acumHits++;
+    return Math.round((acumHits/(idx+1))*100);
+  });
+  const N_SERIE = 12;
+  const confirmou = acumHits;
+  return { jogos: doCenario.length, confirmou, pct: Math.round((confirmou/doCenario.length)*100), serie: evolucao.slice(-N_SERIE) };
+}
+window.cenarioEquipes = cenarioEquipes;
+
 const clamp01 = (v)=> Math.max(0, Math.min(1, v));
 const sub5 = (v)=> Math.round(clamp01(v)*5*10)/10; // sub-métrica vale até 5 pts (1 casa decimal)
 
@@ -1158,7 +1196,7 @@ function computeScoreEstrategia(filtros){
   const media2 = (a,b)=> a!=null && b!=null ? (a+b)/2 : (a!=null ? a : (b!=null ? b : 2.5));
 
   const tendencia = tendenciaMercadoLiga(camp, limite, linha);
-  const cenariosCalc = cenarios.map(c=> ({ ...c, ...cenarioLiga(camp, limite, c.placar, c.minuto, linha) }));
+  const cenariosCalc = cenarios.map(c=> ({ ...c, ...cenarioEquipes(mandante, visitante, camp, limite, c.placar, c.minuto, linha, modoMandante, modoVisitante) }));
   const pctCenariosMedia = (()=>{ const vals=cenariosCalc.map(c=>c.pct).filter(v=>v!=null); return vals.length? vals.reduce((a,b)=>a+b,0)/vals.length : null; })();
 
   const tendenciaScore = Math.round(((

@@ -470,7 +470,7 @@ export default function Estrategias() {
                           na outra) enquanto o outro cabe tudo numa linha só. */}
                       <div style={{ fontSize: 9.5, color: 'var(--texto2)', marginBottom: 6, lineHeight: 1.4 }}>
                         <div>Confirmaram {mercadoLabel}</div>
-                        <div>({dado.jogos} jogos)</div>
+                        <div>({dado.confirmou ?? '—'}/{dado.jogos} jogos)</div>
                       </div>
                       <BarraProgressoCenario pct={dado.pct} />
                     </div>
