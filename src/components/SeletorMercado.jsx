@@ -26,8 +26,18 @@ const LINHAS = {
   cartoes: [2.5, 3.5, 4.5],
   escanteios: [7.5, 8.5, 9.5],
 };
+// 1º/2º Tempo naturalmente tem menos cartões/escanteios que a partida inteira, então usa
+// linhas menores nesse caso.
+const LINHAS_TEMPO = {
+  escanteios: [2.5, 3.5, 4.5],
+  cartoes: [0.5, 1.5, 2.5],
+};
+function linhasDaCategoria(categoria, tempo) {
+  if (tempo !== 'partida' && LINHAS_TEMPO[categoria]) return LINHAS_TEMPO[categoria];
+  return LINHAS[categoria];
+}
 
-const TEMPOS_GOLS = [
+const TEMPOS = [
   { id: 'partida', label: 'Partida' },
   { id: '1t', label: '1º Tempo' },
   { id: '2t', label: '2º Tempo' },
@@ -58,7 +68,6 @@ export default function SeletorMercado({ aberto, operacao = 'bet', onFechar, onS
   if (!aberto) return null;
 
   function prefixoTempo() {
-    if (categoria !== 'gols') return '';
     if (tempo === '1t') return '1º Tempo · ';
     if (tempo === '2t') return '2º Tempo · ';
     return '';
@@ -84,15 +93,14 @@ export default function SeletorMercado({ aberto, operacao = 'bet', onFechar, onS
     setCategoria(cat);
     setTempo('partida');
     if (cat === 'outros') { setPasso('outros'); return; }
-    if (cat === 'gols') { setPasso('tempo'); return; }
-    setPasso('mercados');
+    setPasso('tempo'); // Gols, Cartões, Escanteios e Resultado — todos passam por Partida/1ºT/2ºT
   }
 
   function voltar() {
     if (passo === 'tempo') { setPasso('categoria'); return; }
-    if (passo === 'mercados') { setPasso(categoria === 'gols' ? 'tempo' : 'categoria'); return; }
+    if (passo === 'mercados') { setPasso('tempo'); return; }
     if (passo === 'outros') { setPasso('categoria'); return; }
-    if (passo === 'backlay') { setPasso(categoria === 'gols' ? 'mercados' : (categoria === 'outros' ? 'outros' : 'mercados')); return; }
+    if (passo === 'backlay') { setPasso(categoria === 'outros' ? 'outros' : 'mercados'); return; }
   }
 
   const labelMandante = mandante || 'Mandante';
@@ -125,7 +133,7 @@ export default function SeletorMercado({ aberto, operacao = 'bet', onFechar, onS
             <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {passo === 'categoria' && `Escolha o Mercado (${operacao === 'exchange' ? 'Exchange' : 'Bet'})`}
               {passo === 'tempo' && `${tituloCategoria} — Escolha o Período`}
-              {passo === 'mercados' && (categoria === 'gols' ? `Gols — ${TEMPOS_GOLS.find((t) => t.id === tempo)?.label}` : tituloCategoria)}
+              {passo === 'mercados' && `${tituloCategoria} — ${TEMPOS.find((t) => t.id === tempo)?.label}`}
               {passo === 'outros' && 'Mercado Personalizado'}
               {passo === 'backlay' && 'A Favor ou Contra?'}
             </div>
@@ -148,10 +156,10 @@ export default function SeletorMercado({ aberto, operacao = 'bet', onFechar, onS
           </div>
         )}
 
-        {/* PASSO 2 (só Gols): Partida / 1º Tempo / 2º Tempo */}
+        {/* PASSO 2: Partida / 1º Tempo / 2º Tempo — Gols, Cartões, Escanteios e Resultado */}
         {passo === 'tempo' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {TEMPOS_GOLS.map((t) => (
+            {TEMPOS.map((t) => (
               <button key={t.id} type="button" onClick={() => { setTempo(t.id); setPasso('mercados'); }}
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderRadius: 10, border: '1px solid var(--c3)', background: 'var(--c1)', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
                 {t.label} <ChevronRight size={15} color="var(--texto2)" />
@@ -165,7 +173,7 @@ export default function SeletorMercado({ aberto, operacao = 'bet', onFechar, onS
           <div>
             <div style={{ fontSize: 10.5, color: 'var(--texto2)', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 8 }}>Mais de / Menos de</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
-              {LINHAS[categoria].map((linha) => (
+              {linhasDaCategoria(categoria, tempo).map((linha) => (
                 <Fragment key={linha}>
                   <button type="button" onClick={() => finalizar(`${prefixoTempo()}Mais de ${linha} ${NOME_UNIDADE[categoria]}`)}
                     style={{ padding: '10px 8px', borderRadius: 8, border: '1px solid var(--verde2)', background: 'rgba(37,163,82,.12)', color: 'var(--verde2)', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>
@@ -204,7 +212,7 @@ export default function SeletorMercado({ aberto, operacao = 'bet', onFechar, onS
         {passo === 'mercados' && categoria === 'resultado' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {botoesResultado.map((texto) => (
-              <button key={texto} type="button" onClick={() => finalizar(texto)}
+              <button key={texto} type="button" onClick={() => finalizar(`${prefixoTempo()}${texto}`)}
                 style={{ padding: '12px 14px', borderRadius: 10, border: '1px solid var(--c3)', background: 'var(--c1)', color: '#fff', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', textAlign: 'left' }}>
                 {texto}
               </button>

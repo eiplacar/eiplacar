@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Target, Dice5, Plus, Circle, TrendingUp, Wallet, CheckCircle2, Trophy, Shield, ArrowLeftRight, Coins, ListFilter, PiggyBank } from 'lucide-react';
+import { Target, Dice5, Plus, Circle, TrendingUp, Wallet, CheckCircle2, Trophy, Shield, ArrowLeftRight, Coins, PiggyBank } from 'lucide-react';
 import SeletorMercado from './SeletorMercado';
 
 // ══ Nova Entrada (sub-aba "Registrar Operação" dentro de Apostas) ══
@@ -16,10 +16,10 @@ import SeletorMercado from './SeletorMercado';
 //   - Liga → ao escolher, aparecem dois selects (Mandante/Visitante) com os times
 //     daquele campeonato — em vez do combo "Jogo" único do mockup
 //   - Mercado: além do campo de texto livre (com datalist), agora tem um seletor
-//     guiado (SeletorMercado.jsx) — abre sozinho ao clicar em Bet/Exchange, ou pelo
-//     botão "Escolher". Categorias: Gols (Partida/1ºT/2ºT), Cartões, Escanteios,
-//     Resultado e Outros (mercado livre). No Exchange, pergunta A Favor (Back) ou
-//     Contra (Lay) antes de preencher o campo.
+//     guiado (SeletorMercado.jsx) — abre sozinho ao clicar em Bet/Exchange. Categorias:
+//     Gols, Cartões, Escanteios e Resultado, todas com Partida/1ºT/2ºT, e Outros
+//     (mercado livre). No Exchange, pergunta A Favor (Back) ou Contra (Lay) antes de
+//     preencher o campo.
 //   - 4º tipo de aposta "Outros" virou "Sistema": em vez de pernas de mercado+odd,
 //     pede só o valor investido e o lucro direto
 //   - Nova seção "Operação": Bet ou Exchange
@@ -41,11 +41,8 @@ export default function NovaEntrada() {
     setSeletorAberto(true);
   }
 
-  // Botão "Escolher" ao lado do campo Mercado — reabre o seletor no modo da Operação atual.
-  function abrirSeletorMercado() {
-    setSeletorOperacao(document.getElementById('eOperacao')?.value === 'exchange' ? 'exchange' : 'bet');
-    setSeletorAberto(true);
-  }
+  // Bet ou Exchange (acima) já abrem o Seletor de Mercado guiado — não tem mais nenhum
+  // outro jeito de reabri-lo além desses dois botões.
 
   // Escreve o texto escolhido no campo #eMercado (não-controlado, como o resto do form)
   // e dispara o mesmo recalculo do resumo que o campo já usava ao digitar.
@@ -108,16 +105,12 @@ export default function NovaEntrada() {
         <button type="button" onClick={() => window.setTipoAposta?.('sistema')} id="btnApostaSistema" style={{ flex: '0 0 auto', padding: '6px 16px', borderRadius: 20, border: '1px solid var(--c3)', background: 'var(--c1)', color: 'var(--texto2)', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>Sistema</button>
       </div>
 
-      {/* Mercado (Simples) — por enquanto um campo simples, sem lógica extra (vem depois) */}
+      {/* Mercado (Simples) — por enquanto um campo simples, sem lógica extra (vem depois).
+          O jeito de abrir o Seletor de Mercado guiado é clicando em Bet ou Exchange, ali
+          em cima — não precisa de um botão "Escolher" duplicado aqui do lado. */}
       <div id="blocoMercadoSimples" style={{ marginBottom: 12 }}>
         <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}><TrendingUp size={13} /> Mercado</label>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <input type="text" id="eMercado" list="mercadoDatalist" placeholder="Ex: Over 2.5" onInput={() => window.atualizarResumoEntrada?.()} style={{ flex: 1 }} />
-          <button type="button" onClick={abrirSeletorMercado}
-            style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, padding: '0 14px', borderRadius: 8, border: '1px solid var(--ouro)', background: 'rgba(245,197,24,.15)', color: 'var(--ouro)', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>
-            <ListFilter size={13} /> Escolher
-          </button>
-        </div>
+        <input type="text" id="eMercado" list="mercadoDatalist" placeholder="Ex: Over 2.5" onInput={() => window.atualizarResumoEntrada?.()} />
       </div>
 
       {/* Pernas (Dupla/Múltipla) */}

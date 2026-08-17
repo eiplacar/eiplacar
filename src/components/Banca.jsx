@@ -315,6 +315,7 @@ function AbaEvolucao() {
   }, []);
 
   const ev = window.computeEvolucao ? window.computeEvolucao() : { pontosSaldo: [0], pontosReserva: [0], melhorSequencia: 0, piorSequencia: 0, maiorDrawdown: 0, crescimentoMensal: [] };
+  const carteira = window.computeCarteira ? window.computeCarteira() : { pl: 0 };
   const r = window.computeResumoBanca ? window.computeResumoBanca() : {
     metaDiaria: 0, stopGain: 0, stopLoss: 0,
     progressoMeta: 0, metaBatida: false, faltaMeta: 0,
@@ -345,7 +346,11 @@ function AbaEvolucao() {
           badge={{ texto: `${pctSaldo >= 0 ? '↑' : '↓'} ${Math.abs(pctSaldo).toFixed(2)}%`, cor: atualSaldo >= iniSaldo ? 'var(--verde2)' : 'var(--perigo)' }}
           rodape={[
             { label: 'Início', valor: 'R$ ' + iniSaldo.toFixed(2) },
-            { label: 'Lucro Total', valor: (atualSaldo - iniSaldo >= 0 ? '+' : '') + 'R$ ' + (atualSaldo - iniSaldo).toFixed(2), cor: atualSaldo >= iniSaldo ? 'var(--verde2)' : 'var(--perigo)' },
+            // Lucro Total real: soma de TODOS os depósitos (não só o primeiro) descontada
+            // do saldo atual — antes usava "saldo atual − 1º ponto do gráfico", e como o
+            // 1º ponto é só o primeiro depósito, qualquer depósito seguinte entrava contado
+            // como se fosse lucro. window.computeCarteira().pl já soma certo (ver 14-banca-gestao.js).
+            { label: 'Lucro Total', valor: (carteira.pl >= 0 ? '+' : '') + 'R$ ' + carteira.pl.toFixed(2), cor: carteira.pl >= 0 ? 'var(--verde2)' : 'var(--perigo)' },
             { label: 'Atual', valor: 'R$ ' + atualSaldo.toFixed(2), cor: 'var(--verde2)' },
           ]}
         />
