@@ -30,6 +30,8 @@ const NOMES_CAMP_POR_LIGA = new Map([
   ['cmr77dvqg007crx06q1kaceyo', 'Ligue 1'],
   ['cmr77dvrh007vrx0664phtxs5', 'Eredivisie'],
   ['cmr77dw3900f5rx06j05wgzv4', 'UEFA Champions League'],
+  ['cmr77dvun00adrx06xz20yfxe', 'Primeira Liga'],
+  ['cmr77dvsv008srx06mier6t7r', 'Liga MX'],
 ]);
 
 // País de cada liga — mapeado pelo ID (não pelo nome), então não tem como dar
