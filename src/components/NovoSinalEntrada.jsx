@@ -84,28 +84,30 @@ export default function NovoSinalEntrada() {
     setSelecionadosApi(selecionadosApi.size === jogosApi.length ? new Set() : new Set(jogosApi.map((_, i) => i)));
   }
 
-  function adicionarSelecionadosApi() {
+  async function adicionarSelecionadosApi() {
     if (!jogosApi || !selecionadosApi.size) { window.toast?.('Marque pelo menos um jogo pra adicionar'); return; }
-    const ophLoad = window.ophLoad || (() => []);
-    const ophSave = window.ophSave || (() => {});
-    const lista = ophLoad();
-    let n = 0;
-    jogosApi.forEach((j, i) => {
-      if (!selecionadosApi.has(i)) return;
-      lista.push({
-        id: Date.now() + n, camp: j.campeonato, casa: j.casa, vis: j.vis,
+    const escolhidos = jogosApi.filter((_, i) => selecionadosApi.has(i));
+    let ok = 0, duplicados = 0, erros = 0;
+    for (const j of escolhidos) {
+      const resultado = await window.inserirJogoAgendadoNuvem({
+        camp: j.campeonato, casa: j.casa, vis: j.vis,
         rodada: normalizaRodada(j.rodada), data, horario: j.horario || '',
         mercado: '', minuto: '', odd: '', status: 'aguardando',
-        placar: '', analise: '', criadoEm: new Date().toISOString(),
       });
-      n++;
-    });
-    ophSave(lista);
+      if (resultado === 'duplicado') duplicados++;
+      else if (resultado === 'erro') erros++;
+      else ok++;
+    }
     setJogosApi(null);
     setSelecionadosApi(new Set());
+    await window.ophCarregarNuvem?.();
     window.ophRenderLista?.();
     window.renderGeral?.();
-    window.toast?.(`${n} jogo(s) adicionado(s)`);
+    const partes = [];
+    if (ok) partes.push(`${ok} jogo(s) adicionado(s)`);
+    if (duplicados) partes.push(`${duplicados} já estava(m) na lista`);
+    if (erros) partes.push(`${erros} com erro`);
+    window.toast?.(partes.join(' · ') || 'Nada adicionado', !ok && (duplicados || erros) > 0);
   }
 
   const jogosCache = window.jogosCache || [];
@@ -129,24 +131,21 @@ export default function NovoSinalEntrada() {
   function adicionar() {
     if (!casa || !vis) { window.toast?.('Selecione os dois times'); return; }
     const horario = hora && min ? `${hora}:${min}` : '';
-    const ophLoad = window.ophLoad || (() => []);
-    const ophSave = window.ophSave || (() => {});
 
-    const lista = ophLoad();
-    lista.push({
-      id: Date.now(), camp, casa, vis, rodada: rodada.trim(), data, horario,
-      mercado: '', minuto: '', odd: '', status: 'aguardando',
-      placar: '', analise: '', criadoEm: new Date().toISOString(),
-    });
-    ophSave(lista);
+    window.inserirJogoAgendadoNuvem({ camp, casa, vis, rodada: rodada.trim(), data, horario, mercado: '', minuto: '', odd: '', status: 'aguardando' })
+      .then(async (resultado) => {
+        if (resultado === 'duplicado') { window.toast?.('Esse jogo já está na lista (mesmo confronto, mesma data)', true); return; }
+        if (resultado === 'erro') { window.toast?.('Erro ao adicionar jogo', true); return; }
 
-    // Limpa só os times/rodada/horário — mantém campeonato e data (comum
-    // adicionar vários jogos seguidos do mesmo campeonato/dia)
-    setRodada(''); setHora(''); setMin(''); setCasa(''); setVis('');
+        // Limpa só os times/rodada/horário — mantém campeonato e data (comum
+        // adicionar vários jogos seguidos do mesmo campeonato/dia)
+        setRodada(''); setHora(''); setMin(''); setCasa(''); setVis('');
 
-    window.ophRenderLista?.();
-    window.renderGeral?.();
-    window.toast?.(data === (window.hojeBR?.() || data) ? 'Jogo adicionado' : `Jogo agendado para ${window.fd ? window.fd(data) : data}`);
+        await window.ophCarregarNuvem?.();
+        window.ophRenderLista?.();
+        window.renderGeral?.();
+        window.toast?.(data === (window.hojeBR?.() || data) ? 'Jogo adicionado' : `Jogo agendado para ${window.fd ? window.fd(data) : data}`);
+      });
   }
 
   const escudoCasaHtml = window.escudoImgOuIcone ? window.escudoImgOuIcone(casa) : null;

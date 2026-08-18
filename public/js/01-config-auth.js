@@ -119,19 +119,71 @@ function authGoTab(t){
   authLimparMsg();
 }
 
+// ── Termos de Uso / Política de Privacidade (modal no cadastro) ──
+function abrirModalTermos(){
+  document.getElementById('modalTermos').classList.add('open');
+}
+function fecharModalTermos(){
+  document.getElementById('modalTermos').classList.remove('open');
+}
+function aceitarTermosNoModal(){
+  const chk = document.getElementById('cadAceiteTermos');
+  if(chk) chk.checked = true;
+  authAtualizarBotaoCadastro();
+  fecharModalTermos();
+}
+// Botão "Criar Conta" só libera depois que a pessoa marcar o aceite dos termos —
+// trava na interface além da checagem que fazerCadastro() já faz por segurança.
+function authAtualizarBotaoCadastro(){
+  const chk = document.getElementById('cadAceiteTermos');
+  const btn = document.getElementById('btnCriarConta');
+  if(btn) btn.disabled = !(chk && chk.checked);
+}
+
+// ── Validações do cadastro ──
+// Nome "de verdade": exige nome + sobrenome (2+ palavras com pelo menos 2 letras cada),
+// pra barrar quem digita só "-", "." ou uma letra qualquer pra passar pelo campo obrigatório.
+function nomeCompletoValido(nome){
+  const partes = nome.split(/\s+/).filter(p => p.replace(/[^A-Za-zÀ-ÿ]/g,'').length >= 2);
+  return partes.length >= 2;
+}
+// E-mail em formato básico válido (checagem simples, o Supabase confirma de verdade por trás).
+function emailValido(email){
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+// Telefone: exige DDD + número, ignorando parênteses/traço/espaço (10 ou 11 dígitos no Brasil).
+function telefoneValido(telefone){
+  const digitos = telefone.replace(/\D/g,'');
+  return digitos.length >= 10 && digitos.length <= 11;
+}
+// Idade mínima de 18 anos, conforme os Termos de Uso.
+function maiorDeIdade(dataNascimento){
+  const nasc = new Date(dataNascimento + 'T00:00:00');
+  if(isNaN(nasc.getTime())) return false;
+  const hoje = new Date();
+  let idade = hoje.getFullYear() - nasc.getFullYear();
+  const aindaNaoFezAniversario = (hoje.getMonth() < nasc.getMonth()) ||
+    (hoje.getMonth() === nasc.getMonth() && hoje.getDate() < nasc.getDate());
+  if(aindaNaoFezAniversario) idade--;
+  return idade >= 18;
+}
+
 // ── CADASTRO ──
 async function fazerCadastro(){
-  const nome  = document.getElementById('cadNome').value.trim();
+  const nome  = document.getElementById('cadNome').value.trim().replace(/\s+/g,' ');
   const email = document.getElementById('cadEmail').value.trim();
   const telefone = document.getElementById('cadTelefone').value.trim();
   const dataNascimento = document.getElementById('cadDataNascimento').value;
   const senha = document.getElementById('cadSenha').value;
+  const aceitouTermos = document.getElementById('cadAceiteTermos')?.checked;
   authLimparMsg();
-  if(!nome)  { authMostrarMsg('️ Informe seu nome','erro'); return; }
-  if(!email) { authMostrarMsg('️ Informe seu e-mail','erro'); return; }
-  if(!telefone) { authMostrarMsg('️ Informe seu telefone','erro'); return; }
+  if(!nome || !nomeCompletoValido(nome)) { authMostrarMsg('️ Informe seu nome completo (nome e sobrenome)','erro'); return; }
+  if(!email || !emailValido(email)) { authMostrarMsg('️ Informe um e-mail válido','erro'); return; }
+  if(!telefone || !telefoneValido(telefone)) { authMostrarMsg('️ Informe um telefone válido, com DDD','erro'); return; }
   if(!dataNascimento) { authMostrarMsg('️ Informe sua data de nascimento','erro'); return; }
+  if(!maiorDeIdade(dataNascimento)) { authMostrarMsg('️ O EI PLACAR é destinado a maiores de 18 anos','erro'); return; }
   if(!senha||senha.length<6){ authMostrarMsg('️ A senha precisa ter no mínimo 6 caracteres','erro'); return; }
+  if(!aceitouTermos){ authMostrarMsg('️ É preciso ler e aceitar os Termos de Uso e a Política de Privacidade','erro'); return; }
 
   // Limpa qualquer sessão que já estivesse salva neste navegador (ex: admin testando
   // o cadastro) ANTES de criar a conta nova — evita continuar "logado" na conta antiga
@@ -162,7 +214,7 @@ async function fazerCadastro(){
       const dias = (cfgAppLoad().diasTeste) || 60;
       const hoje = hojeBR(); // corrigido pro fuso de Brasília (ver 04-utils.js)
       salvarPerfil({ assinatura_status:'trial', assinatura_inicio:hoje, assinatura_vencimento: hojeBR(dias) }).catch(()=>{});
-      salvarPerfil({ telefone, data_nascimento: dataNascimento }).catch(()=>{});
+      salvarPerfil({ telefone, data_nascimento: dataNascimento, termos_aceitos_em: new Date().toISOString() }).catch(()=>{});
     } else if(data.user && Array.isArray(data.user.identities) && data.user.identities.length===0){
       // O Supabase, por segurança, não revela se o e-mail já existe: quando a confirmação por
       // e-mail está ativada, um cadastro repetido volta como "sucesso" mas com identities:[] —
@@ -418,6 +470,7 @@ async function authIniciarSessao(){
     bpCarregarNuvem(),
     cfgAppCarregarNuvem(),
     escudosCarregarNuvem(),
+    ophCarregarNuvem().then(()=>ophRenderLista?.()),
   ]);
   authAplicarTela();
 }
@@ -549,6 +602,13 @@ async function rejeitarMembro(perfilId){
 function sbUrl(filtros) {
   const cfg = getConfig();
   return cfg.url.replace(/\/$/, '') + '/rest/v1/jogos' + (filtros || '');
+}
+
+// URL base da tabela "Jogos Agendados" (Dashboard/Oportunidades) — compartilhada
+// entre todas as contas (ver public/js/11-jogosdodia.js)
+function sbUrlAgendados(filtros) {
+  const cfg = getConfig();
+  return cfg.url.replace(/\/$/, '') + '/rest/v1/jogos_agendados' + (filtros || '');
 }
 
 function setSyncStatus(estado, msg) {

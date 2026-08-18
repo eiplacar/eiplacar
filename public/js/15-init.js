@@ -32,6 +32,7 @@
         bpCarregarNuvem(),
         cfgAppCarregarNuvem(),
         escudosCarregarNuvem(),
+        ophCarregarNuvem().then(()=>ophRenderLista?.()),
       ]);
     }
   }

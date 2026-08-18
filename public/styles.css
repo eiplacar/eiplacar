@@ -544,6 +544,23 @@ footer { background: var(--c2); border-top: 1px solid var(--c3); text-align: cen
 .auth-msg.info { background:rgba(209,213,219,.15); border:1px solid var(--texto2); color:var(--texto2); }
 .auth-msg.ok   { background:rgba(34,197,94,.18); border:1px solid var(--verde2); color:#4dd87a; }
 
+/* Checkbox de aceite dos Termos/Privacidade no cadastro */
+.auth-termos-check { display:flex; align-items:flex-start; gap:8px; font-size:12px; color:var(--texto2); line-height:1.5; margin-bottom:16px; cursor:pointer; }
+.auth-termos-check input[type="checkbox"] { width:16px; height:16px; flex-shrink:0; margin-top:1px; accent-color:var(--ouro); cursor:pointer; }
+.auth-termos-check a { color:var(--ouro); text-decoration:none; }
+.auth-termos-check a:hover { text-decoration:underline; }
+.btn-primary:disabled { opacity:.45; cursor:not-allowed; }
+input:disabled, select:disabled { opacity:.5; cursor:not-allowed; background:var(--c1); }
+
+/* Modal de Termos de Uso / Política de Privacidade */
+.modal-termos { max-width:560px; }
+.termos-texto { max-height:56vh; overflow-y:auto; font-size:13px; color:var(--texto2); line-height:1.65; padding-right:4px; margin-bottom:16px; }
+.termos-texto h3 { font-size:14px; font-weight:800; color:var(--ouro); margin:18px 0 8px; }
+.termos-texto h3:first-child { margin-top:0; }
+.termos-texto p { margin-bottom:10px; }
+.termos-texto .termos-data { font-size:11px; color:var(--texto2); opacity:.7; margin-bottom:12px; }
+.termos-texto strong { color:var(--texto); }
+
 /* Tela de espera de aprovação / acesso restrito */
 #waitScreen, #blockScreen { display:none; position:fixed; inset:0; background:var(--c1); z-index:480; align-items:center; justify-content:center; padding:20px; text-align:center; }
 #waitScreen.open, #blockScreen.open { display:flex; }

@@ -61,11 +61,15 @@
       <label>Data de nascimento</label>
       <input type="date" id="cadDataNascimento" style="margin-bottom:12px">
       <label>Senha</label>
-      <div class="pwd-wrap" style="margin-bottom:18px">
+      <div class="pwd-wrap" style="margin-bottom:14px">
         <input type="password" id="cadSenha" placeholder="mínimo 6 caracteres">
         <button type="button" class="pwd-eye" onclick="togglePwd('cadSenha', this)"><span data-ic="eye" data-ic-size="16"></span></button>
       </div>
-      <button class="btn-primary" onclick="fazerCadastro()">Criar Conta</button>
+      <label class="auth-termos-check">
+        <input type="checkbox" id="cadAceiteTermos" onchange="authAtualizarBotaoCadastro()">
+        <span>Li e aceito os <a href="javascript:void(0)" onclick="event.preventDefault(); event.stopPropagation(); abrirModalTermos();">Termos de Uso</a> e a <a href="javascript:void(0)" onclick="event.preventDefault(); event.stopPropagation(); abrirModalTermos();">Política de Privacidade</a></span>
+      </label>
+      <button class="btn-primary" id="btnCriarConta" onclick="fazerCadastro()" disabled>Criar Conta</button>
     </div>
 
     <!-- RECUPERAR SENHA (pede e-mail e envia link) -->
@@ -85,6 +89,86 @@
         <button type="button" class="pwd-eye" onclick="togglePwd('novaSenha', this)"><span data-ic="eye" data-ic-size="16"></span></button>
       </div>
       <button class="btn-primary" onclick="salvarNovaSenha()"><span data-ic="save" data-ic-size="14"></span> Salvar nova senha</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: TERMOS DE USO E POLÍTICA DE PRIVACIDADE ══ -->
+<div class="modal-overlay" id="modalTermos">
+  <div class="modal modal-termos">
+    <h2>Termos de Uso e Política de Privacidade</h2>
+    <div class="termos-texto">
+      <h3>Sobre o EI PLACAR</h3>
+      <p>O EI PLACAR é uma plataforma de inteligência esportiva desenvolvida para transformar dados em informações claras, confiáveis e relevantes.</p>
+      <p>Nossa missão é oferecer estatísticas e análises que auxiliem os usuários a compreender melhor o desempenho das equipes e das partidas, contribuindo para uma visão mais completa do futebol por meio de dados.</p>
+      <p>O EI PLACAR não é uma plataforma de apostas. É uma plataforma dedicada à análise de dados, estatísticas e informações esportivas, desenvolvida para quem busca acompanhar o futebol com mais conhecimento e embasamento.</p>
+      <p>Nosso compromisso é fornecer informações organizadas, confiáveis e de fácil compreensão, sempre buscando aprimorar a experiência dos usuários e a qualidade dos conteúdos disponibilizados.</p>
+      <p>© 2026 EI PLACAR. Todos os direitos reservados.</p>
+
+      <h3>Política de Privacidade</h3>
+      <p class="termos-data">Última atualização: 2026</p>
+      <p>O EI PLACAR respeita a privacidade dos seus usuários e está comprometido com a proteção dos dados pessoais.</p>
+
+      <p><strong>1. Coleta de informações</strong><br>
+      Coletamos apenas as informações necessárias para o funcionamento da plataforma, como nome, e-mail, telefone (quando informado) e demais dados fornecidos pelo usuário durante o cadastro.</p>
+
+      <p><strong>2. Uso das informações</strong><br>
+      As informações coletadas são utilizadas para: identificar o usuário na plataforma; gerenciar assinaturas e acessos; melhorar a experiência de uso; enviar comunicações importantes sobre o serviço.</p>
+
+      <p><strong>3. Compartilhamento de dados</strong><br>
+      O EI PLACAR não vende nem comercializa dados pessoais dos usuários. As informações poderão ser compartilhadas apenas quando exigido por lei ou quando necessário para o funcionamento dos serviços contratados.</p>
+
+      <p><strong>4. Segurança</strong><br>
+      Adotamos medidas de segurança para proteger os dados dos usuários contra acesso não autorizado, alteração, divulgação ou destruição.</p>
+
+      <p><strong>5. Cookies</strong><br>
+      O aplicativo poderá utilizar tecnologias semelhantes a cookies para melhorar a experiência do usuário e analisar o uso da plataforma.</p>
+
+      <p><strong>6. Direitos do usuário</strong><br>
+      O usuário poderá solicitar a atualização, correção ou exclusão de seus dados, conforme permitido pela legislação aplicável.</p>
+
+      <p><strong>7. Alterações</strong><br>
+      Esta Política de Privacidade poderá ser atualizada a qualquer momento. A versão mais recente estará sempre disponível no aplicativo.</p>
+
+      <p><strong>8. Contato</strong><br>
+      Em caso de dúvidas sobre esta Política de Privacidade, entre em contato pelos canais oficiais de suporte do EI PLACAR.</p>
+
+      <h3>Termos de Uso</h3>
+      <p class="termos-data">Última atualização: 2026</p>
+      <p>Bem-vindo ao EI PLACAR. Ao acessar ou utilizar a plataforma, o usuário declara que leu, compreendeu e concorda com os presentes Termos de Uso.</p>
+
+      <p><strong>1. Objetivo da Plataforma</strong><br>
+      O EI PLACAR é uma plataforma de inteligência esportiva que disponibiliza dados, estatísticas e análises sobre partidas e equipes de futebol, com finalidade exclusivamente informativa.</p>
+      <p>O EI PLACAR não realiza apostas esportivas, não intermedeia apostas e não garante resultados de eventos esportivos.</p>
+
+      <p><strong>2. Idade Mínima</strong><br>
+      O EI PLACAR é destinado a usuários com 18 (dezoito) anos ou mais. Ao utilizar a plataforma, o usuário declara possuir idade igual ou superior a 18 anos e estar legalmente apto a utilizar os serviços oferecidos.</p>
+
+      <p><strong>3. Uso da Plataforma</strong><br>
+      O usuário compromete-se a utilizar a plataforma de forma responsável, ética e em conformidade com a legislação vigente.</p>
+      <p>É proibida a utilização do EI PLACAR para atividades ilícitas, fraudulentas ou que possam prejudicar a plataforma, seus serviços ou outros usuários.</p>
+
+      <p><strong>4. Uso das Informações</strong><br>
+      As estatísticas, análises e demais conteúdos disponibilizados possuem caráter exclusivamente informativo.</p>
+      <p>O futebol é um esporte imprevisível e nenhuma informação disponibilizada pelo EI PLACAR constitui garantia de resultados futuros.</p>
+      <p>Qualquer decisão tomada pelo usuário com base nas informações fornecidas é de sua exclusiva responsabilidade.</p>
+
+      <p><strong>5. Propriedade Intelectual</strong><br>
+      Todo o conteúdo disponibilizado pelo EI PLACAR, incluindo identidade visual, logotipos, textos, gráficos, análises, estatísticas e demais materiais, é protegido pela legislação de direitos autorais e de propriedade intelectual.</p>
+      <p>É proibida a reprodução, distribuição ou utilização desses conteúdos sem autorização prévia do EI PLACAR.</p>
+
+      <p><strong>6. Disponibilidade dos Serviços</strong><br>
+      O EI PLACAR busca manter seus serviços disponíveis continuamente. Entretanto, poderão ocorrer interrupções temporárias decorrentes de manutenção, atualização, falhas técnicas ou fatores externos.</p>
+
+      <p><strong>7. Alterações dos Termos</strong><br>
+      Os presentes Termos de Uso poderão ser alterados a qualquer momento. A versão mais recente estará sempre disponível no aplicativo.</p>
+
+      <p><strong>8. Contato</strong><br>
+      Em caso de dúvidas sobre estes Termos de Uso, entre em contato pelos canais oficiais de suporte do EI PLACAR.</p>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-primary" onclick="aceitarTermosNoModal()">Li e aceito</button>
+      <button class="btn-fechar-cfg" onclick="fecharModalTermos()">Fechar</button>
     </div>
   </div>
 </div>
@@ -304,6 +388,7 @@
 <div class="modal-overlay" id="modalEditarOportunidade">
   <div class="modal" style="max-width:380px">
     <h2 style="font-size:15px;margin-bottom:12px"><span data-ic="pencil" data-ic-size="15"></span> Editar Oportunidade</h2>
+    <div id="ophEditAvisoMembro" style="display:none;font-size:11px;color:var(--texto2);background:var(--c1);border:1px solid var(--c3);border-radius:8px;padding:8px 10px;margin-bottom:12px;line-height:1.5">Só o organizador pode alterar Campeonato/Times/Data/Horário. Você pode editar Mercado, Minuto, Odd e Situação.</div>
     <div style="margin-bottom:10px"><label>Campeonato</label><input type="text" id="ophEditCamp" placeholder="Ex: Brasileirão Série A"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
       <div><label>Mandante</label><input type="text" id="ophEditCasa"></div>
