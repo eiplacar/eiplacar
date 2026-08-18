@@ -538,6 +538,22 @@ const CRITERIOS_LIGA = {
     {tipo:'geral', campo:'pts'}, {tipo:'geral', campo:'sg'}, {tipo:'geral', campo:'gp'},
     {tipo:'confronto', campo:'pts'},
   ],
+  'Liga Portugal': [ // Portugal — Liga Portugal Betclic, regulamento 2026/27
+    {tipo:'confronto', campo:'pts'}, {tipo:'confronto', campo:'sg'},
+    {tipo:'geral', campo:'sg'}, {tipo:'geral', campo:'v'}, {tipo:'geral', campo:'gp'},
+    // Detalhe do regulamento que a simulação não cobre: se as duas equipas ainda não
+    // se enfrentaram nos 2 jogos do returno, o critério de saldo do confronto direto
+    // não é pra valer — aqui ele sempre entra na conta (mesma simplificação já usada
+    // pros outros campeonatos: o que sobrar empatado fica na ordem que já estava).
+  ],
+  'Liga MX': [ // México
+    {tipo:'geral', campo:'pts'}, {tipo:'geral', campo:'sg'}, {tipo:'geral', campo:'gp'},
+    {tipo:'confronto', campo:'pts'}, {tipo:'geral', campo:'gpFora'}, {tipo:'geral', campo:'fairPlay'},
+    // "Tabla General de Cociente" (posição por aproveitamento histórico entre várias
+    // temporadas) não dá pra simular só com os jogos de uma temporada — e depois dela
+    // ainda tem sorteio. Se empatar até aqui, fica na ordem que já estava (igual às
+    // outras ligas).
+  ],
 };
 CRITERIOS_LIGA['2. Bundesliga'] = CRITERIOS_LIGA['Bundesliga']; // mesmos critérios da Bundesliga
 
@@ -566,7 +582,7 @@ function computeClassificacao(camp, modo){
   });
 
   const tab = {};
-  function linhaTime(nome){ return tab[nome] || (tab[nome] = {j:0,v:0,e:0,d:0,gp:0,gc:0,vermelhos:0,amarelos:0,vFora:0}); }
+  function linhaTime(nome){ return tab[nome] || (tab[nome] = {j:0,v:0,e:0,d:0,gp:0,gc:0,vermelhos:0,amarelos:0,vFora:0,gpFora:0}); }
   const incluiCasa = modo!=='visitante';
   const incluiVis  = modo!=='casa';
   jogos.forEach(j=>{
@@ -578,7 +594,7 @@ function computeClassificacao(camp, modo){
     }
     if(incluiVis){
       const v = linhaTime(j.vis);
-      v.j++; v.gp += (j.gV||0); v.gc += (j.gC||0);
+      v.j++; v.gp += (j.gV||0); v.gc += (j.gC||0); v.gpFora += (j.gV||0);
       v.vermelhos += (j.vermelhosV||0); v.amarelos += (j.amarelosV||0);
       if(j.gV>j.gC){ v.v++; v.vFora++; } else if(j.gV<j.gC) v.d++; else v.e++;
     }
