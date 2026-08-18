@@ -538,7 +538,7 @@ const CRITERIOS_LIGA = {
     {tipo:'geral', campo:'pts'}, {tipo:'geral', campo:'sg'}, {tipo:'geral', campo:'gp'},
     {tipo:'confronto', campo:'pts'},
   ],
-  'Liga Portugal': [ // Portugal — Liga Portugal Betclic, regulamento 2026/27
+  'Primeira Liga': [ // Portugal — Liga Portugal Betclic, regulamento 2026/27
     {tipo:'confronto', campo:'pts'}, {tipo:'confronto', campo:'sg'},
     {tipo:'geral', campo:'sg'}, {tipo:'geral', campo:'v'}, {tipo:'geral', campo:'gp'},
     // Detalhe do regulamento que a simulação não cobre: se as duas equipas ainda não
