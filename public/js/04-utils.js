@@ -40,8 +40,8 @@ function comEspeciaisPorUltimo(camps){
 // adivinhar pelo nome. Esse dicionário deixa de ser necessário assim que todos
 // os jogos antigos forem migrados; mantido aqui só como rede de segurança.
 const PAIS_CAMPEONATO = {
-  'Série A': 'Brasil', 'Série B': 'Brasil', 'Série C': 'Brasil', 'Série D': 'Brasil',
   'Brasileirão Série A': 'Brasil', 'Brasileirão Série B': 'Brasil',
+  'Série C': 'Brasil', 'Série D': 'Brasil',
   'Copa do Brasil': 'Brasil', 'Carioca': 'Brasil', 'Paulista': 'Brasil', 'Mineiro': 'Brasil', 'Gaúcho': 'Brasil',
   'Serie A': 'Itália', 'Serie B': 'Itália', 'Coppa Italia': 'Itália',
   'Premier League': 'Inglaterra', 'Championship': 'Inglaterra', 'FA Cup': 'Inglaterra', 'EFL Cup': 'Inglaterra',

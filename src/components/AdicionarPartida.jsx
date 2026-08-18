@@ -55,11 +55,13 @@ export default function AdicionarPartida() {
       {/* O título "Adicionar Partida" já aparece na sub-aba logo acima — não precisa repetir aqui dentro */}
 
       {/* Campeonato + País — país garante que "Série A" (Brasil) nunca se confunda
-          com "Serie A" (Itália) ou qualquer outro nome parecido de outro país */}
+          com "Serie A" (Itália) ou qualquer outro nome parecido de outro país.
+          Use sempre "Brasileirão Série A"/"Brasileirão Série B" (nunca "Série A"/
+          "Série B" sozinho), pra bater com o nome que o backend usa. */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
         <div>
           <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Trophy size={13} /> Campeonato <span style={{ color: 'var(--perigo)' }}>*</span></label>
-          <input type="text" id="iCamp" placeholder="Ex: Série A" list="campSug" onInput={() => window.onCampInput?.()} />
+          <input type="text" id="iCamp" placeholder="Ex: Brasileirão Série A" list="campSug" onInput={() => window.onCampInput?.()} />
           <datalist id="campSug"></datalist>
         </div>
         <div>

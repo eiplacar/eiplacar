@@ -46,6 +46,8 @@ const PAIS_POR_LIGA = new Map([
   ['cmr77dvqg007crx06q1kaceyo', 'França'],
   ['cmr77dvrh007vrx0664phtxs5', 'Holanda'],
   ['cmr77dw3900f5rx06j05wgzv4', 'Europa'],
+  ['cmr77dvun00adrx06xz20yfxe', 'Portugal'],
+  ['cmr77dvsv008srx06mier6t7r', 'México'],
 ]);
 
 // A GOAL API cobre o mundo inteiro (500+ ligas). Buscar tudo por "date" sem leagueId
@@ -108,11 +110,20 @@ function formatarRodada(matchRound) {
 // real de transmissão; se ainda estiver errado, ajuste esse número até bater.
 const AJUSTE_FUSO_HORAS = -2;
 
-function horarioBR(matchDate, matchTime) {
+// A Liga MX é bem mais a oeste (México ~UTC-5/-6) que as ligas europeias/Brasil, então
+// o mesmo ajuste de -2h não serve — foi relatada uma diferença de 5h nela especificamente.
+// -2 (padrão) + 5h = +3: ajuste só pra essa liga. Se ainda estiver errado depois de
+// conferir contra um jogo real, é só corrigir o número abaixo (mesma lógica do ajuste padrão).
+const AJUSTE_FUSO_POR_LIGA = {
+  'cmr77dvsv008srx06mier6t7r': 3, // Liga MX
+};
+
+function horarioBR(matchDate, matchTime, leagueId) {
   if (!matchDate || !matchTime) return '';
   const dt = new Date(`${matchDate}T${matchTime}:00Z`);
   if (Number.isNaN(dt.getTime())) return '';
-  dt.setUTCHours(dt.getUTCHours() + AJUSTE_FUSO_HORAS);
+  const ajuste = AJUSTE_FUSO_POR_LIGA[leagueId] ?? AJUSTE_FUSO_HORAS;
+  dt.setUTCHours(dt.getUTCHours() + ajuste);
   return dt.toLocaleTimeString('pt-BR', {
     hour: '2-digit',
     minute: '2-digit',
@@ -154,7 +165,7 @@ export const handler = async function (event) {
         vis: f.awayTeamName,
         escudoCasa: f.teamHomeBadge,
         escudoVis: f.teamAwayBadge,
-        horario: horarioBR(f.matchDate, f.matchTime),
+        horario: horarioBR(f.matchDate, f.matchTime, f.leagueId),
       }))
       .sort((a, b) => a.horario.localeCompare(b.horario));
 

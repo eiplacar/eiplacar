@@ -53,6 +53,13 @@ function LinhaJogo({ j, numero, mapasClassificacao }) {
   const rankC = rankCApi ? j.rankC : mapasClassificacao?.[j.camp]?.[j.casa] ?? null;
   const rankV = rankVApi ? j.rankV : mapasClassificacao?.[j.camp]?.[j.vis] ?? null;
 
+  // Mesma faixa colorida (Champions/Libertadores/rebaixamento etc) que já aparece na
+  // aba Classificação, agora também aqui — pra bater visualmente com a posição, mesmo
+  // quando ela vem calculada na mão (não direto da API). window.zonaPosicao já existe
+  // em public/js/12-banca-futebol.js (função "function" vira global sozinha).
+  const zonaC = window.zonaPosicao?.(j.camp, rankC);
+  const zonaV = window.zonaPosicao?.(j.camp, rankV);
+
   return (
     <tr>
       <td style={{ color: 'var(--texto2)' }}>{numero}</td>
@@ -63,8 +70,10 @@ function LinhaJogo({ j, numero, mapasClassificacao }) {
       <td><strong>{j.casa}</strong></td>
       <td className="td-c">{j.gC} × {j.gV}</td>
       <td><strong>{j.vis}</strong></td>
-      <td className="td-r" style={!rankCApi && rankC != null ? { opacity: .7, fontStyle: 'italic' } : undefined} title={!rankCApi && rankC != null ? 'Calculado pelos critérios da CBF (a API não entregou rank)' : undefined}>{rankC ?? '—'}</td>
-      <td className="td-r" style={!rankVApi && rankV != null ? { opacity: .7, fontStyle: 'italic' } : undefined} title={!rankVApi && rankV != null ? 'Calculado pelos critérios da CBF (a API não entregou rank)' : undefined}>{rankV ?? '—'}</td>
+      <td className="td-r" title={zonaC?.label || (!rankCApi && rankC != null ? 'Calculado pelos critérios oficiais (a API não entregou rank)' : undefined)}
+        style={{ ...(!rankCApi && rankC != null ? { opacity: .7, fontStyle: 'italic' } : {}), ...(zonaC ? { boxShadow: `inset 4px 0 0 0 ${zonaC.cor}` } : {}) }}>{rankC ?? '—'}</td>
+      <td className="td-r" title={zonaV?.label || (!rankVApi && rankV != null ? 'Calculado pelos critérios oficiais (a API não entregou rank)' : undefined)}
+        style={{ ...(!rankVApi && rankV != null ? { opacity: .7, fontStyle: 'italic' } : {}), ...(zonaV ? { boxShadow: `inset 4px 0 0 0 ${zonaV.cor}` } : {}) }}>{rankV ?? '—'}</td>
       <td className="td-c" style={{ fontSize: 13, color: 'var(--texto2)', whiteSpace: 'nowrap' }}>{ht}</td>
       <td className="td-c" style={{ fontSize: 13, color: 'var(--texto2)', whiteSpace: 'nowrap' }}>{st}</td>
       <td className="td-c" style={{ fontSize: 11, color: 'var(--texto2)' }}>{chutes}</td>

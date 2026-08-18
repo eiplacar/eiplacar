@@ -381,6 +381,17 @@ const ZONAS_LIGA = {
     { de:1,  ate:4,  cor:CORES_ZONA.azulEscuro,     label:'Liga dos Campeões (Fase de Liga)' },
     { de:5,  ate:5,  cor:CORES_ZONA.vermelhoEscuro, label:'Liga Europa (Fase de Liga)' },
     { de:18, ate:20, cor:CORES_ZONA.vermelhoClaro,  label:'Rebaixamento — Championship' }
+  ],
+  portugal: [ // Primeira Liga
+    { de:1,  ate:2,  cor:CORES_ZONA.azulEscuro,      label:'Liga dos Campeões (Fase de Liga)' },
+    { de:3,  ate:3,  cor:CORES_ZONA.azulClaro,       label:'Liga dos Campeões (Qualificação)' },
+    { de:4,  ate:4,  cor:CORES_ZONA.vermelhoEscuro,  label:'Liga Europa (Qualificação)' },
+    { de:5,  ate:5,  cor:CORES_ZONA.amareloOuro,     label:'Liga Conferência (Qualificação)' },
+    { de:16, ate:16, cor:CORES_ZONA.vermelhoClaro,   label:'Liga Portugal Betclic (Despromoção)' },
+    { de:17, ate:18, cor:CORES_ZONA.vermelhoLaranja, label:'Despromoção — Liga Portugal 2' }
+  ],
+  mexico: [ // Liga MX
+    { de:1,  ate:8,  cor:CORES_ZONA.azulEscuro, label:'Liga MX (Abertura — Playoffs: Quartas de final)' }
   ]
 };
 function zonasDaLiga(camp){
@@ -391,6 +402,8 @@ function zonasDaLiga(camp){
   if(c.includes('bundesliga')) return ZONAS_LIGA.bund1;
   if(c.includes('la liga')||c.includes('laliga')) return ZONAS_LIGA.laliga;
   if(c.includes('premier')) return ZONAS_LIGA.premier;
+  if(c.includes('primeira liga')) return ZONAS_LIGA.portugal;
+  if(c.includes('liga mx')) return ZONAS_LIGA.mexico;
   return null;
 }
 function zonaPosicao(camp, pos){

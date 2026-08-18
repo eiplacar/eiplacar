@@ -48,6 +48,8 @@ const PAIS_POR_LIGA = new Map([
   ['cmr77dvqg007crx06q1kaceyo', 'França'],
   ['cmr77dvrh007vrx0664phtxs5', 'Holanda'],
   ['cmr77dw3900f5rx06j05wgzv4', 'Europa'],
+  ['cmr77dvun00adrx06xz20yfxe', 'Portugal'],
+  ['cmr77dvsv008srx06mier6t7r', 'México'],
 ]);
 
 function dataHojeSaoPaulo() {
