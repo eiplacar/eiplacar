@@ -344,7 +344,9 @@ const CORES_ZONA = {
   vermelhoEscuro:  '#b91c1c',
   vermelhoClaro:   '#f87171',
   amareloOuro:     '#d4af37',
-  vermelhoLaranja: '#f97316'
+  vermelhoLaranja: '#f97316',
+  vermelhoVinho:   '#7c1836',
+  vermelho:        '#dc2626'
 };
 const ZONAS_LIGA = {
   brasA: [
@@ -378,9 +380,9 @@ const ZONAS_LIGA = {
     { de:18, ate:20, cor:CORES_ZONA.vermelhoClaro,  label:'Rebaixamento — LaLiga2' }
   ],
   premier: [
-    { de:1,  ate:4,  cor:CORES_ZONA.azulEscuro,     label:'Liga dos Campeões (Fase de Liga)' },
-    { de:5,  ate:5,  cor:CORES_ZONA.vermelhoEscuro, label:'Liga Europa (Fase de Liga)' },
-    { de:18, ate:20, cor:CORES_ZONA.vermelhoClaro,  label:'Rebaixamento — Championship' }
+    { de:1,  ate:4,  cor:CORES_ZONA.azulEscuro,     label:'Qualificado - Liga dos Campeões (Fase de Liga)' },
+    { de:5,  ate:5,  cor:CORES_ZONA.vermelhoVinho,  label:'Qualificado - Liga Europa (Fase de Liga)' },
+    { de:18, ate:20, cor:CORES_ZONA.vermelhoClaro,  label:'Despromoção - Championship' }
   ],
   portugal: [ // Primeira Liga
     { de:1,  ate:2,  cor:CORES_ZONA.azulEscuro,      label:'Liga dos Campeões (Fase de Liga)' },
@@ -392,6 +394,36 @@ const ZONAS_LIGA = {
   ],
   mexico: [ // Liga MX
     { de:1,  ate:8,  cor:CORES_ZONA.azulEscuro, label:'Liga MX (Abertura — Playoffs: Quartas de final)' }
+  ],
+  ligue1: [ // França
+    { de:1,  ate:3,  cor:CORES_ZONA.azulEscuro,    label:'Qualificado - Liga dos Campeões (Fase de Liga)' },
+    { de:4,  ate:4,  cor:CORES_ZONA.azulClaro,     label:'Qualificado - Liga dos Campeões (Qualificação)' },
+    { de:5,  ate:5,  cor:CORES_ZONA.vermelhoVinho, label:'Qualificado - Liga Europa (Fase de Liga)' },
+    { de:6,  ate:6,  cor:CORES_ZONA.amareloOuro,   label:'Qualificado - Liga Conferência (Qualificação)' },
+    { de:16, ate:16, cor:CORES_ZONA.vermelho,      label:'Playoff de Rebaixamento' },
+    { de:17, ate:18, cor:CORES_ZONA.vermelhoClaro, label:'Despromoção - Liga 2' }
+  ],
+  serieA: [ // Itália
+    { de:1,  ate:4,  cor:CORES_ZONA.azulEscuro,    label:'Qualificado - Liga dos Campeões (Fase de Liga)' },
+    { de:5,  ate:5,  cor:CORES_ZONA.vermelhoVinho, label:'Qualificado - Liga Europa (Fase de Liga)' },
+    { de:6,  ate:6,  cor:CORES_ZONA.amareloOuro,   label:'Qualificado - Liga Conferência (Qualificação)' },
+    { de:18, ate:20, cor:CORES_ZONA.vermelhoClaro, label:'Despromoção - Série B' }
+  ],
+  holanda: [ // Eredivisie
+    { de:1,  ate:1,  cor:CORES_ZONA.azulEscuro,    label:'Qualificado - Liga dos Campeões (Fase da Liga)' },
+    { de:2,  ate:2,  cor:CORES_ZONA.azulClaro,     label:'Qualificado - Liga dos Campeões (Qualificação)' },
+    { de:3,  ate:3,  cor:CORES_ZONA.vermelhoVinho, label:'Qualificado - Liga Europa (Qualificação)' },
+    { de:4,  ate:7,  cor:CORES_ZONA.amareloOuro,   label:'Qualificado - Eredivisie (Liga da Conferência - Playoffs)' },
+    { de:16, ate:16, cor:CORES_ZONA.vermelho,      label:'Eredivisie (Playoff de Rebaixamento)' },
+    { de:17, ate:18, cor:CORES_ZONA.vermelhoClaro, label:'Despromoção - Eerste Divisie' }
+  ],
+  // UEFA Champions League — só a Fase da Liga (tabela única, 36 times) tem posição
+  // pra colorir. Qualificação (antes) e Playoffs/mata-mata (depois) não têm "posição",
+  // são chaveamento — por isso não entram aqui (zonaPosicao() já retorna null sozinho
+  // pra jogo sem rank, então essas fases simplesmente ficam sem cor, sem quebrar nada).
+  championsLeague: [
+    { de:1,  ate:8,  cor:CORES_ZONA.azulEscuro, label:'Qualificado - Liga dos Campeões (Playoffs: Oitavas de Final)' },
+    { de:9,  ate:24, cor:CORES_ZONA.azulClaro,  label:'Qualificado - Liga dos Campeões (Playoffs: 16 Avos de Final)' }
   ]
 };
 function zonasDaLiga(camp){
@@ -404,6 +436,10 @@ function zonasDaLiga(camp){
   if(c.includes('premier')) return ZONAS_LIGA.premier;
   if(c.includes('primeira liga')) return ZONAS_LIGA.portugal;
   if(c.includes('liga mx')) return ZONAS_LIGA.mexico;
+  if(c.includes('ligue 1')) return ZONAS_LIGA.ligue1;
+  if(c.includes('serie a') && !c.includes('brasileir')) return ZONAS_LIGA.serieA;
+  if(c.includes('eredivisie')) return ZONAS_LIGA.holanda;
+  if(c.includes('champions league')) return ZONAS_LIGA.championsLeague;
   return null;
 }
 function zonaPosicao(camp, pos){

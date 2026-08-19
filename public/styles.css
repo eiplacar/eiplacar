@@ -553,6 +553,9 @@ footer { background: var(--c2); border-top: 1px solid var(--c3); text-align: cen
 input:disabled, select:disabled { opacity:.5; cursor:not-allowed; background:var(--c1); }
 
 /* Modal de Termos de Uso / Política de Privacidade */
+/* Precisa abrir POR CIMA da tela de login/cadastro (#authScreen, z-index:500) —
+   sem isso o modal até abre, mas fica escondido atrás da tela de cadastro. */
+#modalTermos { z-index:600; }
 .modal-termos { max-width:560px; }
 .termos-texto { max-height:56vh; overflow-y:auto; font-size:13px; color:var(--texto2); line-height:1.65; padding-right:4px; margin-bottom:16px; }
 .termos-texto h3 { font-size:14px; font-weight:800; color:var(--ouro); margin:18px 0 8px; }

@@ -125,8 +125,6 @@ function ophAbrirEdicao(id){
     const el = document.getElementById(elId);
     if(el) el.disabled = !souOrganizador;
   });
-  const avisoMembro = document.getElementById('ophEditAvisoMembro');
-  if(avisoMembro) avisoMembro.style.display = souOrganizador ? 'none' : 'block';
 
   document.getElementById('modalEditarOportunidade').classList.add('open');
 }

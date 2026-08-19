@@ -471,6 +471,7 @@ async function authIniciarSessao(){
     cfgAppCarregarNuvem(),
     escudosCarregarNuvem(),
     ophCarregarNuvem().then(()=>ophRenderLista?.()),
+    favIndiceCarregarNuvem().then(()=>window.favIndiceRefresh?.()),
   ]);
   authAplicarTela();
 }

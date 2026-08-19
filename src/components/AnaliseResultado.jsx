@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Target, BarChart3, Flag, Square, Search, AlertTriangle, MapPin, Trophy, Scale, Goal, Handshake, Clock, Calendar, Timer, Home, Plane, ShieldAlert, Sunrise, Zap, Flame, X, Footprints, Award, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Target, BarChart3, Flag, Square, Search, AlertTriangle, MapPin, Trophy, Scale, Goal, Handshake, Clock, Calendar, Timer, Home, Plane, ShieldAlert, Sunrise, Zap, Flame, X, Footprints, Award, TrendingUp, TrendingDown, Minus, Gauge, Star, Trash2 } from 'lucide-react';
 
 const PERIODO_ICONE = { inicio: Sunrise, fimPrimeiro: Zap, inicioSegundo: Flame, final: Flag };
 
@@ -40,14 +40,135 @@ function HtmlChunk({ html }) {
 
 const localLbl = (loc) => (loc === 'all' ? 'Geral' : loc === 'casa' ? 'Em casa' : 'Fora');
 
+// Cor de acordo com a classificação (mesma banda usada no cálculo — 17-indice.js)
+function corClassificacao(label){
+  if (label === 'Muito forte' || label === 'Forte') return 'var(--verde2)';
+  if (label === 'Favorável' || label === 'Moderado') return 'var(--ouro)';
+  return 'var(--perigo)'; // Baixo / Muito baixo
+}
+
+// ══ ⚡ ÍNDICE — Favorita Ponto (Resultado/Gols/BTTS) — cruza Probabilidade × Estatísticas ══
+function IndiceTab({ data, favorEnviando, setFavorEnviando, tab }) {
+  const idx = window.computeIndice ? window.computeIndice(data) : null;
+  const favoritosAtivos = window.favIndiceAtivos ? window.favIndiceAtivos() : [];
+
+  if (!idx) return null;
+
+  async function favoritar() {
+    setFavorEnviando(true);
+    const r = await window.favoritarIndice?.(data, idx);
+    setFavorEnviando(false);
+    if (r === 'erro') window.toast?.('Erro ao favoritar', true);
+    else window.toast?.('Favoritado! Some sozinho em 4h.');
+  }
+
+  async function remover(id) {
+    await window.removerFavoritoIndice?.(id);
+  }
+
+  const { resultado, gols, btts } = idx;
+
+  return (
+    <div className={`sub-page ${tab === 'indice' ? 'active' : ''}`}>
+      <div className="sec">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+          <div className="sec-title" style={{ margin: 0 }}><Gauge size={14} style={{ marginRight: 4 }} />Análise do Confronto</div>
+          <button onClick={favoritar} disabled={favorEnviando}
+            style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 8, padding: '6px 10px', color: 'var(--ouro)', fontSize: 11, fontWeight: 700, cursor: favorEnviando ? 'default' : 'pointer', opacity: favorEnviando ? .6 : 1 }}>
+            <Star size={13} /> Favoritar
+          </button>
+        </div>
+
+        {/* 🏆 RESULTADO */}
+        {resultado ? (
+          <div style={{ background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 10, padding: 12, marginBottom: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--texto2)', fontWeight: 700, marginBottom: 6 }}><Trophy size={13} /> RESULTADO</div>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 4 }}>
+              <span style={{ fontSize: 16, fontWeight: 900, color: corClassificacao(resultado.classificacao) }}>{resultado.favorito || 'Equilibrado'}</span>
+              <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--ouro)' }}>{resultado.pontuacao}/100</span>
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--texto2)', marginBottom: resultado.alerta ? 8 : 0 }}>Favorita Ponto — {resultado.classificacao}</div>
+            {resultado.alerta && (
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, background: 'rgba(212,175,55,0.1)', border: '1px solid var(--ouro)', borderRadius: 8, padding: '6px 8px', fontSize: 10.5, color: 'var(--texto)' }}>
+                <AlertTriangle size={13} style={{ color: 'var(--ouro)', flexShrink: 0, marginTop: 1 }} />
+                <span>O modelo probabilístico (Poisson) favorece <strong>{resultado.favModelo}</strong> — divergência entre a probabilidade pura e os indicadores de desempenho.</span>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="empty" style={{ padding: 14 }}><p>Dados insuficientes pra calcular a Favorita Ponto de Resultado.</p></div>
+        )}
+
+        {/* ⚽ GOLS */}
+        <div style={{ background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 10, padding: 12, marginBottom: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--texto2)', fontWeight: 700, marginBottom: 6 }}><Goal size={13} /> GOLS</div>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
+            <span style={{ fontSize: 16, fontWeight: 900, color: corClassificacao(gols.classificacao) }}>{gols.classificacao}</span>
+            <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--ouro)' }}>{gols.pontuacao}/100</span>
+          </div>
+          <div style={{ fontSize: 10, color: 'var(--texto2)', marginBottom: 6 }}>Principal linha: <strong style={{ color: 'var(--texto)' }}>+{gols.principalLinha}</strong></div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {gols.linhas.map((l) => (
+              <div key={l.linha} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11 }}>
+                <span>Over {l.linha}</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ color: 'var(--texto2)' }}>{l.prob}%</span>
+                  <span style={{ color: l.cor, fontWeight: 700 }}>{l.label}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 🤝 BTTS */}
+        <div style={{ background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 10, padding: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--texto2)', fontWeight: 700, marginBottom: 6 }}><Handshake size={13} /> BTTS (AMBAS MARCAM)</div>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 4 }}>
+            <span style={{ fontSize: 16, fontWeight: 900, color: corClassificacao(btts.classificacao) }}>{btts.classificacao}</span>
+            <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--ouro)' }}>{btts.pontuacao}/100</span>
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--texto2)' }}>BTTS Sim: <strong style={{ color: 'var(--texto)' }}>{btts.pctSim}%</strong> · BTTS Não: <strong style={{ color: 'var(--texto)' }}>{100 - btts.pctSim}%</strong></div>
+        </div>
+      </div>
+
+      {/* ⭐ Favoritados — privado da SUA conta, some sozinho 4h depois */}
+      <div className="sec">
+        <div className="sec-title"><Star size={14} style={{ marginRight: 4 }} />Favoritados ({favoritosAtivos.length})</div>
+        {favoritosAtivos.length === 0 ? (
+          <div className="empty" style={{ padding: 14 }}><p>Nenhum confronto favoritado ainda. Toque em "Favoritar" acima pra salvar esse aqui.</p></div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {favoritosAtivos.map((f) => (
+              <div key={f.id} style={{ background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 10, padding: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <span style={{ fontSize: 12, fontWeight: 700 }}>{f.casa} × {f.vis}</span>
+                  <button onClick={() => remover(f.id)} title="Remover" style={{ background: 'none', border: 'none', color: 'var(--texto2)', cursor: 'pointer', padding: 2 }}><Trash2 size={13} /></button>
+                </div>
+                {f.camp && <div style={{ fontSize: 10, color: 'var(--texto2)', marginBottom: 6 }}>{f.camp}</div>}
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', fontSize: 10 }}>
+                  {f.resultado_favorito && <span style={{ background: 'var(--c1)', borderRadius: 6, padding: '3px 7px', color: corClassificacao(f.resultado_classificacao) }}>🏆 {f.resultado_favorito} · {f.resultado_pontuacao}/100</span>}
+                  {f.gols_classificacao && <span style={{ background: 'var(--c1)', borderRadius: 6, padding: '3px 7px', color: corClassificacao(f.gols_classificacao) }}>⚽ +{f.gols_linha} · {f.gols_pontuacao}/100</span>}
+                  {f.btts_classificacao && <span style={{ background: 'var(--c1)', borderRadius: 6, padding: '3px 7px', color: corClassificacao(f.btts_classificacao) }}>🤝 {f.btts_pct}% · {f.btts_pontuacao}/100</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function AnaliseResultado() {
   const [, setTick] = useState(0);
   const [tab, setTab] = useState('prob');
   const [jogoSel, setJogoSel] = useState(null);
+  const [favorEnviando, setFavorEnviando] = useState(false);
 
   useEffect(() => {
     window.analiseResultadoRefresh = () => setTick((t) => t + 1);
-    return () => { delete window.analiseResultadoRefresh; };
+    window.favIndiceRefresh = () => setTick((t) => t + 1);
+    return () => { delete window.analiseResultadoRefresh; delete window.favIndiceRefresh; };
   }, []);
 
   const data = window.analiseResultado || { estado: 'faltam-times' };
@@ -92,6 +213,7 @@ export default function AnaliseResultado() {
       <div className="sub-nav">
         <button className={`sub-tab ${tab === 'prob' ? 'active' : ''}`} onClick={() => { window.toastEsconder?.(); setTab('prob'); }}><Target size={14} style={{ verticalAlign: -2, marginRight: 4 }} />Probabilidade</button>
         <button className={`sub-tab ${tab === 'estat' ? 'active' : ''}`} onClick={() => { window.toastEsconder?.(); setTab('estat'); }}><BarChart3 size={14} style={{ verticalAlign: -2, marginRight: 4 }} />Estatísticas</button>
+        <button className={`sub-tab ${tab === 'indice' ? 'active' : ''}`} onClick={() => { window.toastEsconder?.(); setTab('indice'); }}><Gauge size={14} style={{ verticalAlign: -2, marginRight: 4 }} />Índice</button>
       </div>
 
       <div className={`sub-page ${tab === 'prob' ? 'active' : ''}`}>
@@ -477,6 +599,8 @@ export default function AnaliseResultado() {
           </div>
         ))}
       </div>
+
+      <IndiceTab data={data} favorEnviando={favorEnviando} setFavorEnviando={setFavorEnviando} tab={tab} />
 
       {jogoSel && (
         <div className="modal-overlay open" onClick={() => setJogoSel(null)}>
