@@ -46,6 +46,13 @@ function corClassificacao(label){
   if (label === 'Favorável' || label === 'Moderado') return 'var(--ouro)';
   return 'var(--perigo)'; // Baixo / Muito baixo
 }
+// Mesma banda, mas pra uma linha de gols específica (Over X.5) — usada nos badges de
+// "Favoritados", que só guardam a probabilidade (%), não o rótulo pronto.
+function corLinha(prob){
+  if (prob>=75 || prob>=60) return 'var(--verde2)'; // Forte / Favorável
+  if (prob>=45) return 'var(--ouro)'; // Moderado
+  return 'var(--perigo)'; // Arriscado / Muito arriscado
+}
 
 // ══ ⚡ ÍNDICE — Favorita Ponto (Resultado/Gols/BTTS) — cruza Probabilidade × Estatísticas ══
 function IndiceTab({ data, favorEnviando, setFavorEnviando, tab }) {
@@ -106,7 +113,7 @@ function IndiceTab({ data, favorEnviando, setFavorEnviando, tab }) {
             <span style={{ fontSize: 16, fontWeight: 900, color: corClassificacao(gols.classificacao) }}>{gols.classificacao}</span>
             <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--ouro)' }}>{gols.pontuacao}/100</span>
           </div>
-          <div style={{ fontSize: 10, color: 'var(--texto2)', marginBottom: 6 }}>Principal linha: <strong style={{ color: 'var(--texto)' }}>+{gols.principalLinha}</strong></div>
+          <div style={{ fontSize: 10, color: 'var(--texto2)', marginBottom: 6 }}>Mercados mais pontuados: <strong style={{ color: 'var(--texto)' }}>+{gols.top2[0]?.linha} · {gols.top2[0]?.prob}/100</strong>{gols.top2[1] && <> e <strong style={{ color: 'var(--texto)' }}>+{gols.top2[1].linha} · {gols.top2[1].prob}/100</strong></>}</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {gols.linhas.map((l) => (
               <div key={l.linha} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11 }}>
@@ -147,7 +154,8 @@ function IndiceTab({ data, favorEnviando, setFavorEnviando, tab }) {
                 {f.camp && <div style={{ fontSize: 10, color: 'var(--texto2)', marginBottom: 6 }}>{f.camp}</div>}
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', fontSize: 10 }}>
                   {f.resultado_favorito && <span style={{ background: 'var(--c1)', borderRadius: 6, padding: '3px 7px', color: corClassificacao(f.resultado_classificacao) }}>🏆 {f.resultado_favorito} · {f.resultado_pontuacao}/100</span>}
-                  {f.gols_classificacao && <span style={{ background: 'var(--c1)', borderRadius: 6, padding: '3px 7px', color: corClassificacao(f.gols_classificacao) }}>⚽ +{f.gols_linha} · {f.gols_pontuacao}/100</span>}
+                  {f.gols_linha1 && <span style={{ background: 'var(--c1)', borderRadius: 6, padding: '3px 7px', color: corLinha(f.gols_prob1) }}>⚽ +{f.gols_linha1} · {f.gols_prob1}/100</span>}
+                  {f.gols_linha2 && <span style={{ background: 'var(--c1)', borderRadius: 6, padding: '3px 7px', color: corLinha(f.gols_prob2) }}>⚽ +{f.gols_linha2} · {f.gols_prob2}/100</span>}
                   {f.btts_classificacao && <span style={{ background: 'var(--c1)', borderRadius: 6, padding: '3px 7px', color: corClassificacao(f.btts_classificacao) }}>🤝 {f.btts_pct}% · {f.btts_pontuacao}/100</span>}
                 </div>
               </div>

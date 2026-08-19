@@ -25,7 +25,10 @@ create table if not exists favoritos_indice (
 
   gols_pontuacao int,
   gols_classificacao text,
-  gols_linha text,                -- "+1.5", "+2.5" etc — principal linha de Over sugerida
+  gols_linha1 text,               -- linha de Over mais bem pontuada (ex: "1.5")
+  gols_prob1 int,                 -- probabilidade dessa linha (%)
+  gols_linha2 text,               -- 2ª linha mais bem pontuada (ex: "2.5")
+  gols_prob2 int,
 
   btts_pontuacao int,
   btts_classificacao text,
@@ -34,6 +37,13 @@ create table if not exists favoritos_indice (
   criado_por uuid references auth.users(id),
   criado_em timestamptz default now()
 );
+
+-- Se você rodou uma versão anterior deste script (com a coluna única "gols_linha"),
+-- isso aqui adiciona as colunas novas sem perder o que já existe. Seguro rodar de novo.
+alter table favoritos_indice add column if not exists gols_linha1 text;
+alter table favoritos_indice add column if not exists gols_prob1 int;
+alter table favoritos_indice add column if not exists gols_linha2 text;
+alter table favoritos_indice add column if not exists gols_prob2 int;
 
 alter table favoritos_indice enable row level security;
 

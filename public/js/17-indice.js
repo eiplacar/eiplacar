@@ -161,10 +161,11 @@ function computeIndiceGols(data){
   const linhas = [
     { linha:'1.5', prob:o15 }, { linha:'2.5', prob:o25 }, { linha:'3.5', prob:o35 }, { linha:'4.5', prob:o45 },
   ].map(l=>({ ...l, ...classificarLinha(l.prob) }));
-  // Principal linha = a maior linha ainda "Favorável" (≥60%) ou melhor; se nenhuma bater, cai pra 1.5
-  const principal = [...linhas].reverse().find(l=>l.prob>=60) || linhas[0];
+  // As 2 linhas de gols mais bem pontuadas (maior probabilidade primeiro) — cada uma
+  // com a própria pontuação, em vez de escolher só "a principal" e esconder a 2ª melhor.
+  const top2 = [...linhas].sort((a,b)=>b.prob-a.prob).slice(0,2);
 
-  return { pontuacao, classificacao: classificar(pontuacao), linhas, principalLinha: principal.linha };
+  return { pontuacao, classificacao: classificar(pontuacao), linhas, top2 };
 }
 
 // ══ 🤝 ÍNDICE — BTTS ══
@@ -232,7 +233,10 @@ async function favoritarIndice(data, idx){
     resultado_alerta: !!idx.resultado?.alerta,
     gols_pontuacao: idx.gols?.pontuacao??null,
     gols_classificacao: idx.gols?.classificacao||null,
-    gols_linha: idx.gols?.principalLinha||null,
+    gols_linha1: idx.gols?.top2?.[0]?.linha||null,
+    gols_prob1: idx.gols?.top2?.[0]?.prob??null,
+    gols_linha2: idx.gols?.top2?.[1]?.linha||null,
+    gols_prob2: idx.gols?.top2?.[1]?.prob??null,
     btts_pontuacao: idx.btts?.pontuacao??null,
     btts_classificacao: idx.btts?.classificacao||null,
     btts_pct: idx.btts?.pctSim??null,
