@@ -161,9 +161,40 @@ function computeIndiceGols(data){
   const linhas = [
     { linha:'1.5', prob:o15 }, { linha:'2.5', prob:o25 }, { linha:'3.5', prob:o35 }, { linha:'4.5', prob:o45 },
   ].map(l=>({ ...l, ...classificarLinha(l.prob) }));
-  // As 2 linhas de gols mais bem pontuadas (maior probabilidade primeiro) — cada uma
-  // com a própria pontuação, em vez de escolher só "a principal" e esconder a 2ª melhor.
-  const top2 = [...linhas].sort((a,b)=>b.prob-a.prob).slice(0,2);
+
+  // ── "Mercados mais pontuados" ──
+  // BUG antigo: escolhia as 2 linhas com maior PROBABILIDADE crua (prob:o15/o25/o35/o45) e
+  // mostrava isso como se fosse uma "pontuação/100". Só que Over 1.5, 2.5, 3.5 e 4.5 são
+  // eventos encaixados (quem passa de 4.5 gols necessariamente passou de 3.5, que passou de
+  // 2.5, que passou de 1.5) — matematicamente o15 >= o25 >= o35 >= o45 SEMPRE. Ou seja, ordenar
+  // por probabilidade crua ia bater +1.5 e +2.5 em 100% dos confrontos, não importa o time nem
+  // o quanto de gol o jogo costuma ter. Também mostrava probabilidade (%) rotulada de "/100"
+  // como se fosse pontuação, o que não é a mesma coisa.
+  //
+  // Correção: cada linha ganha uma PONTUAÇÃO própria comparando a probabilidade real dessa
+  // linha com a probabilidade "esperada" pra aquela mesma linha numa partida média da liga
+  // (mesmo total de gols da liga, dividido igual pros 2 lados). 50 = exatamente dentro do
+  // parâmetro esperado pra aquela linha; acima de 50 = essa linha específica está mais
+  // provável que o normal pra ela nesse confronto; abaixo = menos provável que o normal.
+  // Isso deixa o ranking comparável ENTRE linhas diferentes (uma partida com pinta de goleada
+  // pode pontuar mais alto em +3.5/+4.5 do que em +1.5/+2.5, coisa que a probabilidade crua
+  // nunca conseguiria mostrar).
+  const lambdaBase = ligaGols/2;
+  function probOverBase(n){
+    let u=0;
+    for(let i=0;i<=10;i++) for(let j=0;j<=10;j++) if(i+j<=n) u += poisson(lambdaBase,i)*poisson(lambdaBase,j);
+    return Math.round((1-u)*100);
+  }
+  const linhasPontuadas = [
+    { linha:'1.5', base: probOverBase(1), prob:o15 },
+    { linha:'2.5', base: probOverBase(2), prob:o25 },
+    { linha:'3.5', base: probOverBase(3), prob:o35 },
+    { linha:'4.5', base: probOverBase(4), prob:o45 },
+  ].map(l => ({ linha:l.linha, pontuacao: clip100(50 + (l.prob - l.base)) }));
+  // As 2 linhas de gols mais bem pontuadas dentro dos parâmetros (maior pontuação primeiro) —
+  // cada uma com a própria pontuação, em vez de escolher só "a principal" e esconder a 2ª melhor.
+  const top2 = [...linhasPontuadas].sort((a,b)=>b.pontuacao-a.pontuacao).slice(0,2)
+    .map(l => ({ ...l, ...classificarLinha(l.pontuacao) }));
 
   return { pontuacao, classificacao: classificar(pontuacao), linhas, top2 };
 }
@@ -223,8 +254,8 @@ function favIndiceExpirado(f){
 function favIndiceAtivos(){ return favIndiceCache.filter(f=>!favIndiceExpirado(f)); }
 
 async function favoritarIndice(data, idx){
-  if(!data || data.estado!=='ok' || !idx) return 'erro';
-  if(!perfilAtual?.id) return 'erro';
+  if(!data || data.estado!=='ok' || !idx) return { erro: 'Dados da análise incompletos — selecione os dois times de novo.' };
+  if(!perfilAtual?.id) return { erro: 'Você precisa estar logado pra favoritar.' };
   const payload = {
     camp: data.camp||'', casa: data.casa, vis: data.vis,
     resultado_favorito: idx.resultado?.favorito||null,
@@ -234,9 +265,9 @@ async function favoritarIndice(data, idx){
     gols_pontuacao: idx.gols?.pontuacao??null,
     gols_classificacao: idx.gols?.classificacao||null,
     gols_linha1: idx.gols?.top2?.[0]?.linha||null,
-    gols_prob1: idx.gols?.top2?.[0]?.prob??null,
+    gols_prob1: idx.gols?.top2?.[0]?.pontuacao??null,
     gols_linha2: idx.gols?.top2?.[1]?.linha||null,
-    gols_prob2: idx.gols?.top2?.[1]?.prob??null,
+    gols_prob2: idx.gols?.top2?.[1]?.pontuacao??null,
     btts_pontuacao: idx.btts?.pontuacao??null,
     btts_classificacao: idx.btts?.classificacao||null,
     btts_pct: idx.btts?.pctSim??null,
@@ -246,11 +277,21 @@ async function favoritarIndice(data, idx){
     const res = await fetch(sbUrlFavoritos(), {
       method:'POST', headers: { ...sbHeaders(), 'Prefer':'return=representation' }, body: JSON.stringify(payload)
     });
-    if(!res.ok){ console.error(await res.text()); return 'erro'; }
+    if(!res.ok){
+      const corpo = await res.text();
+      console.error('[favoritarIndice] falhou:', res.status, corpo);
+      // Erro mais comum: a tabela `favoritos_indice` ainda não foi criada no Supabase
+      // (é preciso rodar supabase/12-favoritos-indice.sql manualmente uma vez) — nesse
+      // caso o Postgrest devolve "relation ... does not exist" (código 42P01/PGRST205).
+      if(/does not exist|PGRST205|schema cache/i.test(corpo)){
+        return { erro: 'Tabela de favoritos não existe no Supabase ainda. Rode o script supabase/12-favoritos-indice.sql no SQL Editor.' };
+      }
+      return { erro: corpo || ('Erro ' + res.status) };
+    }
     const inserido = (await res.json())[0];
     favIndiceCache.unshift(inserido);
     return inserido;
-  } catch(e){ console.error(e); return 'erro'; }
+  } catch(e){ console.error(e); return { erro: e.message || 'Falha de rede' }; }
 }
 async function removerFavoritoIndice(id){
   const antes = favIndiceCache.slice();

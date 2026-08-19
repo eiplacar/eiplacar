@@ -65,7 +65,7 @@ function IndiceTab({ data, favorEnviando, setFavorEnviando, tab }) {
     setFavorEnviando(true);
     const r = await window.favoritarIndice?.(data, idx);
     setFavorEnviando(false);
-    if (r === 'erro') window.toast?.('Erro ao favoritar', true);
+    if (!r || r.erro) window.toast?.(r?.erro ? `Erro ao favoritar: ${r.erro}` : 'Erro ao favoritar', true);
     else window.toast?.('Favoritado! Some sozinho em 4h.');
   }
 
@@ -113,7 +113,7 @@ function IndiceTab({ data, favorEnviando, setFavorEnviando, tab }) {
             <span style={{ fontSize: 16, fontWeight: 900, color: corClassificacao(gols.classificacao) }}>{gols.classificacao}</span>
             <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--ouro)' }}>{gols.pontuacao}/100</span>
           </div>
-          <div style={{ fontSize: 10, color: 'var(--texto2)', marginBottom: 6 }}>Mercados mais pontuados: <strong style={{ color: 'var(--texto)' }}>+{gols.top2[0]?.linha} · {gols.top2[0]?.prob}/100</strong>{gols.top2[1] && <> e <strong style={{ color: 'var(--texto)' }}>+{gols.top2[1].linha} · {gols.top2[1].prob}/100</strong></>}</div>
+          <div style={{ fontSize: 10, color: 'var(--texto2)', marginBottom: 6 }}>Mercados mais pontuados: <strong style={{ color: 'var(--texto)' }}>+{gols.top2[0]?.linha} · {gols.top2[0]?.pontuacao}/100</strong>{gols.top2[1] && <> e <strong style={{ color: 'var(--texto)' }}>+{gols.top2[1].linha} · {gols.top2[1].pontuacao}/100</strong></>}</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {gols.linhas.map((l) => (
               <div key={l.linha} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11 }}>
