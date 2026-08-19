@@ -111,6 +111,18 @@ function classificarLinha(pct){
   if(pct>=30) return { label:'Arriscado',       cor:'var(--perigo)' };
   return              { label:'Muito arriscado', cor:'var(--perigo)' };
 }
+// Converte a probabilidade (%) de uma linha de Over numa PONTUAÇÃO 0-100 que nasce das
+// mesmas faixas de cima (75/60/45/30) — cada faixa vira uma fatia de pontuação (Forte
+// 90-100, Favorável 70-90, Moderado 50-70, Arriscado 25-50, Muito arriscado 0-25), com a
+// posição dentro da faixa interpolada linearmente. Ou seja: a pontuação obedece o
+// parâmetro (faixa) em vez de ser a % pura disfarçada de "/100".
+function pontuarLinha(prob){
+  if(prob>=75) return clip100(90 + (prob-75)/(100-75)*10);
+  if(prob>=60) return clip100(70 + (prob-60)/(75-60)*20);
+  if(prob>=45) return clip100(50 + (prob-45)/(60-45)*20);
+  if(prob>=30) return clip100(25 + (prob-30)/(45-30)*25);
+  return clip100((prob/30)*25);
+}
 
 function computeIndiceResultado(data){
   const { casa, vis, pVit, pDer } = data;
@@ -163,38 +175,18 @@ function computeIndiceGols(data){
   ].map(l=>({ ...l, ...classificarLinha(l.prob) }));
 
   // ── "Mercados mais pontuados" ──
-  // BUG antigo: escolhia as 2 linhas com maior PROBABILIDADE crua (prob:o15/o25/o35/o45) e
-  // mostrava isso como se fosse uma "pontuação/100". Só que Over 1.5, 2.5, 3.5 e 4.5 são
-  // eventos encaixados (quem passa de 4.5 gols necessariamente passou de 3.5, que passou de
-  // 2.5, que passou de 1.5) — matematicamente o15 >= o25 >= o35 >= o45 SEMPRE. Ou seja, ordenar
-  // por probabilidade crua ia bater +1.5 e +2.5 em 100% dos confrontos, não importa o time nem
-  // o quanto de gol o jogo costuma ter. Também mostrava probabilidade (%) rotulada de "/100"
-  // como se fosse pontuação, o que não é a mesma coisa.
+  // BUG antigo: mostrava a PROBABILIDADE crua (o15/o25/o35/o45) rotulada de "pontuação/100" —
+  // não é a mesma coisa. Correção: cada linha ganha uma pontuação 0-100 derivada das MESMAS
+  // faixas usadas pra classificar (Forte 75+/Favorável 60+/Moderado 45+/Arriscado 30+/Muito
+  // arriscado abaixo) — ver pontuarLinha() acima. A pontuação passa a obedecer o parâmetro
+  // da faixa (com a posição dentro dela interpolada), em vez de ser a % pura disfarçada.
   //
-  // Correção: cada linha ganha uma PONTUAÇÃO própria comparando a probabilidade real dessa
-  // linha com a probabilidade "esperada" pra aquela mesma linha numa partida média da liga
-  // (mesmo total de gols da liga, dividido igual pros 2 lados). 50 = exatamente dentro do
-  // parâmetro esperado pra aquela linha; acima de 50 = essa linha específica está mais
-  // provável que o normal pra ela nesse confronto; abaixo = menos provável que o normal.
-  // Isso deixa o ranking comparável ENTRE linhas diferentes (uma partida com pinta de goleada
-  // pode pontuar mais alto em +3.5/+4.5 do que em +1.5/+2.5, coisa que a probabilidade crua
-  // nunca conseguiria mostrar).
-  const lambdaBase = ligaGols/2;
-  function probOverBase(n){
-    let u=0;
-    for(let i=0;i<=10;i++) for(let j=0;j<=10;j++) if(i+j<=n) u += poisson(lambdaBase,i)*poisson(lambdaBase,j);
-    return Math.round((1-u)*100);
-  }
-  const linhasPontuadas = [
-    { linha:'1.5', base: probOverBase(1), prob:o15 },
-    { linha:'2.5', base: probOverBase(2), prob:o25 },
-    { linha:'3.5', base: probOverBase(3), prob:o35 },
-    { linha:'4.5', base: probOverBase(4), prob:o45 },
-  ].map(l => ({ linha:l.linha, pontuacao: clip100(50 + (l.prob - l.base)) }));
-  // As 2 linhas de gols mais bem pontuadas dentro dos parâmetros (maior pontuação primeiro) —
-  // cada uma com a própria pontuação, em vez de escolher só "a principal" e esconder a 2ª melhor.
-  const top2 = [...linhasPontuadas].sort((a,b)=>b.pontuacao-a.pontuacao).slice(0,2)
-    .map(l => ({ ...l, ...classificarLinha(l.pontuacao) }));
+  // Aviso: como Over 1.5/2.5/3.5/4.5 são eventos encaixados (quem passa de 4.5 gols passou
+  // de 3.5, que passou de 2.5, que passou de 1.5), a probabilidade é sempre o15>=o25>=o35>=o45
+  // — e como essa pontuação é uma transformação monotônica da probabilidade, o "top 2" abaixo
+  // vai continuar batendo quase sempre em +1.5 e +2.5. Isso é esperado com essa lógica.
+  const top2 = linhas.map(l => ({ linha:l.linha, pontuacao: pontuarLinha(l.prob), label:l.label, cor:l.cor }))
+    .sort((a,b)=>b.pontuacao-a.pontuacao).slice(0,2);
 
   return { pontuacao, classificacao: classificar(pontuacao), linhas, top2 };
 }

@@ -152,11 +152,11 @@ function IndiceTab({ data, favorEnviando, setFavorEnviando, tab }) {
                   <button onClick={() => remover(f.id)} title="Remover" style={{ background: 'none', border: 'none', color: 'var(--texto2)', cursor: 'pointer', padding: 2 }}><Trash2 size={13} /></button>
                 </div>
                 {f.camp && <div style={{ fontSize: 10, color: 'var(--texto2)', marginBottom: 6 }}>{f.camp}</div>}
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', fontSize: 10 }}>
-                  {f.resultado_favorito && <span style={{ background: 'var(--c1)', borderRadius: 6, padding: '3px 7px', color: corClassificacao(f.resultado_classificacao) }}>🏆 {f.resultado_favorito} · {f.resultado_pontuacao}/100</span>}
-                  {f.gols_linha1 && <span style={{ background: 'var(--c1)', borderRadius: 6, padding: '3px 7px', color: corLinha(f.gols_prob1) }}>⚽ +{f.gols_linha1} · {f.gols_prob1}/100</span>}
-                  {f.gols_linha2 && <span style={{ background: 'var(--c1)', borderRadius: 6, padding: '3px 7px', color: corLinha(f.gols_prob2) }}>⚽ +{f.gols_linha2} · {f.gols_prob2}/100</span>}
-                  {f.btts_classificacao && <span style={{ background: 'var(--c1)', borderRadius: 6, padding: '3px 7px', color: corClassificacao(f.btts_classificacao) }}>🤝 {f.btts_pct}% · {f.btts_pontuacao}/100</span>}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, fontSize: 10 }}>
+                  {f.resultado_favorito && <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, background: 'var(--c1)', borderRadius: 6, padding: '3px 7px', color: corClassificacao(f.resultado_classificacao) }}><Trophy size={11} /> {f.resultado_favorito} · {f.resultado_pontuacao}/100</span>}
+                  {f.btts_classificacao && <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, background: 'var(--c1)', borderRadius: 6, padding: '3px 7px', color: corClassificacao(f.btts_classificacao) }}><Handshake size={11} /> {f.btts_pct}% · {f.btts_pontuacao}/100</span>}
+                  {f.gols_linha1 && <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, background: 'var(--c1)', borderRadius: 6, padding: '3px 7px', color: corLinha(f.gols_prob1) }}><Goal size={11} /> +{f.gols_linha1} · {f.gols_prob1}/100</span>}
+                  {f.gols_linha2 && <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, background: 'var(--c1)', borderRadius: 6, padding: '3px 7px', color: corLinha(f.gols_prob2) }}><Goal size={11} /> +{f.gols_linha2} · {f.gols_prob2}/100</span>}
                 </div>
               </div>
             ))}
