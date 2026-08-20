@@ -42,16 +42,22 @@ const localLbl = (loc) => (loc === 'all' ? 'Geral' : loc === 'casa' ? 'Em casa' 
 
 // Cor de acordo com a classificação (mesma banda usada no cálculo — 17-indice.js)
 function corClassificacao(label){
-  if (label === 'Muito forte' || label === 'Forte') return 'var(--verde2)';
-  if (label === 'Favorável' || label === 'Moderado') return 'var(--ouro)';
-  return 'var(--perigo)'; // Baixo / Muito baixo
+  if (label === 'Muito forte' || label === 'Forte') return 'var(--verde)';  // verde escuro
+  if (label === 'Favorável') return 'var(--verde2)';                        // verde claro
+  if (label === 'Moderado') return 'var(--ouro)';                          // amarelo dourado
+  if (label === 'Arriscado' || label === 'Baixo') return 'var(--perigo)';  // vermelho
+  return '#F87171'; // Muito arriscado / Muito baixo — vermelho claro
 }
 // Mesma banda, mas pra uma linha de gols específica (Over X.5) — usada nos badges de
-// "Favoritados", que só guardam a probabilidade (%), não o rótulo pronto.
-function corLinha(prob){
-  if (prob>=75 || prob>=60) return 'var(--verde2)'; // Forte / Favorável
-  if (prob>=45) return 'var(--ouro)'; // Moderado
-  return 'var(--perigo)'; // Arriscado / Muito arriscado
+// "Favoritados". Desde que a pontuação da linha passou a ser uma média ponderada (própria %
+// + contexto), ela usa as MESMAS faixas do card do topo (classificar(): 80/70/60/50/40),
+// pra cor e classificação ficarem consistentes em todo o app.
+function corLinha(pontuacao){
+  if (pontuacao>=70) return 'var(--verde)';   // Forte / Muito forte — verde escuro
+  if (pontuacao>=60) return 'var(--verde2)';  // Favorável — verde claro
+  if (pontuacao>=50) return 'var(--ouro)';    // Moderado — amarelo dourado
+  if (pontuacao>=40) return 'var(--perigo)';  // Baixo/Arriscado — vermelho
+  return '#F87171';                            // Muito baixo/Muito arriscado — vermelho claro
 }
 
 // ══ ⚡ ÍNDICE — Favorita Ponto (Resultado/Gols/BTTS) — cruza Probabilidade × Estatísticas ══
@@ -113,7 +119,7 @@ function IndiceTab({ data, favorEnviando, setFavorEnviando, tab }) {
             <span style={{ fontSize: 16, fontWeight: 900, color: corClassificacao(gols.classificacao) }}>{gols.classificacao}</span>
             <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--ouro)' }}>{gols.pontuacao}/100</span>
           </div>
-          <div style={{ fontSize: 10, color: 'var(--texto2)', marginBottom: 6 }}>Mercados mais pontuados: <strong style={{ color: 'var(--texto)' }}>+{gols.top2[0]?.linha} · {gols.top2[0]?.pontuacao}/100</strong>{gols.top2[1] && <> e <strong style={{ color: 'var(--texto)' }}>+{gols.top2[1].linha} · {gols.top2[1].pontuacao}/100</strong></>}</div>
+          <div style={{ fontSize: 10, color: 'var(--texto2)', marginBottom: 6 }}>Mercados mais pontuados: <strong style={{ color: corClassificacao(gols.top2[0]?.label) }}>+{gols.top2[0]?.linha} · {gols.top2[0]?.pontuacao}/100 ({gols.top2[0]?.label})</strong>{gols.top2[1] && <> e <strong style={{ color: corClassificacao(gols.top2[1].label) }}>+{gols.top2[1].linha} · {gols.top2[1].pontuacao}/100 ({gols.top2[1].label})</strong></>}</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {gols.linhas.map((l) => (
               <div key={l.linha} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11 }}>

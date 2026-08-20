@@ -152,41 +152,50 @@ function computeIndiceGols(data){
   const { sC, sV, lambdaC, lambdaV, o15, o25, o35, o45, tendC, tendV, momStats, totalMom, top10 } = data;
   const ligaGols = (window.jogosCache?.length ? (window.jogosCache.reduce((s,j)=>s+(j.gC||0)+(j.gV||0),0) / (window.jogosCache.length*2)) : 2.6) || 2.6;
 
-  const scoreOver15 = o15, scoreOver25 = o25;
+  // ── Fatores de CONTEXTO (não dependem de qual linha, iguais pras 4) ──
   const lambdaComb = lambdaC+lambdaV;
-  const scoreLambda = clip100((lambdaComb/(ligaGols*2))*100);
-  const scoreMedia = clip100(((sC.lambda+sV.lambda)/(ligaGols))*50);
+  const scoreLambda = clip100((lambdaComb/(ligaGols*2))*100);                 // Ataque combinado vs média da liga
+  const scoreMedia = clip100(((sC.lambda+sV.lambda)/(ligaGols))*50);          // Média de gols dos 2 times
   const momC = momentum(tendC.over15), momV = momentum(tendV.over15);
-  const scoreTendencia = (momC!=null && momV!=null) ? clip100(50 + ((momC+momV)/2)*25) : 50;
-  const scoreMomentos = totalMom>0 ? clip100((momStats[3].count/totalMom)*100) : 50;
+  const scoreTendencia = (momC!=null && momV!=null) ? clip100(50 + ((momC+momV)/2)*25) : 50; // Tendência recente Over 1.5
+  const scoreMomentos = totalMom>0 ? clip100((momStats[3].count/totalMom)*100) : 50;          // Momentos de pico de gol
   const somaTop10 = top10.reduce((s,p)=>s+p.p,0) || 1;
-  const scorePlacar = clip100((top10.filter(p=>p.g1+p.g2>=3).reduce((s,p)=>s+p.p,0)/somaTop10)*100);
+  const scorePlacar = clip100((top10.filter(p=>p.g1+p.g2>=3).reduce((s,p)=>s+p.p,0)/somaTop10)*100); // Placares 3+ gols
 
-  const comps = [
-    { peso:3, score:scoreOver15 }, { peso:3, score:scoreOver25 }, { peso:3, score:scoreLambda },
-    { peso:2, score:scoreMedia }, { peso:2, score:scoreTendencia },
-    { peso:1, score:scoreMomentos }, { peso:1, score:scorePlacar },
+  const contexto = [
+    { peso:3, score:scoreLambda },  // Ataque combinado vs média da liga
+    { peso:2, score:scoreMedia },   // Média de gols dos 2 times
+    { peso:2, score:scoreTendencia},// Tendência recente de Over 1.5
+    { peso:1, score:scoreMomentos },// Frequência de "momentos de pico" de gol
+    { peso:1, score:scorePlacar },  // Placares prováveis com 3+ gols
   ];
-  const pesoTotal = comps.reduce((s,c)=>s+c.peso,0);
+  const pesoContexto = contexto.reduce((s,c)=>s+c.peso,0); // 9
+  const somaContexto = contexto.reduce((s,c)=>s+c.peso*c.score,0);
+
+  // ── Card do topo (número grande + rótulo): média PONDERADA de 9 fatores ──
+  const comps = [
+    { peso:3, score:o15 },          // % Over 1.5 (bruta, sem reescala)
+    { peso:3, score:o25 },          // % Over 2.5 (bruta, sem reescala)
+    { peso:2, score:o35 },          // % Over 3.5 (bruta, sem reescala)
+    { peso:1, score:o45 },          // % Over 4.5 (bruta, sem reescala)
+    ...contexto,
+  ];
+  const pesoTotal = comps.reduce((s,c)=>s+c.peso,0); // 18
   const pontuacao = clip100(comps.reduce((s,c)=>s+c.peso*c.score,0)/pesoTotal);
 
+  // ── "Mercados mais pontuados" (linhas individuais) — CADA linha agora também leva peso:
+  // a % daquela linha entra com o peso dela na tabela (1.5=3 / 2.5=3 / 3.5=2 / 4.5=1),
+  // combinada com os mesmos 5 fatores de contexto acima (ataque, média, tendência,
+  // momentos, placar) — não é mais só a % da linha reescalada sozinha.
+  const pesosLinha = { '1.5':3, '2.5':3, '3.5':2, '4.5':1 };
   const linhas = [
     { linha:'1.5', prob:o15 }, { linha:'2.5', prob:o25 }, { linha:'3.5', prob:o35 }, { linha:'4.5', prob:o45 },
   ].map(l=>({ ...l, ...classificarLinha(l.prob) }));
-
-  // ── "Mercados mais pontuados" ──
-  // BUG antigo: mostrava a PROBABILIDADE crua (o15/o25/o35/o45) rotulada de "pontuação/100" —
-  // não é a mesma coisa. Correção: cada linha ganha uma pontuação 0-100 derivada das MESMAS
-  // faixas usadas pra classificar (Forte 75+/Favorável 60+/Moderado 45+/Arriscado 30+/Muito
-  // arriscado abaixo) — ver pontuarLinha() acima. A pontuação passa a obedecer o parâmetro
-  // da faixa (com a posição dentro dela interpolada), em vez de ser a % pura disfarçada.
-  //
-  // Aviso: como Over 1.5/2.5/3.5/4.5 são eventos encaixados (quem passa de 4.5 gols passou
-  // de 3.5, que passou de 2.5, que passou de 1.5), a probabilidade é sempre o15>=o25>=o35>=o45
-  // — e como essa pontuação é uma transformação monotônica da probabilidade, o "top 2" abaixo
-  // vai continuar batendo quase sempre em +1.5 e +2.5. Isso é esperado com essa lógica.
-  const top2 = linhas.map(l => ({ linha:l.linha, pontuacao: pontuarLinha(l.prob), label:l.label, cor:l.cor }))
-    .sort((a,b)=>b.pontuacao-a.pontuacao).slice(0,2);
+  const top2 = linhas.map(l => {
+    const pesoLinha = pesosLinha[l.linha];
+    const pont = clip100((pesoLinha*l.prob + somaContexto)/(pesoLinha+pesoContexto));
+    return { linha:l.linha, pontuacao: pont, label: classificar(pont) };
+  }).sort((a,b)=>b.pontuacao-a.pontuacao).slice(0,2);
 
   return { pontuacao, classificacao: classificar(pontuacao), linhas, top2 };
 }
