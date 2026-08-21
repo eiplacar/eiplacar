@@ -62,21 +62,59 @@ function corLinha(pontuacao){
 
 // ══ ⚡ ÍNDICE — Favorita Ponto (Resultado/Gols/BTTS) — cruza Probabilidade × Estatísticas ══
 function IndiceTab({ data, favorEnviando, setFavorEnviando, tab }) {
-  const idx = window.computeIndice ? window.computeIndice(data) : null;
+  const idx = window.computeIndice && data?.estado === 'ok' ? window.computeIndice(data) : null;
   const favoritosAtivos = window.favIndiceAtivos ? window.favIndiceAtivos() : [];
-
-  if (!idx) return null;
+  const [horarioJogo, setHorarioJogo] = useState('');
+  const [dataJogo, setDataJogo] = useState(window.hojeBR ? window.hojeBR() : new Date().toISOString().slice(0, 10));
 
   async function favoritar() {
     setFavorEnviando(true);
-    const r = await window.favoritarIndice?.(data, idx);
+    const jogo = horarioJogo ? { data: dataJogo, horario: horarioJogo } : null;
+    const r = await window.favoritarIndice?.(data, idx, jogo);
     setFavorEnviando(false);
     if (!r || r.erro) window.toast?.(r?.erro ? `Erro ao favoritar: ${r.erro}` : 'Erro ao favoritar', true);
-    else window.toast?.('Favoritado! Some sozinho em 4h.');
+    else window.toast?.(horarioJogo ? 'Favoritado! Some sozinho 4h depois do início do jogo.' : 'Favoritado! Some sozinho em 4h.');
   }
 
   async function remover(id) {
     await window.removerFavoritoIndice?.(id);
+  }
+
+  const secaoFavoritados = (
+    <div className="sec">
+      <div className="sec-title"><Star size={14} style={{ marginRight: 4 }} />Favoritados ({favoritosAtivos.length})</div>
+      {favoritosAtivos.length === 0 ? (
+        <div className="empty" style={{ padding: 14 }}><p>Nenhum confronto favoritado ainda. Toque em "Favoritar" acima pra salvar esse aqui.</p></div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {favoritosAtivos.map((f) => (
+            <div key={f.id} style={{ background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 10, padding: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                <span style={{ fontSize: 12, fontWeight: 700 }}>{f.casa} × {f.vis}</span>
+                <button onClick={() => remover(f.id)} title="Remover" style={{ background: 'none', border: 'none', color: 'var(--texto2)', cursor: 'pointer', padding: 2 }}><Trash2 size={13} /></button>
+              </div>
+              {(f.camp || f.horario_jogo) && <div style={{ fontSize: 10, color: 'var(--texto2)', marginBottom: 6 }}>{f.camp}{f.camp && f.horario_jogo ? ' · ' : ''}{f.horario_jogo ? `${f.horario_jogo}` : ''}</div>}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, fontSize: 10 }}>
+                {f.resultado_favorito && <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, background: 'var(--c1)', borderRadius: 6, padding: '3px 7px', color: corClassificacao(f.resultado_classificacao) }}><Trophy size={11} /> {f.resultado_favorito} · {f.resultado_pontuacao}/100</span>}
+                {f.btts_classificacao && <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, background: 'var(--c1)', borderRadius: 6, padding: '3px 7px', color: corClassificacao(f.btts_classificacao) }}><Handshake size={11} /> {f.btts_pct}% · {f.btts_pontuacao}/100</span>}
+                {f.gols_linha1 && <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, background: 'var(--c1)', borderRadius: 6, padding: '3px 7px', color: corLinha(f.gols_prob1) }}><Goal size={11} /> +{f.gols_linha1} · {f.gols_prob1}/100</span>}
+                {f.gols_linha2 && <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, background: 'var(--c1)', borderRadius: 6, padding: '3px 7px', color: corLinha(f.gols_prob2) }}><Goal size={11} /> +{f.gols_linha2} · {f.gols_prob2}/100</span>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  // Sem 2 times selecionados ainda: mostra só a lista de Favoritados (não precisa
+  // estar analisando um confronto pra ver o que já foi favoritado antes).
+  if (!idx) {
+    return (
+      <div className={`sub-page ${tab === 'indice' ? 'active' : ''}`}>
+        {secaoFavoritados}
+      </div>
+    );
   }
 
   const { resultado, gols, btts } = idx;
@@ -86,11 +124,27 @@ function IndiceTab({ data, favorEnviando, setFavorEnviando, tab }) {
       <div className="sec">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
           <div className="sec-title" style={{ margin: 0 }}><Gauge size={14} style={{ marginRight: 4 }} />Análise do Confronto</div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, marginBottom: 10 }}>
+          <div style={{ flex: 1 }}>
+            <label style={{ fontSize: 9.5, color: 'var(--texto2)', display: 'block', marginBottom: 3 }}>Horário do jogo (opcional)</label>
+            <input type="time" value={horarioJogo} onChange={(e) => setHorarioJogo(e.target.value)}
+              style={{ width: '100%', background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 8, padding: '6px 8px', color: 'var(--texto)', fontSize: 12 }} />
+          </div>
+          {horarioJogo && (
+            <div style={{ flex: 1 }}>
+              <label style={{ fontSize: 9.5, color: 'var(--texto2)', display: 'block', marginBottom: 3 }}>Data</label>
+              <input type="date" value={dataJogo} onChange={(e) => setDataJogo(e.target.value)}
+                style={{ width: '100%', background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 8, padding: '6px 8px', color: 'var(--texto)', fontSize: 12 }} />
+            </div>
+          )}
           <button onClick={favoritar} disabled={favorEnviando}
-            style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 8, padding: '6px 10px', color: 'var(--ouro)', fontSize: 11, fontWeight: 700, cursor: favorEnviando ? 'default' : 'pointer', opacity: favorEnviando ? .6 : 1 }}>
+            style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 8, padding: '7px 10px', color: 'var(--ouro)', fontSize: 11, fontWeight: 700, cursor: favorEnviando ? 'default' : 'pointer', opacity: favorEnviando ? .6 : 1, whiteSpace: 'nowrap' }}>
             <Star size={13} /> Favoritar
           </button>
         </div>
+        {!horarioJogo && <div style={{ fontSize: 9.5, color: 'var(--texto2)', marginTop: -6, marginBottom: 10 }}>Sem horário, o favorito some 4h depois de favoritado. Preenchendo, some 4h depois do início do jogo.</div>}
 
         {/* 🏆 RESULTADO */}
         {resultado ? (
@@ -144,31 +198,9 @@ function IndiceTab({ data, favorEnviando, setFavorEnviando, tab }) {
         </div>
       </div>
 
-      {/* ⭐ Favoritados — privado da SUA conta, some sozinho 4h depois */}
-      <div className="sec">
-        <div className="sec-title"><Star size={14} style={{ marginRight: 4 }} />Favoritados ({favoritosAtivos.length})</div>
-        {favoritosAtivos.length === 0 ? (
-          <div className="empty" style={{ padding: 14 }}><p>Nenhum confronto favoritado ainda. Toque em "Favoritar" acima pra salvar esse aqui.</p></div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {favoritosAtivos.map((f) => (
-              <div key={f.id} style={{ background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 10, padding: 10 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                  <span style={{ fontSize: 12, fontWeight: 700 }}>{f.casa} × {f.vis}</span>
-                  <button onClick={() => remover(f.id)} title="Remover" style={{ background: 'none', border: 'none', color: 'var(--texto2)', cursor: 'pointer', padding: 2 }}><Trash2 size={13} /></button>
-                </div>
-                {f.camp && <div style={{ fontSize: 10, color: 'var(--texto2)', marginBottom: 6 }}>{f.camp}</div>}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, fontSize: 10 }}>
-                  {f.resultado_favorito && <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, background: 'var(--c1)', borderRadius: 6, padding: '3px 7px', color: corClassificacao(f.resultado_classificacao) }}><Trophy size={11} /> {f.resultado_favorito} · {f.resultado_pontuacao}/100</span>}
-                  {f.btts_classificacao && <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, background: 'var(--c1)', borderRadius: 6, padding: '3px 7px', color: corClassificacao(f.btts_classificacao) }}><Handshake size={11} /> {f.btts_pct}% · {f.btts_pontuacao}/100</span>}
-                  {f.gols_linha1 && <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, background: 'var(--c1)', borderRadius: 6, padding: '3px 7px', color: corLinha(f.gols_prob1) }}><Goal size={11} /> +{f.gols_linha1} · {f.gols_prob1}/100</span>}
-                  {f.gols_linha2 && <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, background: 'var(--c1)', borderRadius: 6, padding: '3px 7px', color: corLinha(f.gols_prob2) }}><Goal size={11} /> +{f.gols_linha2} · {f.gols_prob2}/100</span>}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      {/* ⭐ Favoritados — privado da SUA conta, some 4h depois do início do jogo (ou 4h
+          depois de favoritado, se não informou horário) */}
+      {secaoFavoritados}
     </div>
   );
 }

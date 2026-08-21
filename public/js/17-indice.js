@@ -248,13 +248,32 @@ async function favIndiceCarregarNuvem(){
     favIndiceCache = await res.json();
   } catch { /* falha silenciosa, tenta de novo depois */ }
 }
+// Mesma lógica de ophExpirado() (11-jogosdodia.js): se você informou horário do jogo ao
+// favoritar, some 4h DEPOIS do início do jogo (não 4h depois de favoritado) — assim, analisar
+// um jogo que só começa daqui a 5h não faz o favorito sumir antes mesmo da bola rolar. Se não
+// informou horário (campo opcional), cai no comportamento antigo: 4h depois de favoritado.
 function favIndiceExpirado(f){
+  if(f.horario_jogo){
+    const [h,m] = f.horario_jogo.split(':').map(Number);
+    if(!isNaN(h) && !isNaN(m)){
+      let base;
+      if(f.data_jogo){
+        const [y,mo,d] = f.data_jogo.split('-').map(Number);
+        base = new Date(y, mo-1, d, h, m, 0, 0);
+      } else {
+        const criado = f.criado_em ? new Date(f.criado_em) : new Date();
+        base = new Date(criado.getFullYear(), criado.getMonth(), criado.getDate(), h, m, 0, 0);
+      }
+      const limite = new Date(base.getTime() + 4*60*60*1000); // 4h depois do início do jogo
+      return new Date() > limite;
+    }
+  }
   if(!f.criado_em) return false;
-  return (new Date() - new Date(f.criado_em)) > 4*60*60*1000; // 4h depois de favoritado
+  return (new Date() - new Date(f.criado_em)) > 4*60*60*1000; // fallback: 4h depois de favoritado
 }
 function favIndiceAtivos(){ return favIndiceCache.filter(f=>!favIndiceExpirado(f)); }
 
-async function favoritarIndice(data, idx){
+async function favoritarIndice(data, idx, jogo){
   if(!data || data.estado!=='ok' || !idx) return { erro: 'Dados da análise incompletos — selecione os dois times de novo.' };
   if(!perfilAtual?.id) return { erro: 'Você precisa estar logado pra favoritar.' };
   const payload = {
@@ -272,6 +291,8 @@ async function favoritarIndice(data, idx){
     btts_pontuacao: idx.btts?.pontuacao??null,
     btts_classificacao: idx.btts?.classificacao||null,
     btts_pct: idx.btts?.pctSim??null,
+    data_jogo: jogo?.data || null,
+    horario_jogo: jogo?.horario || null,
     criado_por: perfilAtual.id, // RLS exige criado_por = auth.uid() — favoritos são privados por conta
   };
   try {

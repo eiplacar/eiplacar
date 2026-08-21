@@ -3,8 +3,9 @@
 -- Guarda o resultado da Favorita Ponto (Resultado/Gols/BTTS) de um confronto.
 -- Diferente dos "Jogos Agendados" (que são compartilhados), aqui é PRIVADO —
 -- cada conta só vê e favorita os SEUS próprios confrontos analisados. Some
--- da lista sozinho 4h depois de favoritado (feito na TELA, igual o de lá —
--- não precisa apagar linha nenhuma aqui pra "sumir da lista").
+-- da lista sozinho (feito na TELA, igual o de lá — não precisa apagar linha
+-- nenhuma aqui pra "sumir da lista"): 4h depois do HORÁRIO DO JOGO, se você
+-- informou data/horário ao favoritar; senão, 4h depois de favoritado.
 --
 -- Regras:
 --   • Cada pessoa só vê e favorita os PRÓPRIOS confrontos (não é compartilhado).
@@ -34,6 +35,10 @@ create table if not exists favoritos_indice (
   btts_classificacao text,
   btts_pct int,                   -- % de Ambas Marcam (Sim)
 
+  data_jogo date,                 -- data do jogo (opcional) — usada pra expirar 4h DEPOIS
+                                   -- do início do jogo, em vez de 4h depois de favoritado
+  horario_jogo text,              -- horário do jogo "HH:MM" (opcional)
+
   criado_por uuid references auth.users(id),
   criado_em timestamptz default now()
 );
@@ -44,6 +49,8 @@ alter table favoritos_indice add column if not exists gols_linha1 text;
 alter table favoritos_indice add column if not exists gols_prob1 int;
 alter table favoritos_indice add column if not exists gols_linha2 text;
 alter table favoritos_indice add column if not exists gols_prob2 int;
+alter table favoritos_indice add column if not exists data_jogo date;
+alter table favoritos_indice add column if not exists horario_jogo text;
 
 alter table favoritos_indice enable row level security;
 

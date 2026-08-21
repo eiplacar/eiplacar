@@ -100,23 +100,16 @@ function formatarRodada(matchRound) {
   return /^\d+$/.test(bruto) ? `Rodada ${bruto}` : bruto;
 }
 
-// A GOAL API não deixa explícito o fuso horário do "matchTime". O código estava
-// assumindo UTC, mas o relato foi de jogo chegando 2h a mais que o horário real —
-// o suspeito mais provável é a API mandar o horário LOCAL da liga (ex: ligas
-// europeias em horário de verão = UTC+2 em agosto: tratar como UTC e converter pra
-// Brasília erra 2h a mais, exatamente o relatado). Como não dá pra confirmar sem
-// comparar com um jogo real ao vivo, deixei um ajuste manual aqui: comece com -2
-// (compensa os 2h relatados), suba pro próximo jogo e confira contra o horário
-// real de transmissão; se ainda estiver errado, ajuste esse número até bater.
-const AJUSTE_FUSO_HORAS = -2;
-
-// A Liga MX é bem mais a oeste (México ~UTC-5/-6) que as ligas europeias/Brasil, então
-// o mesmo ajuste de -2h não serve — foi relatada uma diferença de 5h nela especificamente.
-// -2 (padrão) + 5h = +3: ajuste só pra essa liga. Se ainda estiver errado depois de
-// conferir contra um jogo real, é só corrigir o número abaixo (mesma lógica do ajuste padrão).
-const AJUSTE_FUSO_POR_LIGA = {
-  'cmr77dvsv008srx06mier6t7r': 3, // Liga MX
-};
+// A GOAL API não deixa explícito o fuso horário do "matchTime". Uma correção anterior
+// tentou compensar um relato de "2h a mais" aplicando -2h (e +3h só pra Liga MX), sem
+// confirmar contra jogo real. Resultado: passou a dar 2h de ATRASO nas ligas em geral e
+// 3h ADIANTADO na Liga MX — ou seja, o próprio ajuste manual é que estava causando o erro,
+// nos dois casos batendo exatamente com o valor do ajuste aplicado. Isso indica que o
+// "matchTime" já vem em UTC de verdade (como assumido originalmente) e NÃO precisa de
+// nenhum ajuste manual — por isso zerado abaixo. Se aparecer erro de novo, comparar contra
+// um jogo real ANTES de mexer aqui de novo (pra não repetir o mesmo erro).
+const AJUSTE_FUSO_HORAS = 0;
+const AJUSTE_FUSO_POR_LIGA = {};
 
 function horarioBR(matchDate, matchTime, leagueId) {
   if (!matchDate || !matchTime) return '';
