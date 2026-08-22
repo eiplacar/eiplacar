@@ -220,14 +220,32 @@ export const handler = async function () {
   // se esse parâmetro realmente filtra alguma coisa na API. Agora buscamos tudo
   // (agendado, ao vivo, finalizado) e conferimos o status aqui no código — mais
   // seguro e também deixa ver o status real dos jogos de hoje que ainda não bateram.
+  //
+  // Em PARALELO (Promise.all), não uma liga de cada vez: a GOAL API andou respondendo
+  // ~15s por chamada, e 12 ligas em SÉRIE passava de 60s (limite da função na Netlify)
+  // — a função era morta no meio do loop, deixando de fora tudo depois de "Bundesliga"
+  // pra baixo (2. Bundesliga, Serie A, Ligue 1, Eredivisie, Champions, Primeira Liga,
+  // Liga MX). Em paralelo, as 12 chamadas ficam esperando juntas (~15-20s no total),
+  // bem dentro do limite.
+  const respostasPorLiga = await Promise.all(
+    [...NOMES_CAMP_POR_LIGA.keys()].map(async (ligaId) => {
+      try {
+        const resp = await fetch(`${GOAL_API_URL}/fixtures?leagueId=${ligaId}&limit=30`, {
+          headers: { Authorization: `Bearer ${apiKey}` },
+        });
+        const json = await resp.json();
+        return { ligaId, httpStatus: resp.status, json };
+      } catch (e) {
+        console.log(`ERRO ao buscar fixtures da liga=${ligaId}:`, e.message);
+        return { ligaId, httpStatus: 0, json: { success: false, data: [] } };
+      }
+    })
+  );
+
   let todosFixtures = [];
-  for (const ligaId of NOMES_CAMP_POR_LIGA.keys()) {
-    const resp = await fetch(`${GOAL_API_URL}/fixtures?leagueId=${ligaId}&limit=30`, {
-      headers: { Authorization: `Bearer ${apiKey}` },
-    });
-    const json = await resp.json();
+  for (const { ligaId, httpStatus, json } of respostasPorLiga) {
     const dados = json.data || [];
-    console.log(`Resposta GOAL API (fixtures liga=${ligaId}):`, { httpStatus: resp.status, success: json.success, totalRecebido: dados.length });
+    console.log(`Resposta GOAL API (fixtures liga=${ligaId}):`, { httpStatus, success: json.success, totalRecebido: dados.length });
     // DIAGNÓSTICO — mostra só os jogos com matchDate de hoje/ontem, com o status
     // e horário exatos que a API está reportando pra eles agora.
     const doDia = dados.filter((f) => datasValidas.has(f.matchDate));
@@ -284,10 +302,29 @@ export const handler = async function () {
   const mapaClubes = await buscarMapaClubes(supaUrl, supaServiceKey);
   console.log('Clubes cadastrados na tabela "clubes":', mapaClubes.size);
 
-  for (const f of novos) {
-    // 1 chamada extra por jogo NOVO — já traz estatísticas E eventos juntos
-    const detalhe = await buscarDetalheDoJogo(apiKey, f.id);
+  // Mesma lógica de paralelizar aplicada aqui: 1 chamada de detalhe por jogo NOVO (que
+  // já traz estatística + eventos juntos) rodando em série também corria risco de estourar
+  // o limite de tempo se sobrasse muito jogo pra reprocessar de uma vez (ex: depois de uma
+  // execução anterior que deu timeout). Primeiro busca a classificação de cada liga
+  // envolvida (em paralelo, 1 chamada por liga — sem duplicar graças ao cacheStandings),
+  // só DEPOIS os detalhes de cada jogo em paralelo (não tem corrida no cache porque as
+  // classificações já foram todas buscadas e guardadas antes desse passo).
+  const ligasEnvolvidas = [...new Set(novos.map((f) => f.leagueId))];
+  await Promise.all(ligasEnvolvidas.map((ligaId) => buscarRanksDaLiga(apiKey, ligaId, cacheStandings)));
 
+  const detalhesPorJogo = await Promise.all(
+    novos.map(async (f) => {
+      try {
+        const detalhe = await buscarDetalheDoJogo(apiKey, f.id);
+        return { f, detalhe };
+      } catch (e) {
+        console.log(`ERRO ao buscar detalhe do jogo id=${f.id}:`, e.message);
+        return { f, detalhe: null };
+      }
+    })
+  );
+
+  for (const { f, detalhe } of detalhesPorJogo) {
     const casaCorrigido = nomeDoTime(mapaClubes, f.homeTeamId, f.homeTeamName);
     const visCorrigido = nomeDoTime(mapaClubes, f.awayTeamId, f.awayTeamName);
 

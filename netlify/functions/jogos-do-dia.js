@@ -58,30 +58,40 @@ const PAIS_POR_LIGA = new Map([
 // que já funciona pra ele: busca por liga (leagueId), sem "date", e filtra a data
 // aqui no código (via matchDate). Mais chamadas (1 por liga permitida), mas garante
 // que TODAS as ligas configuradas apareçam, não só as grandes.
+//
+// Em PARALELO (Promise.all), não uma liga de cada vez: a GOAL API andou respondendo
+// ~15s por chamada — 12 ligas em SÉRIE passa fácil de 60s e a função é morta no meio
+// do loop, deixando de fora as ligas que vêm depois na lista (ex: Serie A da Itália,
+// que é a 7ª — via bug relatado de "nenhum jogo da Itália"). Em paralelo, as 12
+// chamadas ficam esperando juntas (~15-20s no total), bem dentro do limite.
 async function buscarTodosFixturesDoDia(apiKey, data) {
   const LIMITE_POR_LIGA = 30; // cobre folgado a "rodada" de qualquer liga em torno da data buscada
-  let todos = [];
 
-  for (const ligaId of LIGAS_PERMITIDAS) {
-    const resp = await fetch(`${GOAL_API_URL}/fixtures?leagueId=${ligaId}&limit=${LIMITE_POR_LIGA}`, {
-      headers: { Authorization: `Bearer ${apiKey}` },
-    });
+  const resultados = await Promise.all(
+    [...LIGAS_PERMITIDAS].map(async (ligaId) => {
+      try {
+        const resp = await fetch(`${GOAL_API_URL}/fixtures?leagueId=${ligaId}&limit=${LIMITE_POR_LIGA}`, {
+          headers: { Authorization: `Bearer ${apiKey}` },
+        });
+        if (!resp.ok) {
+          console.log(`GOAL API respondeu com erro ${resp.status} pra liga ${ligaId}`);
+          return [];
+        }
+        const json = await resp.json();
+        if (!json.success) {
+          console.log(`GOAL API recusou a chamada pra liga ${ligaId}:`, json.message);
+          return [];
+        }
+        console.log(`Liga ${ligaId}: ${(json.data || []).length} fixture(s) recebido(s), datas:`, [...new Set((json.data || []).map((f) => f.matchDate))]);
+        return json.data || [];
+      } catch (e) {
+        console.log(`ERRO ao buscar fixtures da liga ${ligaId}:`, e.message);
+        return [];
+      }
+    })
+  );
 
-    if (!resp.ok) {
-      console.log(`GOAL API respondeu com erro ${resp.status} pra liga ${ligaId}`);
-      continue; // não derruba a busca inteira por causa de 1 liga com problema
-    }
-
-    const json = await resp.json();
-    if (!json.success) {
-      console.log(`GOAL API recusou a chamada pra liga ${ligaId}:`, json.message);
-      continue;
-    }
-
-    console.log(`Liga ${ligaId}: ${(json.data || []).length} fixture(s) recebido(s), datas:`, [...new Set((json.data || []).map((f) => f.matchDate))]);
-    todos = todos.concat(json.data || []);
-  }
-
+  const todos = resultados.flat();
   return todos.filter((f) => f.matchDate === data);
 }
 
