@@ -67,11 +67,19 @@ function dataOntemSaoPaulo() {
   return fmt.format(agora);
 }
 
-// A GOAL API já manda matchDate como "AAAA-MM-DD" (sem hora), então só
-// repassamos — mantido como função pra deixar explícito o formato esperado
-// pelo resto do site (mesmo "AAAA-MM-DD" usado em jogos.data).
-function dataBrParaTexto(matchDate) {
-  return matchDate;
+// A GOAL API manda "matchDate" pareado com "matchTime" em UTC (confirmado na correção
+// de jogos-do-dia.js). Só repassar matchDate direto (como fazia antes) dá bug pra jogos
+// que caem de madrugada em UTC mas ainda são "hoje à noite" no horário local — típico de
+// jogos da Liga MX às 22h (México), que em UTC já viram madrugada do dia seguinte.
+// Por isso aqui juntamos matchDate+matchTime num timestamp UTC de verdade e extraímos a
+// data já no fuso de São Paulo — a mesma data que aparece pro usuário em "Jogos do Dia".
+function dataBrParaTexto(matchDate, matchTime) {
+  if (!matchDate) return matchDate;
+  if (!matchTime) return matchDate; // sem horário, não dá pra converter — mantém como veio
+  const dt = new Date(`${matchDate}T${matchTime}:00Z`);
+  if (Number.isNaN(dt.getTime())) return matchDate;
+  const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' });
+  return fmt.format(dt);
 }
 
 // A GOAL API manda "matchRound" como número puro (ex: "21"), diferente da
@@ -292,7 +300,7 @@ export const handler = async function () {
       origem: 'goal-api',
       camp: NOMES_CAMP_POR_LIGA.get(f.leagueId),
       pais: PAIS_POR_LIGA.get(f.leagueId),
-      data: dataBrParaTexto(f.matchDate),
+      data: dataBrParaTexto(f.matchDate, f.matchTime),
       rodada: formatarRodada(f.matchRound),
       local: f.matchStadium || '',
       casa: casaCorrigido,
