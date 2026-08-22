@@ -17,6 +17,30 @@
 
 const GOAL_API_URL = 'https://api.goal-api.com/v1';
 
+// Faz até `limite` chamadas ao mesmo tempo (não todas de uma vez, não uma de cada vez).
+// Testamos os dois extremos: tudo em série estourava o tempo limite da função (12 ligas
+// x ~15s = 180s+); tudo de uma vez batia rate limit da GOAL API (429 em quase todas).
+// Um meio-termo de poucas por vez resolve os dois problemas. Além disso, se ainda vier
+// 429 (rajada momentânea), espera um pouco e tenta de novo (até 2 vezes) antes de desistir
+// dessa chamada — a maioria dos rate limits de rajada libera sozinho em 1-2 segundos.
+async function buscarComLimite(items, limite, fn) {
+  const resultados = [];
+  for (let i = 0; i < items.length; i += limite) {
+    const lote = items.slice(i, i + limite);
+    const parcial = await Promise.all(lote.map(fn));
+    resultados.push(...parcial);
+  }
+  return resultados;
+}
+async function fetchComRetry429(url, opts, tentativas = 3, esperaMs = 1500) {
+  for (let tentativa = 1; tentativa <= tentativas; tentativa++) {
+    const resp = await fetch(url, opts);
+    if (resp.status !== 429) return resp;
+    if (tentativa < tentativas) await new Promise((r) => setTimeout(r, esperaMs * tentativa));
+  }
+  return fetch(url, opts); // última tentativa, devolve o que vier (mesmo que 429 de novo)
+}
+
 // IDs das ligas na GOAL API → nome do campeonato que aparece no app.
 // Mesma lista de 10 ligas usada em jogos-do-dia.js.
 const NOMES_CAMP_POR_LIGA = new Map([
@@ -160,7 +184,7 @@ function nomeDoTime(mapaClubes, teamId, nomeCru) {
 async function buscarRanksDaLiga(apiKey, ligaId, cacheStandings) {
   if (cacheStandings.has(ligaId)) return cacheStandings.get(ligaId);
 
-  const resp = await fetch(`${GOAL_API_URL}/leagues/${ligaId}/standings`, {
+  const resp = await fetchComRetry429(`${GOAL_API_URL}/leagues/${ligaId}/standings`, {
     headers: { Authorization: `Bearer ${apiKey}` },
   });
   const json = await resp.json();
@@ -182,7 +206,7 @@ async function buscarRanksDaLiga(apiKey, ligaId, cacheStandings) {
 // eventos, cartões e estatísticas embutidos, então não precisa mais de
 // chamadas separadas pra "events" e "statistics" como na API-Football.
 async function buscarDetalheDoJogo(apiKey, fixtureId) {
-  const resp = await fetch(`${GOAL_API_URL}/fixtures/${fixtureId}`, {
+  const resp = await fetchComRetry429(`${GOAL_API_URL}/fixtures/${fixtureId}`, {
     headers: { Authorization: `Bearer ${apiKey}` },
   });
   const json = await resp.json();
@@ -221,26 +245,22 @@ export const handler = async function () {
   // (agendado, ao vivo, finalizado) e conferimos o status aqui no código — mais
   // seguro e também deixa ver o status real dos jogos de hoje que ainda não bateram.
   //
-  // Em PARALELO (Promise.all), não uma liga de cada vez: a GOAL API andou respondendo
-  // ~15s por chamada, e 12 ligas em SÉRIE passava de 60s (limite da função na Netlify)
-  // — a função era morta no meio do loop, deixando de fora tudo depois de "Bundesliga"
-  // pra baixo (2. Bundesliga, Serie A, Ligue 1, Eredivisie, Champions, Primeira Liga,
-  // Liga MX). Em paralelo, as 12 chamadas ficam esperando juntas (~15-20s no total),
-  // bem dentro do limite.
-  const respostasPorLiga = await Promise.all(
-    [...NOMES_CAMP_POR_LIGA.keys()].map(async (ligaId) => {
-      try {
-        const resp = await fetch(`${GOAL_API_URL}/fixtures?leagueId=${ligaId}&limit=30`, {
-          headers: { Authorization: `Bearer ${apiKey}` },
-        });
-        const json = await resp.json();
-        return { ligaId, httpStatus: resp.status, json };
-      } catch (e) {
-        console.log(`ERRO ao buscar fixtures da liga=${ligaId}:`, e.message);
-        return { ligaId, httpStatus: 0, json: { success: false, data: [] } };
-      }
-    })
-  );
+  // Em PARALELO total já bateu rate limit 429 da GOAL API (12 chamadas ao mesmo tempo é
+  // demais pra ela), e em SÉRIE (uma de cada vez) passava de 60s e a função era morta no
+  // meio do loop, deixando de fora as ligas de trás. Solução: lotes de 3 ao mesmo tempo
+  // (ver buscarComLimite acima), com nova tentativa automática se ainda bater 429.
+  const respostasPorLiga = await buscarComLimite([...NOMES_CAMP_POR_LIGA.keys()], 3, async (ligaId) => {
+    try {
+      const resp = await fetchComRetry429(`${GOAL_API_URL}/fixtures?leagueId=${ligaId}&limit=30`, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      });
+      const json = await resp.json();
+      return { ligaId, httpStatus: resp.status, json };
+    } catch (e) {
+      console.log(`ERRO ao buscar fixtures da liga=${ligaId}:`, e.message);
+      return { ligaId, httpStatus: 0, json: { success: false, data: [] } };
+    }
+  });
 
   let todosFixtures = [];
   for (const { ligaId, httpStatus, json } of respostasPorLiga) {
@@ -302,27 +322,22 @@ export const handler = async function () {
   const mapaClubes = await buscarMapaClubes(supaUrl, supaServiceKey);
   console.log('Clubes cadastrados na tabela "clubes":', mapaClubes.size);
 
-  // Mesma lógica de paralelizar aplicada aqui: 1 chamada de detalhe por jogo NOVO (que
-  // já traz estatística + eventos juntos) rodando em série também corria risco de estourar
-  // o limite de tempo se sobrasse muito jogo pra reprocessar de uma vez (ex: depois de uma
-  // execução anterior que deu timeout). Primeiro busca a classificação de cada liga
-  // envolvida (em paralelo, 1 chamada por liga — sem duplicar graças ao cacheStandings),
-  // só DEPOIS os detalhes de cada jogo em paralelo (não tem corrida no cache porque as
-  // classificações já foram todas buscadas e guardadas antes desse passo).
+  // Mesma lógica de limitar concorrência aplicada aqui: primeiro busca a classificação de
+  // cada liga envolvida (lotes de 3, 1 chamada por liga — sem duplicar graças ao
+  // cacheStandings), só DEPOIS os detalhes de cada jogo (lotes de 3) — sem corrida no
+  // cache porque as classificações já foram todas buscadas e guardadas antes desse passo.
   const ligasEnvolvidas = [...new Set(novos.map((f) => f.leagueId))];
-  await Promise.all(ligasEnvolvidas.map((ligaId) => buscarRanksDaLiga(apiKey, ligaId, cacheStandings)));
+  await buscarComLimite(ligasEnvolvidas, 3, (ligaId) => buscarRanksDaLiga(apiKey, ligaId, cacheStandings));
 
-  const detalhesPorJogo = await Promise.all(
-    novos.map(async (f) => {
-      try {
-        const detalhe = await buscarDetalheDoJogo(apiKey, f.id);
-        return { f, detalhe };
-      } catch (e) {
-        console.log(`ERRO ao buscar detalhe do jogo id=${f.id}:`, e.message);
-        return { f, detalhe: null };
-      }
-    })
-  );
+  const detalhesPorJogo = await buscarComLimite(novos, 3, async (f) => {
+    try {
+      const detalhe = await buscarDetalheDoJogo(apiKey, f.id);
+      return { f, detalhe };
+    } catch (e) {
+      console.log(`ERRO ao buscar detalhe do jogo id=${f.id}:`, e.message);
+      return { f, detalhe: null };
+    }
+  });
 
   for (const { f, detalhe } of detalhesPorJogo) {
     const casaCorrigido = nomeDoTime(mapaClubes, f.homeTeamId, f.homeTeamName);

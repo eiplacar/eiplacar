@@ -9,6 +9,30 @@
 
 const GOAL_API_URL = 'https://api.goal-api.com/v1';
 
+// Faz até `limite` chamadas ao mesmo tempo (não todas de uma vez, não uma de cada vez).
+// Testamos os dois extremos: tudo em série estourava o tempo limite da função (12 ligas
+// x ~15s = 180s+); tudo de uma vez batia rate limit da GOAL API (429 em quase todas).
+// Um meio-termo de poucas por vez resolve os dois problemas. Além disso, se ainda vier
+// 429 (rajada momentânea), espera um pouco e tenta de novo (até 2 vezes) antes de desistir
+// dessa liga — a maioria dos rate limits de rajada libera sozinho em 1-2 segundos.
+async function buscarComLimite(items, limite, fn) {
+  const resultados = [];
+  for (let i = 0; i < items.length; i += limite) {
+    const lote = items.slice(i, i + limite);
+    const parcial = await Promise.all(lote.map(fn));
+    resultados.push(...parcial);
+  }
+  return resultados;
+}
+async function fetchComRetry429(url, opts, tentativas = 3, esperaMs = 1500) {
+  for (let tentativa = 1; tentativa <= tentativas; tentativa++) {
+    const resp = await fetch(url, opts);
+    if (resp.status !== 429) return resp;
+    if (tentativa < tentativas) await new Promise((r) => setTimeout(r, esperaMs * tentativa));
+  }
+  return fetch(url, opts); // última tentativa, devolve o que vier (mesmo que 429 de novo)
+}
+
 // Ligas que aparecem na busca — IDs da GOAL API (não são mais números
 // simples como na API-Football, e sim strings tipo "cmr77dvww...") →
 // nome do campeonato que aparece no app. Mesma lista/nomes de
@@ -59,37 +83,32 @@ const PAIS_POR_LIGA = new Map([
 // aqui no código (via matchDate). Mais chamadas (1 por liga permitida), mas garante
 // que TODAS as ligas configuradas apareçam, não só as grandes.
 //
-// Em PARALELO (Promise.all), não uma liga de cada vez: a GOAL API andou respondendo
-// ~15s por chamada — 12 ligas em SÉRIE passa fácil de 60s e a função é morta no meio
-// do loop, deixando de fora as ligas que vêm depois na lista (ex: Serie A da Itália,
-// que é a 7ª — via bug relatado de "nenhum jogo da Itália"). Em paralelo, as 12
-// chamadas ficam esperando juntas (~15-20s no total), bem dentro do limite.
+// Em lotes de 3 ao mesmo tempo (ver buscarComLimite acima) — nem tudo em série (estourava
+// o tempo limite da função) nem tudo de uma vez (batia rate limit 429 da GOAL API).
 async function buscarTodosFixturesDoDia(apiKey, data) {
   const LIMITE_POR_LIGA = 30; // cobre folgado a "rodada" de qualquer liga em torno da data buscada
 
-  const resultados = await Promise.all(
-    [...LIGAS_PERMITIDAS].map(async (ligaId) => {
-      try {
-        const resp = await fetch(`${GOAL_API_URL}/fixtures?leagueId=${ligaId}&limit=${LIMITE_POR_LIGA}`, {
-          headers: { Authorization: `Bearer ${apiKey}` },
-        });
-        if (!resp.ok) {
-          console.log(`GOAL API respondeu com erro ${resp.status} pra liga ${ligaId}`);
-          return [];
-        }
-        const json = await resp.json();
-        if (!json.success) {
-          console.log(`GOAL API recusou a chamada pra liga ${ligaId}:`, json.message);
-          return [];
-        }
-        console.log(`Liga ${ligaId}: ${(json.data || []).length} fixture(s) recebido(s), datas:`, [...new Set((json.data || []).map((f) => f.matchDate))]);
-        return json.data || [];
-      } catch (e) {
-        console.log(`ERRO ao buscar fixtures da liga ${ligaId}:`, e.message);
+  const resultados = await buscarComLimite([...LIGAS_PERMITIDAS], 3, async (ligaId) => {
+    try {
+      const resp = await fetchComRetry429(`${GOAL_API_URL}/fixtures?leagueId=${ligaId}&limit=${LIMITE_POR_LIGA}`, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      });
+      if (!resp.ok) {
+        console.log(`GOAL API respondeu com erro ${resp.status} pra liga ${ligaId}`);
         return [];
       }
-    })
-  );
+      const json = await resp.json();
+      if (!json.success) {
+        console.log(`GOAL API recusou a chamada pra liga ${ligaId}:`, json.message);
+        return [];
+      }
+      console.log(`Liga ${ligaId}: ${(json.data || []).length} fixture(s) recebido(s), datas:`, [...new Set((json.data || []).map((f) => f.matchDate))]);
+      return json.data || [];
+    } catch (e) {
+      console.log(`ERRO ao buscar fixtures da liga ${ligaId}:`, e.message);
+      return [];
+    }
+  });
 
   const todos = resultados.flat();
   return todos.filter((f) => f.matchDate === data);
