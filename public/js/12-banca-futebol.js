@@ -624,12 +624,13 @@ function computeClassificacao(camp, modo){
   if(/copa do mundo|amistoso/i.test(camp)) return { estado:'sem-classificacao', camp };
 
   const jogos = camp ? jogosCache.filter(j=>j.camp===camp) : [];
-  // Champions League: só entra na tabela de pontos corrida quem é da Fase Liga —
-  // jogos de Qualificação/Playoffs são mata-mata (rodada guardada como "Qualificação -
-  // <etapa>" / "Playoffs - <etapa>", ver AdicionarPartida.jsx) e não contam pra
-  // classificação por pontos, senão o saldo/pontos ficam errados.
+  // Champions League: só entra na tabela de pontos corrida quem é da Fase Liga de verdade —
+  // o campo "Rodada" da Fase Liga é preenchido só com o número (ex: "10", ver AdicionarPartida.jsx).
+  // Jogos de Qualificação/Playoffs (mata-mata, rodada guardada como "Qualificação - <etapa>" /
+  // "Playoffs - <etapa>") e qualquer jogo cuja rodada não seja um número puro ficam de fora,
+  // senão o saldo/pontos da Fase Liga ficam errados.
   const jogosParaTabela = /champions league/i.test(camp)
-    ? jogos.filter(j => !/^qualifica[cç][aã]o\s*-|^playoffs\s*-/i.test((j.rodada||'').trim()))
+    ? jogos.filter(j => /^\d+$/.test((j.rodada||'').trim()))
     : jogos;
   if(!jogosParaTabela.length) return { estado: jogosCache.length ? 'sem-jogos-liga' : 'sem-jogos', camp };
 

@@ -44,13 +44,13 @@ function ListaJogosFase({ jogosCache, camp, prefixoFase, etapa }) {
       {jogos.map((j) => (
         <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--c2)', borderRadius: 8, padding: '8px 10px' }}>
           <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ width: 20, height: 20, flexShrink: 0 }}>{escudoImgOuIcone(j.casa)}</div>
+            <div style={{ width: 20, height: 20, flexShrink: 0 }} dangerouslySetInnerHTML={{ __html: escudoImgOuIcone(j.casa) }} />
             <span style={{ fontSize: 11, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.casa || '—'}</span>
           </div>
           <div style={{ fontSize: 13, fontWeight: 900, flexShrink: 0 }}>{j.gC ?? '-'}<span style={{ color: 'var(--texto2)' }}> x </span>{j.gV ?? '-'}</div>
           <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'flex-end' }}>
             <span style={{ fontSize: 11, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right' }}>{j.vis || '—'}</span>
-            <div style={{ width: 20, height: 20, flexShrink: 0 }}>{escudoImgOuIcone(j.vis)}</div>
+            <div style={{ width: 20, height: 20, flexShrink: 0 }} dangerouslySetInnerHTML={{ __html: escudoImgOuIcone(j.vis) }} />
           </div>
           <div style={{ fontSize: 9, color: 'var(--texto2)', flexShrink: 0, width: 60, textAlign: 'right' }}>{j.data ? fd(j.data) : ''}</div>
         </div>
