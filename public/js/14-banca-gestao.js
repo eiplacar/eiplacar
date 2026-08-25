@@ -245,8 +245,15 @@ function onCampInput(){
   // Sugerir estádios do campeonato
   const locais=[...new Set(jogosDoCamp.map(j=>j.local).filter(Boolean))].sort();
   document.getElementById('localSug').innerHTML=locais.map(l=>`<option value="${l}">`).join('');
-  // Sugerir rodadas do campeonato
-  const rodadas=[...new Set(jogosDoCamp.map(j=>j.rodada).filter(Boolean))].sort();
+  // Sugerir rodadas do campeonato — pra Champions League, junta as rodadas já usadas
+  // com as etapas fixas de Qualificação/Playoffs (mata-mata, fora da Fase Liga por
+  // pontos corridos — ver computeClassificacao em 12-banca-futebol.js).
+  const rodadasUsadas=[...new Set(jogosDoCamp.map(j=>j.rodada).filter(Boolean))];
+  const ETAPAS_CL = /champions league/i.test(camp) ? [
+    'Qualificação - Oitavas de Final', 'Qualificação - Quartas de Final', 'Qualificação - Semifinais', 'Qualificação - Final',
+    'Playoffs - 16 Avos de Final', 'Playoffs - Oitavas de Final', 'Playoffs - Quartas de Final', 'Playoffs - Semifinais', 'Playoffs - Final',
+  ] : [];
+  const rodadas=[...new Set([...rodadasUsadas, ...ETAPAS_CL])].sort();
   document.getElementById('rodadasSug').innerHTML=rodadas.map(r=>`<option value="${r}">`).join('');
   // Auto-preencher país: se esse campeonato já foi cadastrado antes com um país,
   // usa o mesmo — assim ninguém precisa redigitar (nem errar) o país toda vez.

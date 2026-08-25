@@ -624,9 +624,16 @@ function computeClassificacao(camp, modo){
   if(/copa do mundo|amistoso/i.test(camp)) return { estado:'sem-classificacao', camp };
 
   const jogos = camp ? jogosCache.filter(j=>j.camp===camp) : [];
-  if(!jogos.length) return { estado: jogosCache.length ? 'sem-jogos-liga' : 'sem-jogos', camp };
+  // Champions League: só entra na tabela de pontos corrida quem é da Fase Liga —
+  // jogos de Qualificação/Playoffs são mata-mata (rodada guardada como "Qualificação -
+  // <etapa>" / "Playoffs - <etapa>", ver AdicionarPartida.jsx) e não contam pra
+  // classificação por pontos, senão o saldo/pontos ficam errados.
+  const jogosParaTabela = /champions league/i.test(camp)
+    ? jogos.filter(j => !/^qualifica[cç][aã]o\s*-|^playoffs\s*-/i.test((j.rodada||'').trim()))
+    : jogos;
+  if(!jogosParaTabela.length) return { estado: jogosCache.length ? 'sem-jogos-liga' : 'sem-jogos', camp };
 
-  const jogosOrdenados = [...jogos].sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+  const jogosOrdenados = [...jogosParaTabela].sort((a,b)=>(a.data||'').localeCompare(b.data||''));
   const rankPorTime = {};
   jogosOrdenados.forEach(j=>{
     if(j.rankC!=null) rankPorTime[j.casa] = j.rankC;
@@ -637,7 +644,7 @@ function computeClassificacao(camp, modo){
   function linhaTime(nome){ return tab[nome] || (tab[nome] = {j:0,v:0,e:0,d:0,gp:0,gc:0,vermelhos:0,amarelos:0,vFora:0,gpFora:0}); }
   const incluiCasa = modo!=='visitante';
   const incluiVis  = modo!=='casa';
-  jogos.forEach(j=>{
+  jogosParaTabela.forEach(j=>{
     if(incluiCasa){
       const c = linhaTime(j.casa);
       c.j++; c.gp += (j.gC||0); c.gc += (j.gV||0);
@@ -670,12 +677,12 @@ function computeClassificacao(camp, modo){
   } else if(ehBrasileirao){
     // Brasileirão: API não entrega mais o rank (plano gratuito não libera a temporada
     // atual), então a posição É calculada manualmente com os critérios oficiais da CBF.
-    linhas = ordenarBrasileirao(linhas, jogos).map((l,i)=>({ ...l, rank: i+1 }));
+    linhas = ordenarBrasileirao(linhas, jogosParaTabela).map((l,i)=>({ ...l, rank: i+1 }));
   } else if(CRITERIOS_LIGA[camp]){
     // Ligas estrangeiras cobertas: calcula com os critérios OFICIAIS de cada uma, sem
     // depender do rank da API (se a API falhar ou não trouxer rank, o app não fica sem
     // classificação nem usa uma ordenação genérica errada — calcula sozinho, igual ao Brasileirão).
-    linhas = ordenarPorCriteriosOficiais(linhas, jogos, camp).map((l,i)=>({ ...l, rank: i+1 }));
+    linhas = ordenarPorCriteriosOficiais(linhas, jogosParaTabela, camp).map((l,i)=>({ ...l, rank: i+1 }));
   } else {
     // Ligas não cobertas: usa o rank da API quando disponível; sem rank, cai no fallback
     // simples por pontos (critérios de desempate variam liga a liga, não implementados aqui).
