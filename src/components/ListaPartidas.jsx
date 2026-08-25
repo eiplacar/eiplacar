@@ -114,12 +114,14 @@ export default function ListaPartidas() {
 
   const allCamps = useMemo(() => [...new Set(jogosCache.map((j) => j.camp))], [jogosCache]);
 
-  // Rank calculado (critérios da CBF) pros campeonatos do Brasileirão, pra preencher a
-  // coluna Rk quando o jogo não veio com rank da API — mesma fonte que a Aba Classificação usa.
+  // Rank calculado pelos critérios oficiais de cada campeonato (CBF pro Brasileirão,
+  // regulamento próprio pras 11 ligas estrangeiras), pra preencher a coluna Rk quando o
+  // jogo não veio com rank da API — sempre o caso em jogo cadastrado manualmente. Mesma
+  // fonte que a aba Classificação usa (window.computeClassificacao).
   const mapasClassificacao = useMemo(() => {
     const mapa = {};
     allCamps.forEach((c) => {
-      if (/brasileir[ãa]o/i.test(c) && window.computeClassificacao) {
+      if (window.computeClassificacao) {
         const r = window.computeClassificacao(c);
         if (r.estado === 'ok') {
           mapa[c] = {};

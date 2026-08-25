@@ -183,13 +183,12 @@ function ophCompartilharSelecionados(){
     j.mercado ? `📈 Mercado: ${j.mercado}` : null,
     j.minuto ? `⏱ Entrada: ${j.minuto}'` : null,
     j.odd ? `💰 Odd: ${parseFloat(j.odd).toFixed(2)}` : null,
-    `🟡 Situação: ${ophRotuloStatus(j.status)}`,
   ].filter(l=>l!==null).join('\n'));
 
   const titulo = lista.length===1 ? `${lista[0].casa} × ${lista[0].vis}` : 'Jogos de Hoje';
   const txt = [
     ...blocos,
-  ].join('\n\n━━━━━━━━━━━━━━━━━━\n\n') + `\n\n━━━━━━━━━━━━━━━━━━\n\n📅 Publicado em:\n${dataFmt} às ${horaFmt}\n\n📲 Ei Placar`;
+  ].join('\n\n━━━━━━━━━━━━━━━━━━\n\n') + `\n\n━━━━━━━━━━━━━━━━━━\n\n📅 Publicado em:\n${dataFmt} às ${horaFmt}`;
 
   abrirCompartilhamento(txt.trim(), titulo);
   ophSelecionados.clear(); // já foram enviados — some a marcação pra não mandar de novo sem querer

@@ -637,13 +637,6 @@ function sbUrlAgendados(filtros) {
   return cfg.url.replace(/\/$/, '') + '/rest/v1/jogos_agendados' + (filtros || '');
 }
 
-// URL base da tabela "Ao Vivo" (Dashboard) — alimentada pelo webhook da GOAL API,
-// só leitura pelo app (ver public/js/18-ao-vivo.js e netlify/functions/goal-webhook.js)
-function sbUrlAoVivo(filtros) {
-  const cfg = getConfig();
-  return cfg.url.replace(/\/$/, '') + '/rest/v1/jogos_ao_vivo' + (filtros || '');
-}
-
 function setSyncStatus(estado, msg) {
   const dot = document.getElementById('syncDot');
   const msgEl = document.getElementById('syncMsg');
