@@ -9,9 +9,9 @@
 // todo mundo; apagado, some pra todo mundo também.
 //
 // Permissões (reforçadas na tela E no banco via RLS — ver o .sql acima):
-//   • Organizador: adiciona, apaga e edita qualquer campo.
-//   • Membro: só compartilha e edita Mercado/Minuto/Odd/Situação (não mexe
-//     em Campeonato/Times/Data/Horário, e não apaga jogo).
+//   • Organizador: adiciona e apaga jogos.
+//   • Membro: só compartilha (não apaga jogo).
+// Não existe mais edição pelo card — o toque só marca/desmarca pra compartilhar.
 let ophCache = [];
 
 // Busca a lista inteira na nuvem. Chamado no carregamento e a cada 60s
@@ -100,85 +100,6 @@ async function ophRemover(id){
   }
 }
 
-// ══ Edição do card (ícone ✏️, só aparece quando o card tá selecionado) ══
-// Organizador edita tudo. Membro só edita Mercado/Minuto/Odd/Situação — os
-// campos de cima (Campeonato/Times/Data/Horário) ficam travados na tela.
-let ophEditandoId = null;
-function ophAbrirEdicao(id){
-  const j = ophCache.find(x=>x.id===id);
-  if(!j) return;
-  ophEditandoId = id;
-  const souOrganizador = perfilAtual && perfilAtual.papel === 'organizador';
-
-  document.getElementById('ophEditCamp').value = j.camp||'';
-  document.getElementById('ophEditCasa').value = j.casa||'';
-  document.getElementById('ophEditVis').value = j.vis||'';
-  document.getElementById('ophEditData').value = j.data || (window.hojeBR ? window.hojeBR() : '');
-  document.getElementById('ophEditHorario').value = j.horario||'';
-  document.getElementById('ophEditMercado').value = j.mercado||'';
-  document.getElementById('ophEditMinuto').value = j.minuto||'';
-  document.getElementById('ophEditOdd').value = j.odd||'';
-  document.getElementById('ophEditStatus').value = j.status||'aguardando';
-
-  // Campos de cima (identidade do jogo) só o organizador mexe
-  ['ophEditCamp','ophEditCasa','ophEditVis','ophEditData','ophEditHorario'].forEach(elId=>{
-    const el = document.getElementById(elId);
-    if(el) el.disabled = !souOrganizador;
-  });
-
-  document.getElementById('modalEditarOportunidade').classList.add('open');
-}
-function ophFecharEdicao(){
-  document.getElementById('modalEditarOportunidade').classList.remove('open');
-  ophEditandoId = null;
-}
-async function ophSalvarEdicao(){
-  if(ophEditandoId==null) return;
-  const j = ophCache.find(x=>x.id===ophEditandoId);
-  if(!j){ ophFecharEdicao(); return; }
-  const souOrganizador = perfilAtual && perfilAtual.papel === 'organizador';
-
-  // Mercado/Minuto/Odd/Situação — todo mundo pode mandar
-  const campos = {
-    mercado: document.getElementById('ophEditMercado').value.trim(),
-    minuto: document.getElementById('ophEditMinuto').value,
-    odd: document.getElementById('ophEditOdd').value,
-    status: document.getElementById('ophEditStatus').value,
-  };
-  // Campeonato/Times/Data/Horário — só entra no PATCH se for organizador (dupla
-  // trava: mesmo que o campo estivesse habilitado por algum motivo, membro nunca
-  // manda esses campos pro banco)
-  if(souOrganizador){
-    const casa = document.getElementById('ophEditCasa').value.trim();
-    const vis = document.getElementById('ophEditVis').value.trim();
-    const data = document.getElementById('ophEditData').value;
-    if(!casa || !vis){ toast?.('Preencha Mandante e Visitante', true); return; }
-    if(!data){ toast?.('Preencha a data do jogo', true); return; }
-    campos.camp = document.getElementById('ophEditCamp').value.trim();
-    campos.casa = casa;
-    campos.vis = vis;
-    campos.data = data;
-    campos.horario = document.getElementById('ophEditHorario').value;
-  }
-
-  try {
-    const res = await fetch(sbUrlAgendados('?id=eq.'+ophEditandoId), {
-      method:'PATCH',
-      headers: { ...sbHeaders(), 'Prefer':'return=representation' },
-      body: JSON.stringify(campos)
-    });
-    if(!res.ok) throw new Error(await res.text());
-    const atualizado = (await res.json())[0];
-    Object.assign(j, atualizado);
-    ophFecharEdicao();
-    ophRenderLista();
-    renderGeral();
-    toast?.('Oportunidade atualizada!');
-  } catch(e){
-    toast?.('Erro ao salvar: ' + e.message, true);
-  }
-}
-
 // Ids marcados pra compartilhar (toque no card pra marcar/desmarcar). Fica só na memória
 // da sessão — assim, se um jogo já foi compartilhado, ele não vem marcado de novo sozinho.
 let ophSelecionados = new Set();
@@ -188,6 +109,7 @@ function ophToggleSelecao(id){
 }
 
 // ══ Renderiza a lista "Jogos de Hoje" — na aba Oportunidades E no Dashboard ══
+// Card sem modal: o toque só marca/desmarca pra compartilhar (não abre edição).
 function ophRenderLista(){
   let lista = ophCache.filter(j=>!ophExpirado(j)); // some sozinho 4h depois do horário (só da TELA — quem apaga de verdade é o organizador)
   lista = lista.slice().sort((a,b)=>((a.data||'')+(a.horario||'99:99')).localeCompare((b.data||'')+(b.horario||'99:99')));
@@ -208,7 +130,6 @@ function ophRenderLista(){
     <div onclick="ophToggleSelecao(${j.id})" style="flex:0 0 auto;width:150px;background:var(--c2);border:2px solid ${sel?'var(--verde2)':'var(--c3)'};border-radius:10px;padding:24px 10px 10px;text-align:center;position:relative;cursor:pointer">
       ${sel?'<div style="position:absolute;top:6px;left:6px;width:16px;height:16px;border-radius:50%;background:var(--verde2);color:#fff;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;line-height:1">✓</div>':''}
       ${foraDeHoje?`<div style="position:absolute;top:6px;left:50%;transform:translateX(-50%);background:var(--c2-dest);color:var(--ouro);font-size:8px;font-weight:700;padding:2px 6px;border-radius:8px;white-space:nowrap">${dataFmt}</div>`:''}
-      <button onclick="event.stopPropagation();ophAbrirEdicao(${j.id})" title="Editar" style="position:absolute;top:4px;right:22px;background:none;border:none;color:var(--texto2);font-size:13px;cursor:${sel?'pointer':'default'};padding:2px 4px;display:${sel?'flex':'none'}"><span data-ic="pencil" data-ic-size="13"></span></button>
       ${souOrganizador?`<button onclick="event.stopPropagation();ophRemover(${j.id})" style="position:absolute;top:4px;right:4px;background:none;border:none;color:var(--texto2);font-size:13px;cursor:${sel?'pointer':'default'};padding:2px 4px;display:${sel?'flex':'none'}">✕</button>`:''}
       <div style="width:30px;height:30px;margin:0 auto">${escudoImgOuIcone(j.casa)}</div>
       <div style="font-size:10.5px;font-weight:700;line-height:1.2;margin-top:2px">${j.casa||'—'}</div>

@@ -50,7 +50,10 @@ function bpLoad(){
 // Salva: atualiza cache local imediatamente (UI fica rápida) e envia para a nuvem em segundo plano
 function bpSave(d){
   bancaCache = d;
-  localStorage.setItem(bpLocalKey(), JSON.stringify(d)); // backup local, caso fique offline
+  // Backup local, caso fique offline — se o localStorage estiver cheio, ignora e segue
+  // só com a nuvem (que é a fonte de verdade mesmo); sem o try/catch, isso travava a
+  // tela com um erro de "quota exceeded" no meio do uso normal do app.
+  try { localStorage.setItem(bpLocalKey(), JSON.stringify(d)); } catch(e){ console.error('Backup local da Banca falhou (sem espaço no navegador):', e); }
   bpSyncNuvem();
 }
 

@@ -52,7 +52,31 @@ function authHeadersBase(){
 function authGetSessao(){
   try { return JSON.parse(localStorage.getItem(AUTH_KEY)); } catch { return null; }
 }
-function authSaveSessao(s){ localStorage.setItem(AUTH_KEY, JSON.stringify(s)); }
+// Salva a sessão. Em celulares com pouco espaço livre, o localStorage do navegador
+// pode encher com o tempo (cache de escudos em base64, backups locais da Banca de
+// contas antigas etc.) e aí até um dado pequeno como a sessão falha ao salvar
+// ("QuotaExceededError") — isso travava o login pra sempre nesse aparelho, mesmo
+// com e-mail/senha corretos. Agora, se acontecer, libera espaço apagando só os
+// caches "de emergência" (tudo isso volta sozinho da nuvem depois do login) e
+// tenta salvar a sessão de novo antes de desistir.
+function authSaveSessao(s){
+  try {
+    localStorage.setItem(AUTH_KEY, JSON.stringify(s));
+  } catch(e){
+    if(!/quota/i.test(e.name||'') && !/quota/i.test(e.message||'')) throw e;
+    try {
+      localStorage.removeItem('mp_escudos'); // cache de escudos (imagens) — recarrega da nuvem
+      Object.keys(localStorage).forEach(k=>{
+        // backups locais da Banca (por conta) e config do app — idem, voltam da nuvem
+        if(k.startsWith('bancaParticipantes_v2_') || k === 'eiPlacar_configApp') localStorage.removeItem(k);
+      });
+      localStorage.setItem(AUTH_KEY, JSON.stringify(s));
+    } catch(e2){
+      console.error('Não foi possível salvar a sessão mesmo após limpar cache local:', e2);
+      throw e2;
+    }
+  }
+}
 function authClearSessao(){ localStorage.removeItem(AUTH_KEY); }
 
 // ── Renovação automática de sessão ──
@@ -471,6 +495,7 @@ async function authIniciarSessao(){
     cfgAppCarregarNuvem(),
     escudosCarregarNuvem(),
     ophCarregarNuvem().then(()=>ophRenderLista?.()),
+    avCarregarNuvem().then(()=>avRenderLista?.()),
     favIndiceCarregarNuvem().then(()=>window.favIndiceRefresh?.()),
   ]);
   authAplicarTela();
@@ -610,6 +635,13 @@ function sbUrl(filtros) {
 function sbUrlAgendados(filtros) {
   const cfg = getConfig();
   return cfg.url.replace(/\/$/, '') + '/rest/v1/jogos_agendados' + (filtros || '');
+}
+
+// URL base da tabela "Ao Vivo" (Dashboard) — alimentada pelo webhook da GOAL API,
+// só leitura pelo app (ver public/js/18-ao-vivo.js e netlify/functions/goal-webhook.js)
+function sbUrlAoVivo(filtros) {
+  const cfg = getConfig();
+  return cfg.url.replace(/\/$/, '') + '/rest/v1/jogos_ao_vivo' + (filtros || '');
 }
 
 function setSyncStatus(estado, msg) {

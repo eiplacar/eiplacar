@@ -384,42 +384,6 @@
   </div>
 </div>
 
-<!-- ══ MODAL EDITAR JOGO (Oportunidade) — Mercado/Odd/Minuto/Situação preenchidos depois de cadastrar o jogo ══ -->
-<div class="modal-overlay" id="modalEditarOportunidade">
-  <div class="modal" style="max-width:380px">
-    <h2 style="font-size:15px;margin-bottom:12px"><span data-ic="pencil" data-ic-size="15"></span> Editar Oportunidade</h2>
-    <div style="margin-bottom:10px"><label>Campeonato</label><input type="text" id="ophEditCamp" placeholder="Ex: Brasileirão Série A"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-      <div><label>Mandante</label><input type="text" id="ophEditCasa"></div>
-      <div><label>Visitante</label><input type="text" id="ophEditVis"></div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-      <div><label>Data</label><input type="date" id="ophEditData"></div>
-      <div><label>Horário</label><input type="time" id="ophEditHorario"></div>
-    </div>
-    <div style="height:1px;background:var(--c3);margin:2px 0 14px"></div>
-    <div style="margin-bottom:10px"><label>Mercado</label><input type="text" id="ophEditMercado" placeholder="Ex: Over 1.5"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-      <div><label>Minuto</label><input type="number" min="0" max="120" id="ophEditMinuto" placeholder="Ex: 33"></div>
-      <div><label>Odd</label><input type="text" inputMode="decimal" id="ophEditOdd" placeholder="1.80"></div>
-    </div>
-    <div style="margin-bottom:16px">
-      <label>Situação</label>
-      <select id="ophEditStatus">
-        <option value="aguardando">Aguardando resultado</option>
-        <option value="green">Green</option>
-        <option value="red">Red</option>
-        <option value="void">Void</option>
-        <option value="encerrado">Encerrado</option>
-      </select>
-    </div>
-    <div class="modal-btns">
-      <button class="btn-fechar-cfg" onclick="ophFecharEdicao()">Cancelar</button>
-      <button class="btn-salvar-cfg" onclick="ophSalvarEdicao()"><span data-ic="save" data-ic-size="14"></span> Salvar</button>
-    </div>
-  </div>
-</div>
-
 <!-- ══ MODAL DETALHE DO JOGO ══ -->
 <div class="modal-overlay" id="modalDetalheJogo">
   <div class="modal" style="max-width:380px">
@@ -728,6 +692,7 @@
 <script src="js/13-calculadora.js"></script>
 <script src="js/14-banca-gestao.js"></script>
 <script src="js/17-indice.js"></script>
+<script src="js/18-ao-vivo.js"></script>
 <script src="js/16-admin.js"></script>
 <script src="js/15-init.js"></script>
 <!-- Componentes React (migração aos poucos, por módulo) -->
