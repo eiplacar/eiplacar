@@ -169,7 +169,8 @@ export default function AdicionarPartida() {
       <div className="timeline-box">
         <div className="tl-header" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Timer size={14} /> Gols por Minuto</div>
         <div className="gol-form">
-          <div style={{ maxWidth: 90 }}><label>Minuto</label><input type="number" id="golMin" min="1" max="120" placeholder="45" /></div>
+          <div style={{ maxWidth: 90 }}><label>Minuto</label><input type="number" id="golMin" min="1" max="90" placeholder="45" /></div>
+          <div style={{ maxWidth: 90 }}><label>Acréscimo</label><input type="number" id="golAcr" min="0" max="20" placeholder="0" /></div>
           <div style={{ flex: 1 }}>
             <label>Quem marcou?</label>
             <div style={{ display: 'flex', gap: 8 }}>
@@ -178,6 +179,7 @@ export default function AdicionarPartida() {
             </div>
           </div>
         </div>
+        <div style={{ fontSize: 10, color: 'var(--texto2)', marginTop: -4, marginBottom: 8 }}>Gol nos acréscimos do 1º tempo: Minuto 45 + Acréscimo (ex: 3) — NÃO digite 48 direto no Minuto, senão ele cai errado no 2º tempo.</div>
         <div className="campo" id="campoVisual"></div>
         <div className="legenda">
           <div className="legenda-item"><div className="dot dot-c"></div><span id="legCasa">Mandante</span></div>

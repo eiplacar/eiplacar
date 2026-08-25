@@ -502,6 +502,29 @@
         </div>
       </div>
     </details>
+    <div class="card-title" style="margin:16px 0 8px"><span data-ic="clock" data-ic-size="14"></span> Gols por Minuto</div>
+    <div class="timeline-box">
+      <div class="gol-form">
+        <div style="max-width:90px"><label>Minuto</label><input type="number" id="eGolMin" min="1" max="90" placeholder="45"></div>
+        <div style="max-width:90px"><label>Acréscimo</label><input type="number" id="eGolAcr" min="0" max="20" placeholder="0"></div>
+        <div style="flex:1">
+          <label>Quem marcou?</label>
+          <div style="display:flex;gap:8px">
+            <button class="btn-time casa-btn" onclick="addGolEdit('casa')">Mandante</button>
+            <button class="btn-time vis-btn" onclick="addGolEdit('vis')">Visitante</button>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--texto2);margin:-4px 0 8px">Gol nos acréscimos do 1º tempo: Minuto 45 + Acréscimo (ex: 3) — não digite 48 direto no Minuto.</div>
+      <div class="campo" id="eCampoVisual"></div>
+      <div class="legenda">
+        <div class="legenda-item"><div class="dot dot-c"></div><span>Mandante</span></div>
+        <div class="legenda-item"><div class="dot dot-v"></div><span>Visitante</span></div>
+        <div style="flex:1"></div>
+        <span id="eContGols">0 gols</span>
+      </div>
+      <div id="eGolsLista"></div>
+    </div>
     <div class="modal-btns">
       <button class="btn-fechar-cfg" onclick="fecharModalEditar()">Cancelar</button>
       <button class="btn-salvar-cfg" onclick="confirmarEdicaoJogo()"><span data-ic="save" data-ic-size="14"></span> Salvar Alterações</button>

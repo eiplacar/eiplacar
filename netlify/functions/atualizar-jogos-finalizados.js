@@ -127,12 +127,18 @@ function pegarEstatistica(estatisticas, tipo, lado) {
   return Number.isNaN(n) ? null : n;
 }
 
-// "45", "90+3" etc. — soma os acréscimos pro minuto final do gol.
+// "45", "90+3" etc. — devolve o minuto-BASE e o acréscimo SEPARADOS (não soma).
+// BUG que isso corrige: antes somava tudo ("45+3" → 48), e como todo o motor de análise
+// usa min<=45 pra decidir "esse gol foi no 1º tempo" (estatísticas de HT, faixas de
+// minuto etc.), um gol nos acréscimos do 1º tempo (ex: 45+3) virava min=48 e passava a
+// contar (errado) como gol do 2º tempo em tudo. Com min=45 e acr=3 separados, o gol
+// continua corretamente classificado como 1º tempo, e o "+3" fica só pra exibição.
 function parseMinuto(tempo) {
-  if (!tempo) return 0;
-  return String(tempo)
-    .split('+')
-    .reduce((soma, parte) => soma + (parseInt(parte, 10) || 0), 0);
+  if (!tempo) return { min: 0, acr: 0 };
+  const [base, extra] = String(tempo).split('+');
+  const min = parseInt(base, 10) || 0;
+  const acr = extra ? (parseInt(extra, 10) || 0) : 0;
+  return { min, acr };
 }
 
 // Os eventos da GOAL API não trazem o nome do time que fez o gol — só
@@ -142,13 +148,14 @@ function extrairGols(eventos, nomeCasa, nomeVis) {
     .filter((ev) => ev.type === 'GOAL')
     .map((ev) => {
       const daCasa = !!ev.homeScorer;
+      const { min, acr } = parseMinuto(ev.time);
       return {
-        min: parseMinuto(ev.time),
+        min, acr,
         time: daCasa ? 'casa' : 'vis',
         nome: daCasa ? nomeCasa : nomeVis,
       };
     })
-    .sort((a, b) => a.min - b.min);
+    .sort((a, b) => (a.min + a.acr) - (b.min + b.acr));
 }
 
 // ═══════════════════════════════════════════════════

@@ -139,12 +139,15 @@ function abrirEditarJogo(id){
   document.getElementById('eAmarelosV').value   = j.amarelosV ?? '';
   document.getElementById('eVermelhosC').value  = j.vermelhosC ?? '';
   document.getElementById('eVermelhosV').value  = j.vermelhosV ?? '';
+  golsTempEdit = [...(j.gols || [])];
+  renderCampoEdit(); renderGolsListaEdit();
   document.getElementById('modalEditarJogo').classList.add('open');
 }
 
 function fecharModalEditar(){
   document.getElementById('modalEditarJogo').classList.remove('open');
   jogoEditandoId = null;
+  golsTempEdit = [];
 }
 
 function campoIntOuNullEdit(id){
@@ -185,6 +188,7 @@ async function confirmarEdicaoJogo(){
     escanteiosC: campoIntOuNullEdit('eEscanteiosC'), escanteiosV: campoIntOuNullEdit('eEscanteiosV'),
     amarelosC: campoIntOuNullEdit('eAmarelosC'), amarelosV: campoIntOuNullEdit('eAmarelosV'),
     vermelhosC: campoIntOuNullEdit('eVermelhosC'), vermelhosV: campoIntOuNullEdit('eVermelhosV'),
+    gols: [...golsTempEdit], // corrigido aqui no modal — antes só dava pra editar excluindo o jogo e recadastrando
   };
 
   const atualizado = await atualizarJogoNuvem(jogoEditandoId, dados);

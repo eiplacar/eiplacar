@@ -689,7 +689,7 @@ export default function AnaliseResultado() {
                   {jogoSel.gols.map((g, i) => (
                     <div className="gol-seq-item" key={i}>
                       <div className="gsi-num">{g.time === 'casa' ? jogoSel.casaNome : jogoSel.visNome}</div>
-                      <div className="gsi-min marc">{g.min}'</div>
+                      <div className="gsi-min marc">{g.min}{g.acr ? `+${g.acr}` : ''}'</div>
                     </div>
                   ))}
                 </div>

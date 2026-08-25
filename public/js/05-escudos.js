@@ -143,32 +143,62 @@ function syncNomes() {
 }
 
 // ══ GOLS ══
-function addGol(time) {
-  const min=parseInt(document.getElementById('golMin').value);
-  if(!min||min<1||min>120){ toast('Informe o minuto (1–120)'); return; }
-  const c=document.getElementById('iCasa').value.trim()||'Mandante';
-  const v=document.getElementById('iVis').value.trim()||'Visitante';
-  golsTemp.push({ min, time, nome:time==='casa'?c:v });
-  golsTemp.sort((a,b)=>a.min-b.min);
-  document.getElementById('golMin').value='';
-  document.getElementById('golMin').focus();
-  renderCampo(); renderGolsLista();
-}
-function removerGol(i){ golsTemp.splice(i,1); renderCampo(); renderGolsLista(); }
+// "min" é sempre o minuto-BASE (1-45 no 1º tempo, 46-90 no 2º) — nunca a soma com o
+// acréscimo. É esse campo que classifica o gol em "1º tempo" ou "2º tempo" em TODO o
+// motor de análise (HT, faixas de minuto etc.), então ele precisa continuar <=45 pra
+// gol nos acréscimos do 1º tempo (ex: 45+3) continuar contando como 1º tempo — daí
+// "acr" (acréscimo) ser um campo separado, só usado pra mostrar "45+3'", nunca somado
+// no "min". Sem isso, um gol aos 45+3 viraria min=48 e passaria a contar (errado) como
+// gol do 2º tempo em tudo — desde o gráfico de faixas até as estatísticas de HT.
+//
+// Genérico: usado tanto no formulário de "Adicionar Partida" quanto no de "Editar Jogo"
+// (antes só dava pra corrigir um gol errado apagando o jogo inteiro e cadastrando de
+// novo) — cada formulário passa seu próprio array de gols temporários e IDs de elemento.
+function rotuloMin(g){ return g.acr ? `${g.min}+${g.acr}` : `${g.min}`; }
 
-function renderCampo() {
-  document.getElementById('campoVisual').innerHTML=periodos6.map(p=>{
-    const gols=golsTemp.filter(g=>g.min>=p.s&&g.min<=p.e);
+function _addGolGenerico(temp, ids, time){
+  const min=parseInt(document.getElementById(ids.min).value);
+  const acr=parseInt(document.getElementById(ids.acr).value)||0;
+  if(!min||min<1||min>90){ toast('Informe o minuto (1–90, sem somar o acréscimo)'); return; }
+  const c=document.getElementById(ids.casa).value.trim()||'Mandante';
+  const v=document.getElementById(ids.vis).value.trim()||'Visitante';
+  temp.push({ min, acr, time, nome:time==='casa'?c:v });
+  temp.sort((a,b)=>(a.min+a.acr)-(b.min+b.acr));
+  document.getElementById(ids.min).value='';
+  document.getElementById(ids.acr).value='';
+  document.getElementById(ids.min).focus();
+  _renderCampoGenerico(temp, ids);
+  _renderGolsListaGenerico(temp, ids);
+}
+function _renderCampoGenerico(temp, ids){
+  document.getElementById(ids.campo).innerHTML=periodos6.map(p=>{
+    const gols=temp.filter(g=>g.min>=p.s&&g.min<=p.e);
     return `<div class="campo-row"><div class="periodo-label">${p.l}</div><div class="periodo-gols">${gols.map(g=>{
-      const i=golsTemp.indexOf(g);
-      return `<span class="gol-chip ${g.time}" onclick="removerGol(${i})" title="Toque para remover"><span>${g.min}'</span> <span>${g.nome}</span> <span style="opacity:.6">✕</span></span>`;
+      const i=temp.indexOf(g);
+      return `<span class="gol-chip ${g.time}" onclick="${ids.removerFn}(${i})" title="Toque para remover"><span>${rotuloMin(g)}'</span> <span>${g.nome}</span> <span style="opacity:.6">✕</span></span>`;
     }).join('')}</div></div>`;
   }).join('');
 }
-function renderGolsLista(){
-  document.getElementById('contGols').textContent=golsTemp.length+(golsTemp.length===1?' gol':' gols');
-  document.getElementById('golsLista').innerHTML=golsTemp.map((g,i)=>`<div class="gol-item"><span class="gi-min">${g.min}'</span><span data-ic="target" data-ic-size="13"></span><span class="gi-time ${g.time}">${g.nome}</span><button class="gi-del" onclick="removerGol(${i})">✕</button></div>`).join('');
-  window.renderIcons?.(document.getElementById('golsLista'));
+function _renderGolsListaGenerico(temp, ids){
+  const contEl = document.getElementById(ids.cont);
+  if(contEl) contEl.textContent=temp.length+(temp.length===1?' gol':' gols');
+  document.getElementById(ids.lista).innerHTML=temp.map((g,i)=>`<div class="gol-item"><span class="gi-min">${rotuloMin(g)}'</span><span data-ic="target" data-ic-size="13"></span><span class="gi-time ${g.time}">${g.nome}</span><button class="gi-del" onclick="${ids.removerFn}(${i})">✕</button></div>`).join('');
+  window.renderIcons?.(document.getElementById(ids.lista));
 }
+
+// ── Formulário "Adicionar Partida" (Partidas → Novo Jogo) ──
+const IDS_GOL_ADD = { min:'golMin', acr:'golAcr', casa:'iCasa', vis:'iVis', campo:'campoVisual', lista:'golsLista', cont:'contGols', removerFn:'removerGol' };
+function addGol(time){ _addGolGenerico(golsTemp, IDS_GOL_ADD, time); }
+function removerGol(i){ golsTemp.splice(i,1); _renderCampoGenerico(golsTemp, IDS_GOL_ADD); _renderGolsListaGenerico(golsTemp, IDS_GOL_ADD); }
+function renderCampo(){ _renderCampoGenerico(golsTemp, IDS_GOL_ADD); }
+function renderGolsLista(){ _renderGolsListaGenerico(golsTemp, IDS_GOL_ADD); }
+
+// ── Formulário "Editar Jogo" (Dados → toque no jogo → Editar) — mesma lógica, IDs "e" ──
+let golsTempEdit = [];
+const IDS_GOL_EDIT = { min:'eGolMin', acr:'eGolAcr', casa:'eCasa', vis:'eVis', campo:'eCampoVisual', lista:'eGolsLista', cont:'eContGols', removerFn:'removerGolEdit' };
+function addGolEdit(time){ _addGolGenerico(golsTempEdit, IDS_GOL_EDIT, time); }
+function removerGolEdit(i){ golsTempEdit.splice(i,1); _renderCampoGenerico(golsTempEdit, IDS_GOL_EDIT); _renderGolsListaGenerico(golsTempEdit, IDS_GOL_EDIT); }
+function renderCampoEdit(){ _renderCampoGenerico(golsTempEdit, IDS_GOL_EDIT); }
+function renderGolsListaEdit(){ _renderGolsListaGenerico(golsTempEdit, IDS_GOL_EDIT); }
 
 // ══ SALVAR ══

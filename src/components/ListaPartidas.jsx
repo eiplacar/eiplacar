@@ -21,8 +21,8 @@ function celulaMinutos(j) {
   if (!gols.length) return '—';
   const gC = gols.filter((g) => g.time === 'casa');
   const gV = gols.filter((g) => g.time === 'vis');
-  const lc = gC.length ? `<span class="min-casa">${ICO_GOAL}${j.casa}: ${gC.map((g) => g.min + "'").join(', ')}</span>` : '';
-  const lv = gV.length ? `<span class="min-vis">${ICO_GOAL}${j.vis}: ${gV.map((g) => g.min + "'").join(', ')}</span>` : '';
+  const lc = gC.length ? `<span class="min-casa">${ICO_GOAL}${j.casa}: ${gC.map((g) => g.min + (g.acr ? `+${g.acr}` : '') + "'").join(', ')}</span>` : '';
+  const lv = gV.length ? `<span class="min-vis">${ICO_GOAL}${j.vis}: ${gV.map((g) => g.min + (g.acr ? `+${g.acr}` : '') + "'").join(', ')}</span>` : '';
   return `<div class="minutos-cell">${[lc, lv].filter(Boolean).join('<br>')}</div>`;
 }
 

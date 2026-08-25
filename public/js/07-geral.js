@@ -147,7 +147,7 @@ function abrirDetalheJogo(id){
   if(!j) return;
   const gC2=(j.gols||[]).filter(g=>g.time==='casa').sort((a,b)=>a.min-b.min);
   const gV2=(j.gols||[]).filter(g=>g.time==='vis').sort((a,b)=>a.min-b.min);
-  const linhaGol = (g)=>`<div style="font-size:12px;color:var(--texto2);padding:3px 0;display:flex;align-items:center;gap:4px"><span data-ic="target" data-ic-size="11"></span> ${g.min}' ${g.nome||''}</div>`;
+  const linhaGol = (g)=>`<div style="font-size:12px;color:var(--texto2);padding:3px 0;display:flex;align-items:center;gap:4px"><span data-ic="target" data-ic-size="11"></span> ${g.min}${g.acr?`+${g.acr}`:''}' ${g.nome||''}</div>`;
   document.getElementById('detJogoTitulo').textContent = `${j.camp}${j.data?' · '+fd(j.data):''}${j.rodada?' · '+j.rodada:''}`;
   document.getElementById('detJogoPlacar').innerHTML = `
     <div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:14px 0">
