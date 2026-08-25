@@ -100,13 +100,32 @@ export default function Classificacao() {
           </table>
         </div>
         {data.estado === 'ok' && data.zonas && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--c3)' }}>
-            {data.zonas.map((z) => (
-              <div key={z.label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10, color: 'var(--texto2)' }}>
-                <span style={{ width: 10, height: 10, borderRadius: 3, background: z.cor, flexShrink: 0 }} />
-                <span>{z.label}</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--c3)' }}>
+            {/^champions league/i.test(campAtivo) && (
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--texto)', marginBottom: 4 }}>Fase Qualificação</div>
+                <div style={{ fontSize: 10, color: 'var(--texto2)' }}>Oitavas de Final · Quartas de Final · Semifinais · Final</div>
               </div>
-            ))}
+            )}
+            <div>
+              {/^champions league/i.test(campAtivo) && (
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--texto)', marginBottom: 4 }}>Fase Liga</div>
+              )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                {data.zonas.map((z) => (
+                  <div key={z.label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10, color: 'var(--texto2)' }}>
+                    <span style={{ width: 10, height: 10, borderRadius: 3, background: z.cor, flexShrink: 0 }} />
+                    <span>{z.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/^champions league/i.test(campAtivo) && (
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--texto)', marginBottom: 4 }}>Fase Playoffs</div>
+                <div style={{ fontSize: 10, color: 'var(--texto2)' }}>16 Avos de Final · Oitavas de Final · Quartas de Final · Semifinais · Final</div>
+              </div>
+            )}
           </div>
         )}
       </div>
