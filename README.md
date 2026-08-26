@@ -3,51 +3,71 @@
 App de análise de jogos, calculadora de entradas e gestão de banca, com dados
 sincronizados na nuvem via Supabase e deploy no Netlify.
 
-Este é o antigo "Meu Placar" reorganizado: mesmo código (HTML + JS puro,
-funcional), dentro de uma estrutura de projeto padrão (Vite), publicável no
-Netlify, e agora **em migração módulo por módulo para React** — sem parar o
-app pra reescrever tudo de uma vez. O JS puro e os componentes React
-convivem lado a lado até a migração terminar.
+Este é o antigo "Meu Placar" reorganizado: estrutura de projeto padrão (Vite),
+publicável no Netlify, com a interface **já migrada para React** — a lógica de
+cálculo/negócio mais pesada (Poisson, força do adversário, classificação,
+banca) continua em JS puro por trás, chamada pelos componentes React através
+de pontes explícitas (`window.algumaFuncao`).
 
 ## Estrutura de pastas
 
 ```
 ei-placar/
-├── index.html          → página principal (carrega os scripts + o bundle React)
-├── src/                  → componentes React (migração em andamento)
-│   ├── main.jsx          → monta cada componente na sua <div id="...-root">
+├── index.html            → página principal (carrega os scripts + o bundle React)
+├── src/                   → interface em React
+│   ├── main.jsx           → monta cada componente na sua <div id="...-root">
 │   └── components/
-│       └── CalculadoraEV.jsx   → ✅ migrado (aba Calculadora)
-├── public/              → tudo que é servido "como está" (sem processamento)
-│   ├── manifest.json    → configuração do PWA (nome, ícones, cores)
-│   ├── sw.js            → service worker (cache offline do "casco" do app)
-│   ├── styles.css       → estilos (compartilhado entre JS puro e React)
-│   ├── icon-*.png       → ícones do app
-│   └── js/               → scripts que ainda são JS puro, em ordem de carregamento:
+│       ├── Dashboard.jsx          → aba inicial (campeonatos, resumo, Jogos de Hoje)
+│       ├── ListaPartidas.jsx      → aba Dados (tabela "Lista de Partidas")
+│       ├── SeletorAnalise.jsx     → aba Análise (escolha de campeonato/confronto)
+│       ├── AnaliseResultado.jsx   → aba Análise (resultado: Probabilidade/Estatísticas/Índice)
+│       ├── Estatistica.jsx        → sub-aba Estatística por liga
+│       ├── Classificacao.jsx      → sub-aba Classificação (tabela de pontos corridos)
+│       ├── AdicionarPartida.jsx   → aba Partidas (cadastro de jogo)
+│       ├── NovoSinalEntrada.jsx   → sub-aba dentro de Partidas (Novo Sinal de Entrada)
+│       ├── NovaEntrada.jsx        → aba Apostas (nova entrada)
+│       ├── Resolvidas.jsx         → aba Apostas (histórico de entradas resolvidas)
+│       ├── Estrategias.jsx        → aba Apostas (estratégias cadastradas)
+│       ├── SeletorMercado.jsx     → sub-componente de mercado (usado em Nova Entrada)
+│       ├── Banca.jsx              → aba Banca (tesouraria, membros)
+│       ├── Administracao.jsx      → aba Administração (só organizador: usuários, planos)
+│       └── MinhaConta.jsx         → tela de conta do usuário logado
+├── public/                → tudo que é servido "como está" (sem processamento)
+│   ├── manifest.json      → configuração do PWA (nome, ícones, cores)
+│   ├── sw.js               → service worker (cache offline do "casco" do app)
+│   ├── styles.css          → estilos (compartilhado entre JS puro e React)
+│   ├── icon-*.png          → ícones do app
+│   └── js/                  → scripts JS puro, em ordem de carregamento (regra de negócio,
+│       │                       Supabase, e as pontes `window.*` usadas pelo React):
 │       01-config-auth.js    → conexão com Supabase + login/cadastro/sessão
 │       02-dados-crud.js     → leitura/escrita dos jogos no Supabase
 │       03-nav.js            → navegação entre abas
 │       04-utils.js          → funções utilitárias
 │       05-escudos.js        → upload/exibição de escudos dos times
-│       06-confrontos.js     → tela de cadastro de jogos (Partidas)
-│       07-geral.js          → aba "Dashboard" (campeonatos e resumo)
-│       08-dados-render.js   → tabela "Lista de Partidas"
-│       09-analise.js        → aba "Análise" (comparação de times)
+│       06-confrontos.js     → salvar jogo (usado por AdicionarPartida.jsx)
+│       07-geral.js          → cálculo do Dashboard (campeonatos, resumo, últimos resultados)
+│       08-dados-render.js   → filtros/paginação da Lista de Partidas
+│       09-analise.js        → cálculo da Análise (Poisson, força do adversário etc.)
 │       10-compartilhar.js   → geração de texto/imagem pra WhatsApp/Telegram
-│       11-jogosdodia.js     → sub-aba "Novo Sinal de Entrada" (dentro de Partidas) + lista "Jogos de Hoje" (Dashboard)
-│       12-banca-futebol.js  → Estatística + Classificação
-│       13-calculadora.js    → aba "Apostas" (Entrada, Resolvidas)
+│       11-jogosdodia.js     → lista "Jogos de Hoje" (Dashboard)
+│       12-banca-futebol.js  → cálculo de Estatística + Classificação + banca (futebol)
+│       13-calculadora.js    → cálculo de EV/estatística por liga (Apostas)
 │       14-banca-gestao.js   → membros, tesouraria, organizador, aprovações
 │       15-init.js           → inicialização geral da página
-├── supabase/             → scripts SQL do banco (rodar no SQL Editor, em ordem)
-├── vite.config.js        → configuração do bundler/dev-server (Vite + plugin React)
-├── netlify.toml           → configuração de build/deploy no Netlify
+│       16-admin.js          → Administração: usuários, assinaturas, config do app (planos/preços)
+│       17-indice.js         → sub-aba Índice (Favorita Ponto), cruza Probabilidade + Estatísticas
+├── netlify/functions/     → funções serverless (rodam no servidor da Netlify)
+│   ├── jogos-do-dia.js               → busca jogos do dia na GOAL API (chamada sob demanda pelo app)
+│   └── atualizar-jogos-finalizados.js → roda a cada 2h (agendada), busca jogos finalizados e salva no Supabase
+├── supabase/               → scripts SQL do banco (rodar no SQL Editor, em ordem)
+├── vite.config.js          → configuração do bundler/dev-server (Vite + plugin React)
+├── netlify.toml             → configuração de build/deploy no Netlify
 └── package.json
 ```
 
 ## Rodando localmente
 
-Pré-requisito: Node.js já instalado (você confirmou que tem).
+Pré-requisito: Node.js já instalado.
 
 ```bash
 cd ei-placar
@@ -82,55 +102,37 @@ caso precise recriar o banco do zero (ex: novo ambiente).
    (o `netlify.toml` já deixa isso configurado automaticamente).
 4. Deploy.
 
+## Funções serverless (Netlify Functions)
+
+Ficam em `netlify/functions/` e rodam no servidor, não no navegador — assim a
+chave da GOAL API (`GOAL_API_KEY`) fica escondida como variável de ambiente no
+painel da Netlify, e nunca é exposta no código do navegador.
+
+- **`jogos-do-dia.js`** — busca os jogos do dia na GOAL API sob demanda
+  (`/.netlify/functions/jogos-do-dia?data=AAAA-MM-DD`).
+- **`atualizar-jogos-finalizados.js`** — agendada (`schedule` no `netlify.toml`,
+  roda a cada 2 horas), busca jogos finalizados de hoje/ontem nas ligas
+  permitidas e salva no Supabase. Aceita jogo decidido em `FINISHED`,
+  `AFTER_ET` (prorrogação) e `AFTER_PEN` (pênaltis) como encerrado.
+
+> As funções `buscar-liga-id` e `goal-webhook` (e o arquivo `public/js/18-ao-vivo.js`,
+> que alimentava o card "Ao Vivo" no Dashboard) foram removidas — não fazem
+> mais parte do projeto.
+
 ## Como JS puro e React convivem
 
-Cada tela migrada vira um componente dentro de `src/components/`, montado
-pelo `src/main.jsx` numa `<div id="algo-root">` que fica exatamente onde o
-card em JS puro ficava antes, dentro da mesma aba/navegação de sempre. O
-resto do app (login, Supabase, troca de abas) nem percebe a diferença.
+Cada tela vira um componente dentro de `src/components/`, montado pelo
+`src/main.jsx` numa `<div id="algo-root">` que fica exatamente onde o card em
+JS puro ficava antes, dentro da mesma aba/navegação de sempre.
 
 Quando um componente React precisa de algo que ainda vive no mundo JS puro
-(uma variável global, uma função como `toast()`), a ponte é sempre explícita
-e comentada no código — por exemplo, a Calculadora de EV lê
-`window.ultimaAnalise` (preenchido pela aba Análise) e chama `window.toast()`
-pros avisos.
-
-## Progresso da migração para React
-
-- [x] **Calculadora de EV** (aba Calculadora) → `src/components/CalculadoraEV.jsx`
-- [x] **Lista de Partidas** (aba Dados) → `src/components/ListaPartidas.jsx`
-- [x] **Seletor da Análise** (Campeonato + Confronto) → `src/components/SeletorAnalise.jsx`
-      — o cálculo de estatísticas em si (`renderAnalise`, Poisson, força do adversário
-      etc., ~350 linhas de matemática) continua JS puro por enquanto, chamado pela
-      ponte `window.renderAnalise()`. Pode virar React depois, com mais calma.
-- [x] **Adicionar Partida** (aba Partidas) → `src/components/AdicionarPartida.jsx`
-      — migração "de organização": o HTML virou componente React com os mesmos ids
-      de sempre, mas os campos continuam não-controlados e chamam as mesmas funções
-      JS puras (upload de escudo com canvas, gols por minuto, salvar jogo). Entrelaçado
-      demais com o resto do app pra arriscar reescrever a lógica agora também.
-- [x] **Novo Sinal de Entrada** (sub-aba dentro de Partidas) → `src/components/NovoSinalEntrada.jsx`
-      — migração completa, com estado 100% React (não é só um "shell" como Adicionar
-      Partida). A lista "Jogos de Hoje" (localStorage + expiração automática, usada
-      também no Dashboard) continua JS puro em `11-jogosdodia.js`.
-- [x] **Nova Entrada** (aba Apostas) → `src/components/NovaEntrada.jsx`
-      — migração "de organização" como Adicionar Partida: entrelaçada demais com a
-      Banca (distribuição de lucro por participante, modal de confirmação) pra
-      reescrever a lógica agora. Ícones trocados por Lucide mesmo assim.
-- [ ] **Resolvidas** (histórico de entradas, aba Apostas) — fica junto com Banca,
-      já que `renderHistoricoEntradas()` também alimenta um painel dentro da Banca
-- [ ] **Estatística + Classificação** (`12-banca-futebol.js`, exceto a parte de banca) ← **próximo módulo**
-- [ ] **Dashboard** (`07-geral.js`)
-- [ ] **Banca** (`14-banca-gestao.js` + parte de banca de `12-banca-futebol.js`) — deixado por último de propósito: vai passar por reformulação antes de virar componente
-- [ ] `01-config-auth.js` + `02-dados-crud.js` — sempre por último, pois tudo depende deles
+(cálculo pesado, variável global, uma função como `toast()`), a ponte é
+sempre explícita e comentada no código — por exemplo, `AnaliseResultado.jsx`
+chama `window.renderAnalise()` (que faz todo o cálculo de Poisson em
+`09-analise.js`) e só cuida de exibir o resultado.
 
 ### Ícones
 
-A partir do módulo "Novo Sinal de Entrada", os componentes React usam ícones de
-verdade da biblioteca [lucide-react](https://lucide.dev) em vez de emoji. Os
-componentes migrados antes desse ponto (Calculadora, Lista de Partidas, Seletor de
-Análise, Adicionar Partida) também já foram atualizados. O que ainda é JS puro
-continua usando emoji por enquanto — vai sendo trocado por ícones conforme cada
-tela for migrada.
-
-Sem pressa: migramos um módulo por vez, testamos, e só então seguimos pro
-próximo.
+Os componentes React usam ícones de verdade da biblioteca
+[lucide-react](https://lucide.dev) em vez de emoji. O que ainda é JS puro
+continua usando emoji.
