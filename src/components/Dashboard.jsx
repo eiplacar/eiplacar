@@ -1,4 +1,4 @@
-import { CalendarDays, Send, Trophy, Gamepad2, Handshake, BarChart3, Zap, Goal, Radio } from 'lucide-react';
+import { CalendarDays, Send, Trophy, Gamepad2, Handshake, BarChart3, Zap, Goal } from 'lucide-react';
 
 // ══ Dashboard (aba inicial) — sexto módulo migrado para React ══
 //
@@ -15,22 +15,11 @@ import { CalendarDays, Send, Trophy, Gamepad2, Handshake, BarChart3, Zap, Goal, 
 //   - window.renderGeral()               → preenche tudo daqui a partir de jogosCache
 //   - window.filtrarCamp(nome)            → troca o campeonato selecionado e re-renderiza
 //   - window.ophRenderLista() / ophCompartilharSelecionados() → card "Jogos de Hoje"
-//   - window.avRenderLista()                                 → card "Ao Vivo" (webhook GOAL API)
 //   - window.abrirDetalheJogo(id)        → abre o modal de detalhe (fora desta aba)
 
 export default function Dashboard() {
   return (
     <>
-      {/* Ao Vivo: jogos de hoje que já começaram (placar/minuto), alimentado
-          pelo webhook da GOAL API (public/js/18-ao-vivo.js) — só leitura, sem
-          gastar cota de chamada. Fica escondido quando não tem nenhum jogo rolando. */}
-      <div className="card" id="aoVivoCardDash" style={{ marginBottom: 14, display: 'none' }}>
-        <div className="card-title" style={{ margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: 6 }}>
-          <Radio size={14} /> Ao Vivo
-        </div>
-        <div id="aoVivoLista" style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }} />
-      </div>
-
       {/* Jogos de Hoje: toque num jogo pra selecionar, depois compartilhe só os marcados */}
       <div className="card" id="ophListaCardDash" style={{ marginBottom: 14, display: 'none' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 12 }}>
