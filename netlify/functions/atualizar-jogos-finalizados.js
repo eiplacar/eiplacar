@@ -258,7 +258,7 @@ export const handler = async function () {
   // (ver buscarComLimite acima), com nova tentativa automática se ainda bater 429.
   const respostasPorLiga = await buscarComLimite([...NOMES_CAMP_POR_LIGA.keys()], 3, async (ligaId) => {
     try {
-      const resp = await fetchComRetry429(`${GOAL_API_URL}/fixtures?leagueId=${ligaId}&limit=30`, {
+      const resp = await fetchComRetry429(`${GOAL_API_URL}/fixtures?leagueId=${ligaId}&limit=100`, {
         headers: { Authorization: `Bearer ${apiKey}` },
       });
       const json = await resp.json();
@@ -359,6 +359,20 @@ export const handler = async function () {
     const gols = extrairGols(detalhe?.events, f.homeTeamName, f.awayTeamName);
     const stats = detalhe?.statistics || [];
 
+    const rankC = ranks.get(f.homeTeamId) ?? null;
+    const rankV = ranks.get(f.awayTeamId) ?? null;
+    // BUG que isso corrige: "rank_indisponivel" só vinha true quando a chamada de
+    // classificação da liga falhava inteira. Mas se a liga responde certinho e só o
+    // time da casa/visitante não aparece na tabela (comum em jogo de copa/mata-mata,
+    // que não entra na pontos-corridos, ou time recém-promovido sem posição ainda),
+    // rankC/rankV ficavam null com rank_indisponivel=false — e esse jogo NUNCA era
+    // marcado como "completo" no banco. Resultado: essa função (agendada) buscava e
+    // reenviava (upsert) esse mesmo jogo pro Supabase pra sempre, a cada execução,
+    // mesmo já estando salvo com tudo que dava pra preencher. Marcando indisponível
+    // também quando nenhum dos dois times tem posição, o jogo passa a ser tratado
+    // como completo e para de ser reprocessado à toa.
+    const rankIndisponivelFinal = rankIndisponivel || (rankC === null && rankV === null);
+
     linhas.push({
       fixture_id: parseInt(f.apiId, 10),
       origem: 'goal-api',
@@ -371,9 +385,9 @@ export const handler = async function () {
       vis: visCorrigido,
       gC: f.homeTeamScore !== null ? parseInt(f.homeTeamScore, 10) : null,
       gV: f.awayTeamScore !== null ? parseInt(f.awayTeamScore, 10) : null,
-      rankC: ranks.get(f.homeTeamId) ?? null,
-      rankV: ranks.get(f.awayTeamId) ?? null,
-      rank_indisponivel: rankIndisponivel,
+      rankC,
+      rankV,
+      rank_indisponivel: rankIndisponivelFinal,
       gols,
       golsHT_C: f.homeTeamHalftimeScore !== null ? parseInt(f.homeTeamHalftimeScore, 10) : null,
       golsHT_V: f.awayTeamHalftimeScore !== null ? parseInt(f.awayTeamHalftimeScore, 10) : null,

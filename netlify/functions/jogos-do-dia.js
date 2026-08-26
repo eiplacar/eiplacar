@@ -86,7 +86,7 @@ const PAIS_POR_LIGA = new Map([
 // Em lotes de 3 ao mesmo tempo (ver buscarComLimite acima) — nem tudo em série (estourava
 // o tempo limite da função) nem tudo de uma vez (batia rate limit 429 da GOAL API).
 async function buscarTodosFixturesDoDia(apiKey, data) {
-  const LIMITE_POR_LIGA = 30; // cobre folgado a "rodada" de qualquer liga em torno da data buscada
+  const LIMITE_POR_LIGA = 100; // cobre folgado a "rodada" de qualquer liga em torno da data buscada
 
   const resultados = await buscarComLimite([...LIGAS_PERMITIDAS], 3, async (ligaId) => {
     try {
