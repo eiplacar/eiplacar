@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Trophy, BarChart3 } from 'lucide-react';
+import { Trophy, BarChart3, ArrowRight } from 'lucide-react';
 
 // ══ Classificação — nono módulo migrado para React ══
 //
@@ -39,22 +39,49 @@ function ListaJogosFase({ jogosCache, camp, prefixoFase, etapa }) {
     return <div style={{ textAlign: 'center', color: 'var(--texto2)', fontSize: 12, padding: 16 }}>Nenhum jogo cadastrado ainda pra {etapa.toLowerCase()}.</div>;
   }
 
+  // Agrupa ida/volta pelo par de times (mesmos 2 times, casa/fora invertidos) pra
+  // saber quem avança no agregado dos 2 jogos. Se só tiver 1 jogo cadastrado ainda
+  // (falta a volta) ou o agregado empatar (foi pra pênaltis, sem esse dado aqui),
+  // não mostra seta — só quando os 2 jogos existem e o agregado tem um vencedor claro.
+  const porPar = {};
+  jogos.forEach((j) => {
+    const par = [j.casa, j.vis].sort().join('|');
+    (porPar[par] = porPar[par] || []).push(j);
+  });
+  const golsDoTimeNoPar = (jogosDoPar, time) =>
+    jogosDoPar.reduce((soma, jg) => soma + (jg.casa === time ? Number(jg.gC ?? 0) : jg.vis === time ? Number(jg.gV ?? 0) : 0), 0);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      {jogos.map((j) => (
-        <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--c2)', borderRadius: 8, padding: '8px 10px' }}>
-          <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ width: 20, height: 20, flexShrink: 0 }} dangerouslySetInnerHTML={{ __html: escudoImgOuIcone(j.casa) }} />
-            <span style={{ fontSize: 11, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.casa || '—'}</span>
+      {jogos.map((j) => {
+        const jogosDoPar = porPar[[j.casa, j.vis].sort().join('|')];
+        const ehJogoDaVolta = jogosDoPar.length === 2 && j === jogosDoPar[1];
+        let avancouCasa = false, avancouVis = false;
+        if (ehJogoDaVolta) {
+          const golsCasa = golsDoTimeNoPar(jogosDoPar, j.casa);
+          const golsVis = golsDoTimeNoPar(jogosDoPar, j.vis);
+          avancouCasa = golsCasa > golsVis;
+          avancouVis = golsVis > golsCasa;
+        }
+        return (
+          <div key={j.id} style={{ background: 'var(--c2)', borderRadius: 8, padding: '8px 10px' }}>
+            {j.data && <div style={{ fontSize: 9, color: 'var(--texto2)', textAlign: 'center', marginBottom: 4 }}>{fd(j.data)}</div>}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ width: 20, height: 20, flexShrink: 0 }} dangerouslySetInnerHTML={{ __html: escudoImgOuIcone(j.casa) }} />
+                <span style={{ fontSize: 11, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.casa || '—'}</span>
+                {avancouCasa && <ArrowRight size={12} strokeWidth={3} style={{ color: 'var(--verde2)', flexShrink: 0 }} />}
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 900, flexShrink: 0 }}>{j.gC ?? '-'}<span style={{ color: 'var(--texto2)' }}> x </span>{j.gV ?? '-'}</div>
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'flex-end' }}>
+                {avancouVis && <ArrowRight size={12} strokeWidth={3} style={{ color: 'var(--verde2)', flexShrink: 0 }} />}
+                <span style={{ fontSize: 11, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right' }}>{j.vis || '—'}</span>
+                <div style={{ width: 20, height: 20, flexShrink: 0 }} dangerouslySetInnerHTML={{ __html: escudoImgOuIcone(j.vis) }} />
+              </div>
+            </div>
           </div>
-          <div style={{ fontSize: 13, fontWeight: 900, flexShrink: 0 }}>{j.gC ?? '-'}<span style={{ color: 'var(--texto2)' }}> x </span>{j.gV ?? '-'}</div>
-          <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'flex-end' }}>
-            <span style={{ fontSize: 11, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right' }}>{j.vis || '—'}</span>
-            <div style={{ width: 20, height: 20, flexShrink: 0 }} dangerouslySetInnerHTML={{ __html: escudoImgOuIcone(j.vis) }} />
-          </div>
-          <div style={{ fontSize: 9, color: 'var(--texto2)', flexShrink: 0, width: 60, textAlign: 'right' }}>{j.data ? fd(j.data) : ''}</div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
