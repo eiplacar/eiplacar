@@ -283,7 +283,12 @@ export const handler = async function () {
     todosFixtures = todosFixtures.concat(dados);
   }
 
-  const fixtures = todosFixtures.filter((f) => NOMES_CAMP_POR_LIGA.has(f.leagueId) && datasValidas.has(f.matchDate) && f.matchStatus === 'FINISHED');
+  // Status "encerrado de verdade" da GOAL API: FINISHED é o caso normal (90 min),
+  // mas jogo de mata-mata que vai pra prorrogação/pênaltis volta como AFTER_ET /
+  // AFTER_PEN — sem essas variantes aqui, esses jogos nunca eram salvos mesmo
+  // já tendo placar final (foi o caso de LASK x Celtic e Sabah Baku x H. Beer Sheva).
+  const STATUS_ENCERRADOS = new Set(['FINISHED', 'AFTER_ET', 'AFTER_PEN']);
+  const fixtures = todosFixtures.filter((f) => NOMES_CAMP_POR_LIGA.has(f.leagueId) && datasValidas.has(f.matchDate) && STATUS_ENCERRADOS.has(f.matchStatus));
   console.log('Jogos após filtro de ligas permitidas + finalizados:', fixtures.length, fixtures.map((f) => `${NOMES_CAMP_POR_LIGA.get(f.leagueId)} - ${f.homeTeamName} x ${f.awayTeamName}`));
 
   if (fixtures.length === 0) {
