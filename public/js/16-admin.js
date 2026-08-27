@@ -86,9 +86,22 @@ function renderAssinar(){
 window.renderAssinar = renderAssinar;
 
 async function iniciarAssinatura(planoId){
-  // Placeholder — a integração real (Netlify function → Mercado Pago) entra
-  // assim que o MP_ACCESS_TOKEN de produção estiver configurado.
-  toast('Pagamento chegando em breve! Estamos finalizando a integração com o Mercado Pago.');
+  const btns = document.querySelectorAll('#assinarPlanos button');
+  btns.forEach(b=>{ b.disabled = true; b.style.opacity = .6; });
+  try {
+    const sessao = authGetSessao();
+    const res = await fetch('/.netlify/functions/criar-assinatura', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (sessao?.access_token || '') },
+      body: JSON.stringify({ planoId }),
+    });
+    const data = await res.json();
+    if(!res.ok || !data.checkoutUrl) throw new Error(data.erro || 'Não foi possível gerar o checkout');
+    window.location.href = data.checkoutUrl; // manda pra página segura do Mercado Pago
+  } catch(e){
+    toast('Erro ao iniciar assinatura: ' + e.message, true);
+    btns.forEach(b=>{ b.disabled = false; b.style.opacity = 1; });
+  }
 }
 window.iniciarAssinatura = iniciarAssinatura;
 
