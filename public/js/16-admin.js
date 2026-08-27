@@ -147,20 +147,33 @@ async function gerarPagamentoPix(){
     document.getElementById('pixCopiaCola').value = data.qrCode;
     document.getElementById('pixStatus').textContent = '⏳ Aguardando confirmação do pagamento...';
 
-    // Fica checando se a assinatura já foi liberada (o webhook confirma em
-    // segundo plano assim que o Pix cai) — sem precisar a pessoa recarregar.
+    // Fica checando o status DESSE pagamento específico direto no Mercado
+    // Pago (não só "a assinatura tá liberada?", porque isso pode já estar
+    // liberado por outro motivo — teste grátis, plano anterior — e daria
+    // falso positivo antes da pessoa pagar de verdade).
     if(pixPollTimer) clearInterval(pixPollTimer);
     let tentativas = 0;
     pixPollTimer = setInterval(async () => {
       tentativas++;
       if(tentativas > 40){ clearInterval(pixPollTimer); pixPollTimer = null; return; } // ~4min e desiste de checar sozinho
-      await window.perfilAtualRecarregarAssinatura?.();
-      if(!window.assinaturaVencida?.()){
-        clearInterval(pixPollTimer); pixPollTimer = null;
-        document.getElementById('pixStatus').textContent = '✅ Pagamento confirmado! Acesso liberado.';
-        toast('Pagamento confirmado! Seu acesso já está liberado.');
-        setTimeout(()=>{ fecharModalPix(); goTo('geral'); }, 1500);
-      }
+      try {
+        const resStatus = await fetch('/.netlify/functions/verificar-pagamento-pix', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (authGetSessao()?.access_token || '') },
+          body: JSON.stringify({ paymentId: data.paymentId }),
+        });
+        const statusData = await resStatus.json();
+        if(statusData.status === 'approved'){
+          clearInterval(pixPollTimer); pixPollTimer = null;
+          await window.perfilAtualRecarregarAssinatura?.(); // já dá tempo do webhook ter processado
+          document.getElementById('pixStatus').textContent = '✅ Pagamento confirmado! Acesso liberado.';
+          toast('Pagamento confirmado! Seu acesso já está liberado.');
+          setTimeout(()=>{ fecharModalPix(); goTo('geral'); }, 1500);
+        } else if(statusData.status === 'rejected' || statusData.status === 'cancelled'){
+          clearInterval(pixPollTimer); pixPollTimer = null;
+          document.getElementById('pixStatus').textContent = '❌ Pagamento não aprovado. Tente gerar um novo Pix.';
+        }
+      } catch {} // erro passageiro de rede — tenta de novo na próxima
     }, 6000);
   } catch(e){
     toast('Erro ao gerar Pix: ' + e.message, true);
