@@ -95,7 +95,7 @@ export const handler = async function (event) {
     reason: `EI PLACAR — Plano ${plano.nome}`,
     external_reference: usuario.id, // usado no webhook pra saber de quem é o pagamento
     payer_email: usuario.email,
-    back_url: appUrl || undefined,
+    back_url: appUrl || 'https://eiplacar.com.br',
     auto_recurring: {
       frequency: plano.frequency,
       frequency_type: plano.frequency_type,
