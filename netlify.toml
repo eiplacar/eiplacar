@@ -9,6 +9,12 @@
 [functions."atualizar-jogos-finalizados"]
   schedule = "0 */2 * * *"
 
+# Roda todo dia às 23:59 (horário de São Paulo, sem horário de verão desde 2019 = UTC-3
+# fixo) e apaga os jogos agendados do dia — essa lista é só o "quadro" de hoje, não é
+# histórico, então não precisa acumular linha no banco pra sempre.
+[functions."limpar-jogos-agendados"]
+  schedule = "59 2 * * *"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

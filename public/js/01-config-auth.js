@@ -432,6 +432,20 @@ function assinaturaVencida(){
 }
 window.assinaturaVencida = assinaturaVencida;
 
+// Busca de novo só os campos de assinatura e atualiza o perfilAtual global —
+// usado no polling da tela de Pix avulso, pra saber quando o webhook liberou
+// o acesso sem precisar que a pessoa esteja na tela de Minha Conta (que só
+// atualiza seu próprio estado local, não o perfilAtual usado pela trava).
+async function perfilAtualRecarregarAssinatura(){
+  if(!perfilAtual?.id) return;
+  try {
+    const res = await fetch(sbUrlPerfis('?id=eq.'+perfilAtual.id+'&select=assinatura_status,assinatura_vencimento'), { headers: sbHeaders() });
+    const data = res.ok ? await res.json() : [];
+    if(data?.[0]) Object.assign(perfilAtual, data[0]);
+  } catch {}
+}
+window.perfilAtualRecarregarAssinatura = perfilAtualRecarregarAssinatura;
+
 // ══ PERFIL (aba Conta → Perfil) ══
 // Busca os campos extras (telefone, data de nascimento, foto, assinatura). Como esses
 // campos podem não existir ainda na tabela "perfis" de quem está usando o app (é preciso

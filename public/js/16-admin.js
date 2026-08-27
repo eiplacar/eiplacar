@@ -72,16 +72,20 @@ function renderAssinar(){
     { id:'semestral',   nome:'Semestral',   preco:cfg.precoSemestral,   obs:'cobrado a cada 6 meses' },
   ];
   el.innerHTML = planos.map(p=>`
-    <div style="background:var(--c2);border:2px solid var(--c3);border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px">
-      <div>
-        <div style="font-size:14px;font-weight:800">${p.nome}</div>
-        <div style="font-size:10.5px;color:var(--texto2)">${p.obs}</div>
+    <div style="background:var(--c2);border:2px solid var(--c3);border-radius:12px;padding:14px 16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <div>
+          <div style="font-size:14px;font-weight:800">${p.nome}</div>
+          <div style="font-size:10.5px;color:var(--texto2)">${p.obs}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:16px;font-weight:900;color:var(--ouro)">R$ ${Number(p.preco||0).toFixed(2).replace('.',',')}</div>
+          <button onclick="iniciarAssinatura('${p.id}')" style="margin-top:4px;background:var(--verde2);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer">Assinar</button>
+        </div>
       </div>
-      <div style="text-align:right">
-        <div style="font-size:16px;font-weight:900;color:var(--ouro)">R$ ${Number(p.preco||0).toFixed(2).replace('.',',')}</div>
-        <button onclick="iniciarAssinatura('${p.id}')" style="margin-top:4px;background:var(--verde2);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer">Assinar</button>
-      </div>
+      ${p.id==='mensal' ? `<button onclick="abrirModalPix()" style="margin-top:10px;width:100%;background:none;border:1px dashed var(--texto2);color:var(--texto2);border-radius:8px;padding:6px;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px"><span data-ic="qrCode" data-ic-size="13"></span>Pagar só este mês com Pix (sem renovar sozinho)</button>` : ''}
     </div>`).join('');
+  renderIcons(el);
 }
 window.renderAssinar = renderAssinar;
 
@@ -104,6 +108,72 @@ async function iniciarAssinatura(planoId){
   }
 }
 window.iniciarAssinatura = iniciarAssinatura;
+
+// ══ PIX AVULSO (1 mês, sem renovação automática) ══
+let pixPollTimer = null;
+
+function abrirModalPix(){
+  document.getElementById('pixEtapaCpf').style.display = 'block';
+  document.getElementById('pixEtapaQr').style.display = 'none';
+  document.getElementById('pixCpf').value = '';
+  const cfg = cfgAppLoad();
+  document.getElementById('pixValor').textContent = Number(cfg.precoMensal||0).toFixed(2).replace('.',',');
+  document.getElementById('modalPix').classList.add('open');
+}
+window.abrirModalPix = abrirModalPix;
+
+function fecharModalPix(){
+  document.getElementById('modalPix').classList.remove('open');
+  if(pixPollTimer){ clearInterval(pixPollTimer); pixPollTimer = null; }
+}
+window.fecharModalPix = fecharModalPix;
+
+async function gerarPagamentoPix(){
+  const cpf = document.getElementById('pixCpf').value.replace(/\D/g,'');
+  if(cpf.length !== 11){ toast('Digite um CPF válido!'); return; }
+  try {
+    const sessao = authGetSessao();
+    const res = await fetch('/.netlify/functions/criar-pagamento-pix', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (sessao?.access_token || '') },
+      body: JSON.stringify({ cpf }),
+    });
+    const data = await res.json();
+    if(!res.ok || !data.qrCode) throw new Error(data.erro || 'Não foi possível gerar o Pix');
+
+    document.getElementById('pixEtapaCpf').style.display = 'none';
+    document.getElementById('pixEtapaQr').style.display = 'block';
+    document.getElementById('pixQrImg').src = 'data:image/png;base64,' + data.qrCodeBase64;
+    document.getElementById('pixCopiaCola').value = data.qrCode;
+    document.getElementById('pixStatus').textContent = '⏳ Aguardando confirmação do pagamento...';
+
+    // Fica checando se a assinatura já foi liberada (o webhook confirma em
+    // segundo plano assim que o Pix cai) — sem precisar a pessoa recarregar.
+    if(pixPollTimer) clearInterval(pixPollTimer);
+    let tentativas = 0;
+    pixPollTimer = setInterval(async () => {
+      tentativas++;
+      if(tentativas > 40){ clearInterval(pixPollTimer); pixPollTimer = null; return; } // ~4min e desiste de checar sozinho
+      await window.perfilAtualRecarregarAssinatura?.();
+      if(!window.assinaturaVencida?.()){
+        clearInterval(pixPollTimer); pixPollTimer = null;
+        document.getElementById('pixStatus').textContent = '✅ Pagamento confirmado! Acesso liberado.';
+        toast('Pagamento confirmado! Seu acesso já está liberado.');
+        setTimeout(()=>{ fecharModalPix(); goTo('geral'); }, 1500);
+      }
+    }, 6000);
+  } catch(e){
+    toast('Erro ao gerar Pix: ' + e.message, true);
+  }
+}
+window.gerarPagamentoPix = gerarPagamentoPix;
+
+function copiarPix(){
+  const campo = document.getElementById('pixCopiaCola');
+  campo.select();
+  navigator.clipboard?.writeText(campo.value).then(()=>toast('Código Pix copiado!')).catch(()=>{});
+}
+window.copiarPix = copiarPix;
 
 // ══ USUÁRIOS (Administração → Usuários / Assinaturas) ══
 // Lê a lista inteira de perfis (a mesma política de RLS que já libera o organizador

@@ -132,7 +132,20 @@ export const handler = async function (event) {
       return resposta(200);
     }
 
-    // outros tipos de evento (ex: pagamento avulso, que não usamos aqui) — ignora
+    // ── Pagamento avulso via Pix (1 mês, sem recorrência — criar-pagamento-pix.js) ──
+    if (tipo === 'payment') {
+      const { ok, data } = await mpFetch(`/v1/payments/${id}`, mpToken);
+      if (!ok) { console.log('Pagamento não encontrado na API do MP:', id); return resposta(200); }
+      console.log('Pagamento avulso consultado:', { id, status: data.status, payment_method_id: data.payment_method_id, external_reference: data.external_reference });
+
+      if (data.status === 'approved' && data.payment_method_id === 'pix' && data.external_reference) {
+        const ok2 = await liberarAssinatura({ supaUrl, supaServiceKey, userId: data.external_reference, dias: 30 });
+        console.log('Pix avulso liberou 1 mês:', { userId: data.external_reference, ok: ok2 });
+      }
+      return resposta(200);
+    }
+
+    // outros tipos de evento — ignora
     return resposta(200);
   } catch (e) {
     console.log('Erro processando webhook:', e.message);

@@ -217,6 +217,34 @@
   </div>
 </div>
 
+<!-- ══ MODAL PAGAR COM PIX (avulso, só plano mensal, sem renovação automática) ══ -->
+<div class="modal-overlay" id="modalPix">
+  <div class="modal" style="max-width:360px">
+    <h2 style="font-size:15px;margin-bottom:6px"><span data-ic="qrCode" data-ic-size="15"></span> Pagar com Pix</h2>
+    <p style="font-size:11px;color:var(--texto2);margin-bottom:14px">1 mês de acesso, R$ <span id="pixValor">9,99</span>. Não renova sozinho — quando vencer, é só pagar de novo aqui.</p>
+
+    <div id="pixEtapaCpf">
+      <label>CPF</label>
+      <input type="text" id="pixCpf" placeholder="000.000.000-00" maxlength="14" style="width:100%;margin-top:4px;margin-bottom:14px">
+      <div class="modal-btns">
+        <button class="btn-fechar-cfg" onclick="fecharModalPix()">Cancelar</button>
+        <button class="btn-salvar-cfg" onclick="gerarPagamentoPix()"><span data-ic="qrCode" data-ic-size="14"></span> Gerar Pix</button>
+      </div>
+    </div>
+
+    <div id="pixEtapaQr" style="display:none;text-align:center">
+      <img id="pixQrImg" style="width:180px;height:180px;border-radius:8px;background:#fff;padding:6px" />
+      <p style="font-size:10px;color:var(--texto2);margin:10px 0 4px">Ou copie o código:</p>
+      <div style="display:flex;gap:6px">
+        <input type="text" id="pixCopiaCola" readonly style="flex:1;font-size:10px">
+        <button class="btn-salvar-cfg" style="padding:6px 10px" onclick="copiarPix()"><span data-ic="copy" data-ic-size="14"></span></button>
+      </div>
+      <p id="pixStatus" style="font-size:11px;color:var(--texto2);margin-top:14px">⏳ Aguardando confirmação do pagamento...</p>
+      <button class="btn-fechar-cfg" style="margin-top:10px;width:100%" onclick="fecharModalPix()">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ MODAL EDITAR JOGO AGENDADO (dashboard) — só organizador, corrige time/data quando vem errado da API ══ -->
 <div class="modal-overlay" id="modalEditarOph">
   <div class="modal" style="max-width:360px">
