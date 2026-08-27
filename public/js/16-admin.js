@@ -50,6 +50,48 @@ window.cfgAppLoad = cfgAppLoad;
 window.cfgAppSave = cfgAppSave;
 window.cfgAppCarregarNuvem = cfgAppCarregarNuvem;
 
+// ══ TELA "SEJA ASSINANTE" ══
+// Mostra os 3 planos com preço vindo de config_app (editável em Administração →
+// Sistema). O clique em "Assinar" ainda é um placeholder — vira chamada de
+// verdade pra Netlify function assim que o Mercado Pago estiver configurado
+// (MP_ACCESS_TOKEN). Não precisa mexer aqui de novo quando isso acontecer,
+// só trocar o corpo de iniciarAssinatura().
+function renderAssinar(){
+  const el = document.getElementById('assinarPlanos');
+  if(!el) return;
+  const cfg = cfgAppLoad();
+  const venceu = window.assinaturaVencida?.();
+  const sub = document.getElementById('assinarSubtitulo');
+  if(sub) sub.textContent = venceu
+    ? 'Seu período de teste grátis acabou. Assine um plano para continuar.'
+    : 'Continue com acesso liberado a tudo do EI PLACAR.';
+
+  const planos = [
+    { id:'mensal',      nome:'Mensal',      preco:cfg.precoMensal,      obs:'cobrado todo mês' },
+    { id:'trimestral',  nome:'Trimestral',  preco:cfg.precoTrimestral,  obs:'cobrado a cada 3 meses' },
+    { id:'semestral',   nome:'Semestral',   preco:cfg.precoSemestral,   obs:'cobrado a cada 6 meses' },
+  ];
+  el.innerHTML = planos.map(p=>`
+    <div style="background:var(--c2);border:2px solid var(--c3);border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+      <div>
+        <div style="font-size:14px;font-weight:800">${p.nome}</div>
+        <div style="font-size:10.5px;color:var(--texto2)">${p.obs}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:16px;font-weight:900;color:var(--ouro)">R$ ${Number(p.preco||0).toFixed(2).replace('.',',')}</div>
+        <button onclick="iniciarAssinatura('${p.id}')" style="margin-top:4px;background:var(--verde2);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer">Assinar</button>
+      </div>
+    </div>`).join('');
+}
+window.renderAssinar = renderAssinar;
+
+async function iniciarAssinatura(planoId){
+  // Placeholder — a integração real (Netlify function → Mercado Pago) entra
+  // assim que o MP_ACCESS_TOKEN de produção estiver configurado.
+  toast('Pagamento chegando em breve! Estamos finalizando a integração com o Mercado Pago.');
+}
+window.iniciarAssinatura = iniciarAssinatura;
+
 // ══ USUÁRIOS (Administração → Usuários / Assinaturas) ══
 // Lê a lista inteira de perfis (a mesma política de RLS que já libera o organizador
 // enxergar todo mundo em "Cadastros Pendentes" libera esse select mais completo também).

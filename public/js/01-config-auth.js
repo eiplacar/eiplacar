@@ -408,7 +408,7 @@ async function authBuscarPerfil(){
   const uid = sessao?.user?.id;
   if(!uid) return null;
   try {
-    const res = await fetch(sbUrlPerfis('?id=eq.'+uid+'&select=id,nome,papel,status,membro_id'), { headers: sbHeaders() });
+    const res = await fetch(sbUrlPerfis('?id=eq.'+uid+'&select=id,nome,papel,status,membro_id,assinatura_status,assinatura_vencimento'), { headers: sbHeaders() });
     if(!res.ok) return null;
     const data = await res.json();
     return (data && data[0]) || null;
@@ -418,6 +418,19 @@ function sbUrlPerfis(filtros){
   const cfg = getConfig();
   return cfg.url.replace(/\/$/, '') + '/rest/v1/perfis' + (filtros || '');
 }
+
+// ══ Trava de assinatura ══ — organizador nunca é afetado (é quem administra o
+// sistema). Pra membro: vencido = status "cancelado" OU data de vencimento já
+// passou. Sem data de vencimento (base antiga sem migração, ou perfil recém-criado
+// antes do trial gravar) não bloqueia — evita travar todo mundo por engano.
+function assinaturaVencida(){
+  if(!perfilAtual || perfilAtual.papel === 'organizador') return false;
+  if(perfilAtual.assinatura_status === 'cancelado') return true;
+  const venc = perfilAtual.assinatura_vencimento;
+  if(!venc) return false;
+  return venc < hojeBR();
+}
+window.assinaturaVencida = assinaturaVencida;
 
 // ══ PERFIL (aba Conta → Perfil) ══
 // Busca os campos extras (telefone, data de nascimento, foto, assinatura). Como esses

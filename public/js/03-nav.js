@@ -10,8 +10,17 @@ function toggleSidebar(force){
   ov.classList.toggle('open', abrir);
 }
 
+// Abas com conteúdo do produto (ficam travadas quando a assinatura vence).
+// Fora dessa lista: Conta, Administração, Assinar e as ações diretas de
+// Convidar Amigo/Suporte/Sugestões (que não são "page", não precisam de trava).
+const PAGINAS_GATED = ['geral','confrontos','dados','analise','futebol','classificacao','apostas','banca','estrategias'];
+
 function goTo(p) {
   toastEsconder(); // troca de aba sempre limpa qualquer aviso preso na tela
+  if (PAGINAS_GATED.includes(p) && window.assinaturaVencida?.()) {
+    toast('Seu período de teste acabou! Assine para continuar acessando.');
+    p = 'assinar';
+  }
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(x=>x.classList.remove('active'));
   document.getElementById('page-'+p).classList.add('active');
@@ -33,6 +42,7 @@ function goTo(p) {
   if (p==='confrontos')  { goSubConfrontos('add-partida'); }
   if (p==='minhaconta')  { window.perfilRefresh?.(); window.configuracoesRefresh?.(); }
   if (p==='administracao') { window.administracaoRefresh?.(); }
+  if (p==='assinar')     { renderAssinar(); }
 }
 // "Início" na navegação rápida: sempre volta pra tela inicial do Dashboard
 // (grade de campeonatos + Jogos de Hoje), mesmo se o usuário estiver com um

@@ -6,10 +6,7 @@
 --
 -- Regras (aplicadas aqui via RLS E também na tela, dos dois lados):
 --   • Qualquer pessoa aprovada pode VER a lista.
---   • Só ORGANIZADOR pode ADICIONAR e APAGAR jogo.
---   • Qualquer pessoa aprovada pode EDITAR (a tela decide quais campos
---     aparecem editáveis pra quem não é organizador — Mercado/Minuto/
---     Odd/Situação; Campeonato/Times/Data/Horário só o organizador mexe).
+--   • Só ORGANIZADOR pode ADICIONAR, EDITAR (lápis no card) e APAGAR jogo.
 --   • Não deixa cadastrar o MESMO jogo (mesmos times, mesma data) duas vezes.
 -- Rode no SQL Editor do Supabase, de uma vez só.
 -- ═══════════════════════════════════════════════════
@@ -57,9 +54,9 @@ create policy "ja_delete_organizador" on jogos_agendados for delete
     select 1 from perfis where perfis.id = auth.uid() and perfis.papel = 'organizador'
   ));
 
--- Qualquer pessoa logada pode editar (a TELA que restringe quais campos
--- ficam liberados pra quem não é organizador — mesmo padrão já usado no
--- resto do app pros botões "so-organizador").
+-- Só organizador edita (corrigir time/data errado vindo da API — lápis no card).
 drop policy if exists "ja_update" on jogos_agendados;
 create policy "ja_update" on jogos_agendados for update
-  using (auth.uid() is not null);
+  using (exists (
+    select 1 from perfis where perfis.id = auth.uid() and perfis.papel = 'organizador'
+  ));

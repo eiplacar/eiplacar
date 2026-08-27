@@ -131,6 +131,7 @@ function ophRenderLista(){
       ${sel?'<div style="position:absolute;top:6px;left:6px;width:16px;height:16px;border-radius:50%;background:var(--verde2);color:#fff;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;line-height:1">✓</div>':''}
       ${foraDeHoje?`<div style="position:absolute;top:6px;left:50%;transform:translateX(-50%);background:var(--c2-dest);color:var(--ouro);font-size:8px;font-weight:700;padding:2px 6px;border-radius:8px;white-space:nowrap">${dataFmt}</div>`:''}
       ${souOrganizador?`<button onclick="event.stopPropagation();ophRemover(${j.id})" style="position:absolute;top:4px;right:4px;background:none;border:none;color:var(--texto2);font-size:13px;cursor:${sel?'pointer':'default'};padding:2px 4px;display:${sel?'flex':'none'}">✕</button>`:''}
+      ${souOrganizador?`<button onclick="event.stopPropagation();abrirEditarOph(${j.id})" style="position:absolute;top:4px;right:${sel?'22':'4'}px;background:none;border:none;color:var(--texto2);padding:2px 4px;display:flex"><span data-ic="pencil" data-ic-size="12"></span></button>`:''}
       <div style="width:30px;height:30px;margin:0 auto">${escudoImgOuIcone(j.casa)}</div>
       <div style="font-size:10.5px;font-weight:700;line-height:1.2;margin-top:2px">${j.casa||'—'}</div>
       <div style="height:8px"></div>
@@ -165,6 +166,58 @@ function ophRenderLista(){
     cardDash.style.display = lista.length ? 'block' : 'none';
   }
 }
+
+// ══ Editar jogo agendado (lápis, só organizador) — corrige nome de time/data
+// quando vem errado da API. Fica no mesmo card, não mexe no resto dos dados
+// (mercado/odd/minuto) que foram preenchidos manualmente no cadastro. ══
+let ophEditandoId = null;
+function abrirEditarOph(id){
+  if(!perfilAtual || perfilAtual.papel !== 'organizador'){ toast?.('Só o organizador pode editar'); return; }
+  const j = ophCache.find(x=>x.id===id);
+  if(!j){ toast?.('Jogo não encontrado'); return; }
+  ophEditandoId = id;
+  document.getElementById('ophEditCasa').value = j.casa || '';
+  document.getElementById('ophEditVis').value  = j.vis || '';
+  document.getElementById('ophEditData').value = j.data || '';
+  document.getElementById('modalEditarOph').classList.add('open');
+}
+window.abrirEditarOph = abrirEditarOph;
+
+function fecharModalEditarOph(){
+  document.getElementById('modalEditarOph').classList.remove('open');
+  ophEditandoId = null;
+}
+window.fecharModalEditarOph = fecharModalEditarOph;
+
+async function confirmarEdicaoOph(){
+  if(ophEditandoId==null) return;
+  const casa = document.getElementById('ophEditCasa').value.trim();
+  const vis  = document.getElementById('ophEditVis').value.trim();
+  const data = document.getElementById('ophEditData').value;
+  if(!casa || !vis){ toast('Informe os dois times!'); return; }
+  if(casa===vis){ toast('Mandante e visitante não podem ser o mesmo time!'); return; }
+
+  const antes = ophCache.slice();
+  const idx = ophCache.findIndex(x=>x.id===ophEditandoId);
+  if(idx>-1) ophCache[idx] = { ...ophCache[idx], casa, vis, data: data||null }; // otimista
+  ophRenderLista();
+  fecharModalEditarOph();
+
+  try {
+    const res = await fetch(sbUrlAgendados('?id=eq.'+ophEditandoId), {
+      method:'PATCH',
+      headers: { ...sbHeaders(), 'Prefer':'return=representation' },
+      body: JSON.stringify({ casa, vis, data: data||null })
+    });
+    if(!res.ok) throw new Error(await res.text());
+    toast?.('Jogo corrigido!');
+  } catch(e){
+    ophCache = antes; // desfaz se der erro
+    ophRenderLista();
+    toast?.('Erro ao corrigir: ' + e.message, true);
+  }
+}
+window.confirmarEdicaoOph = confirmarEdicaoOph;
 
 // ══ Compartilha só os jogos marcados (toque no card pra marcar) ══
 function ophCompartilharSelecionados(){
