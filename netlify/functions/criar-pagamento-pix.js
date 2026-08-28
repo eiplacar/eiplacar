@@ -65,11 +65,13 @@ export const handler = async function (event) {
   if (!preco || preco <= 0) return resposta(500, { erro: 'Preço do plano mensal não configurado (Administração → Sistema).' });
 
   const nomes = (usuario.user_metadata?.nome || usuario.email.split('@')[0] || 'Assinante').trim().split(' ');
+  const expiraEm = new Date(Date.now() + 30 * 60 * 1000); // 30 minutos a partir de agora
   const corpo = {
     transaction_amount: Number(preco),
     description: 'EI PLACAR — 1 mês de acesso (Pix avulso)',
     payment_method_id: 'pix',
     external_reference: usuario.id, // usado no webhook pra saber de quem é o pagamento
+    date_of_expiration: expiraEm.toISOString(), // ISO8601 em UTC — o Mercado Pago aceita normalmente
     payer: {
       email: usuario.email,
       first_name: nomes[0],

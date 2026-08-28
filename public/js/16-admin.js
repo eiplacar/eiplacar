@@ -62,6 +62,28 @@ function renderAssinar(){
   const cfg = cfgAppLoad();
   const venceu = window.assinaturaVencida?.();
   const sub = document.getElementById('assinarSubtitulo');
+
+  // Já tem um plano PAGO em dia (não é o teste grátis) — não deixa gerar
+  // cobrança/Pix de novo à toa, só mostra que está tudo certo.
+  const jaEmDia = perfilAtual?.assinatura_status === 'ativo' && !venceu;
+  if(jaEmDia){
+    if(sub) sub.textContent = 'Sua assinatura está em dia!';
+    const nomePlano = perfilAtual.plano ? perfilAtual.plano.charAt(0).toUpperCase()+perfilAtual.plano.slice(1) : '';
+    const podeCancelar = !!perfilAtual.assinatura_mp_id && !perfilAtual.assinatura_cancelada;
+    el.innerHTML = `
+      <div style="background:var(--c2);border:2px solid var(--verde2);border-radius:12px;padding:16px;text-align:center">
+        <div style="font-size:13px;font-weight:700;color:var(--verde2);margin-bottom:4px">✅ Assinatura ativa</div>
+        <div style="font-size:12px;color:var(--texto2)">Plano ${nomePlano} • ${perfilAtual.assinatura_cancelada ? 'acesso até' : 'válido até'} ${window.fd?.(perfilAtual.assinatura_vencimento) || perfilAtual.assinatura_vencimento}</div>
+        ${perfilAtual.assinatura_cancelada
+          ? `<div style="font-size:10.5px;color:var(--texto2);margin-top:10px">Cancelada — não vai renovar sozinha.</div>`
+          : podeCancelar
+            ? `<button onclick="cancelarAssinaturaTela()" style="margin-top:12px;background:none;border:1px solid var(--perigo);color:var(--perigo);border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer">Cancelar assinatura recorrente</button>`
+            : `<div style="font-size:10.5px;color:var(--texto2);margin-top:10px">Pago via Pix avulso — não renova sozinho.</div>`
+        }
+      </div>`;
+    return;
+  }
+
   if(sub) sub.textContent = venceu
     ? 'Seu período de teste grátis acabou. Assine um plano para continuar.'
     : 'Continue com acesso liberado a tudo do EI PLACAR.';
@@ -109,6 +131,25 @@ async function iniciarAssinatura(planoId){
 }
 window.iniciarAssinatura = iniciarAssinatura;
 
+async function cancelarAssinaturaTela(){
+  if(!confirm('Cancelar a renovação automática? Você continua com acesso até ' + (window.fd?.(perfilAtual.assinatura_vencimento) || perfilAtual.assinatura_vencimento) + ', só não vai ser cobrado(a) de novo depois disso.')) return;
+  try {
+    const sessao = authGetSessao();
+    const res = await fetch('/.netlify/functions/cancelar-assinatura', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (sessao?.access_token || '') },
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.erro || 'Não foi possível cancelar');
+    perfilAtual.assinatura_cancelada = true;
+    toast('Assinatura cancelada. Seu acesso continua até o vencimento.');
+    renderAssinar();
+  } catch(e){
+    toast('Erro ao cancelar: ' + e.message, true);
+  }
+}
+window.cancelarAssinaturaTela = cancelarAssinaturaTela;
+
 // ══ PIX AVULSO (1 mês, sem renovação automática) ══
 let pixPollTimer = null;
 
@@ -155,7 +196,7 @@ async function gerarPagamentoPix(){
     let tentativas = 0;
     pixPollTimer = setInterval(async () => {
       tentativas++;
-      if(tentativas > 40){ clearInterval(pixPollTimer); pixPollTimer = null; return; } // ~4min e desiste de checar sozinho
+      if(tentativas > 300){ clearInterval(pixPollTimer); pixPollTimer = null; document.getElementById('pixStatus').textContent = '⌛ Esse código Pix expirou. Feche e gere um novo.'; return; } // 30min (mesmo prazo do date_of_expiration) e desiste de checar sozinho
       try {
         const resStatus = await fetch('/.netlify/functions/verificar-pagamento-pix', {
           method: 'POST',

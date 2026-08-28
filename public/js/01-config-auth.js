@@ -452,7 +452,7 @@ window.perfilAtualRecarregarAssinatura = perfilAtualRecarregarAssinatura;
 // rodar uma migração no Supabase pra criá-los), tenta o select completo e, se der erro
 // de coluna inexistente, cai pro select básico (que sempre funciona) e usa valores padrão
 // pro resto — assim a tela nunca quebra, só mostra os campos como vazios/"Teste Grátis".
-const CAMPOS_PERFIL_EXTRA = 'nome,telefone,data_nascimento,foto_url,plano,assinatura_status,assinatura_inicio,assinatura_vencimento';
+const CAMPOS_PERFIL_EXTRA = 'nome,telefone,data_nascimento,foto_url,plano,assinatura_status,assinatura_inicio,assinatura_vencimento,assinatura_mp_id,assinatura_cancelada';
 async function buscarPerfilCompleto(){
   if(!perfilAtual?.id) return { ok:false, dados:{} };
   try {

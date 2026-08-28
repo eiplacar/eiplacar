@@ -47,4 +47,6 @@ alter table perfis
   add column if not exists plano text,
   add column if not exists assinatura_status text default 'trial',
   add column if not exists assinatura_inicio date,
-  add column if not exists assinatura_vencimento date;
+  add column if not exists assinatura_vencimento date,
+  add column if not exists assinatura_mp_id text,          -- id da assinatura (preapproval) no Mercado Pago, pra poder cancelar depois
+  add column if not exists assinatura_cancelada boolean default false; -- true = não cobra mais, mas mantém acesso até assinatura_vencimento

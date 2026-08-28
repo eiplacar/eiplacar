@@ -31,6 +31,11 @@ const DIAS_POR_FREQUENCIA = {
   '3-months': 90,   // trimestral
   '6-months': 180,  // semestral
 };
+const PLANO_POR_FREQUENCIA = {
+  '1-months': 'mensal',
+  '3-months': 'trimestral',
+  '6-months': 'semestral',
+};
 
 function resposta(statusCode, corpo) {
   return { statusCode, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo || {}) };
@@ -56,7 +61,7 @@ async function mpFetch(path, mpToken) {
 // Ativa/renova o plano do usuário no Supabase — mesma lógica de
 // adminAprovarPlano/adminRenovarPlano (16-admin.js): renova a partir do
 // vencimento atual se ele ainda não passou, ou de hoje se já passou.
-async function liberarAssinatura({ supaUrl, supaServiceKey, userId, dias }) {
+async function liberarAssinatura({ supaUrl, supaServiceKey, userId, dias, mpId, plano }) {
   const headers = {
     'Content-Type': 'application/json',
     apikey: supaServiceKey,
@@ -71,10 +76,14 @@ async function liberarAssinatura({ supaUrl, supaServiceKey, userId, dias }) {
   const hoje = hojeSaoPaulo();
   const dataBase = (vencAtual && vencAtual >= hoje) ? vencAtual : hoje;
 
+  const corpo = { assinatura_status: 'ativo', assinatura_vencimento: somarDias(dataBase, dias), assinatura_cancelada: false };
+  if (mpId) corpo.assinatura_mp_id = mpId; // só grava/atualiza quando vem de uma assinatura recorrente (não no Pix avulso)
+  if (plano) corpo.plano = plano; // faltava isso — sem gravar, a tela continuava mostrando "Teste Gratuito" mesmo após pagar
+
   const resUpdate = await fetch(`${base}/rest/v1/perfis?id=eq.${userId}`, {
     method: 'PATCH',
     headers,
-    body: JSON.stringify({ assinatura_status: 'ativo', assinatura_vencimento: somarDias(dataBase, dias) }),
+    body: JSON.stringify(corpo),
   });
   return resUpdate.ok;
 }
@@ -108,8 +117,9 @@ export const handler = async function (event) {
       if (data.status === 'authorized') {
         const chave = `${data.auto_recurring?.frequency}-${data.auto_recurring?.frequency_type}`;
         const dias = DIAS_POR_FREQUENCIA[chave] || 30;
-        const ok2 = await liberarAssinatura({ supaUrl, supaServiceKey, userId: data.external_reference, dias });
-        console.log('Assinatura liberada:', { userId: data.external_reference, dias, ok: ok2 });
+        const plano = PLANO_POR_FREQUENCIA[chave] || 'mensal';
+        const ok2 = await liberarAssinatura({ supaUrl, supaServiceKey, userId: data.external_reference, dias, mpId: id, plano });
+        console.log('Assinatura liberada:', { userId: data.external_reference, dias, plano, ok: ok2 });
       }
       return resposta(200);
     }
@@ -125,8 +135,9 @@ export const handler = async function (event) {
         if (okPre && preapproval.external_reference) {
           const chave = `${preapproval.auto_recurring?.frequency}-${preapproval.auto_recurring?.frequency_type}`;
           const dias = DIAS_POR_FREQUENCIA[chave] || 30;
-          const ok2 = await liberarAssinatura({ supaUrl, supaServiceKey, userId: preapproval.external_reference, dias });
-          console.log('Assinatura renovada:', { userId: preapproval.external_reference, dias, ok: ok2 });
+          const plano = PLANO_POR_FREQUENCIA[chave] || 'mensal';
+          const ok2 = await liberarAssinatura({ supaUrl, supaServiceKey, userId: preapproval.external_reference, dias, plano });
+          console.log('Assinatura renovada:', { userId: preapproval.external_reference, dias, plano, ok: ok2 });
         }
       }
       return resposta(200);
@@ -139,7 +150,7 @@ export const handler = async function (event) {
       console.log('Pagamento avulso consultado:', { id, status: data.status, payment_method_id: data.payment_method_id, external_reference: data.external_reference });
 
       if (data.status === 'approved' && data.payment_method_id === 'pix' && data.external_reference) {
-        const ok2 = await liberarAssinatura({ supaUrl, supaServiceKey, userId: data.external_reference, dias: 30 });
+        const ok2 = await liberarAssinatura({ supaUrl, supaServiceKey, userId: data.external_reference, dias: 30, plano: 'mensal' });
         console.log('Pix avulso liberou 1 mês:', { userId: data.external_reference, ok: ok2 });
       }
       return resposta(200);

@@ -1,36 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
-import { User, Settings, Camera, CreditCard, ShieldHalf, Moon, Bell, Lock, Info, LogOut, ChevronRight, CheckCircle2, Save, Target, Mail, MessageCircle } from 'lucide-react';
+import { User, Settings, Camera, ShieldHalf, Moon, Bell, Lock, Info, LogOut, ChevronRight, Save, Target, Mail, MessageCircle } from 'lucide-react';
 
 // ══ Conta — Perfil + Configurações ══
 //
-// Perfil: foto, dados pessoais (nome/data nasc./telefone/e-mail) e Assinatura.
+// Perfil: foto, dados pessoais (nome/data nasc./telefone/e-mail).
 //   - window.buscarPerfilCompleto() / window.salvarPerfil(campos) → public/js/01-config-auth.js
 //   - Os campos extras (telefone, data_nascimento, foto_url, plano...) ficam na tabela
 //     "perfis" do Supabase — se essas colunas ainda não existirem na base do usuário, a
 //     tela cai pra um modo "somente nome" (sem quebrar) até a migração ser feita lá.
-//   - Assinatura é só EXIBIÇÃO por enquanto — não existe cobrança real integrada ainda;
-//     escolher um plano mostra um aviso em vez de "fingir" que cobrou algo.
+//   - Assinatura (planos, Pix, cancelamento) mora só na aba "Seja Assinante" do menu
+//     lateral (public/js/16-admin.js, página #page-assinar) — não duplica aqui.
 //
 // Configurações: tema, notificações, reserva automática, senha, sobre, sair.
 //   - window.bancaSalvarProtecao(ativa,pct) → public/js/14-banca-gestao.js
 //   - window.alterarSenhaLogado(senha) → public/js/01-config-auth.js
 //   - window.fazerLogout() → public/js/01-config-auth.js
-
-function planosAtuais() {
-  const c = window.cfgAppLoad ? window.cfgAppLoad() : {};
-  return [
-    { id: 'mensal', nome: 'Mensal', preco: c.precoMensal ?? 9.90, periodo: '/mês', dias: 30 },
-    { id: 'trimestral', nome: 'Trimestral', preco: c.precoTrimestral ?? 24.99, periodo: '/3 meses', dias: 90 },
-    { id: 'semestral', nome: 'Semestral', preco: c.precoSemestral ?? 19.99, periodo: '/6 meses', dias: 180 },
-  ];
-}
-
-function diasRestantes(vencimento) {
-  if (!vencimento) return null;
-  const d = Math.ceil((new Date(vencimento + 'T00:00:00') - new Date(new Date().toDateString())) / 86400000);
-  return d;
-}
-function fdBr(s) { return window.fd ? window.fd(s) : s; }
 
 // Abre o app de e-mail padrão do usuário (Gmail, Outlook, app nativo do celular etc.)
 // já com o destinatário e assunto preenchidos — não precisa digitar nada.
@@ -61,7 +45,6 @@ function AbaPerfil() {
   const [perfil, setPerfil] = useState({ nome: '', telefone: '', data_nascimento: '', foto_url: '', plano: '', assinatura_status: '', assinatura_inicio: '', assinatura_vencimento: '' });
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
-  const [verPlanos, setVerPlanos] = useState(false);
   const fileRef = useRef(null);
 
   async function carregar() {
@@ -109,9 +92,6 @@ function AbaPerfil() {
     reader.readAsDataURL(file);
   }
 
-  const dias = diasRestantes(perfil.assinatura_vencimento);
-  const emTeste = !perfil.plano || perfil.plano === 'teste_gratis';
-
   return (
     <>
       <div className="card" style={{ textAlign: 'center' }}>
@@ -136,40 +116,6 @@ function AbaPerfil() {
           <div><label>E-mail</label><input type="email" value={window.authGetSessao?.()?.user?.email || ''} disabled style={{ opacity: .6 }} /></div>
         </div>
         <button className="btn-primary" onClick={salvar} disabled={salvando || carregando} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>{salvando ? 'Salvando...' : <><Save size={13} /> Salvar</>}</button>
-      </div>
-
-      <div className="card">
-        <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><CreditCard size={14} /> Assinatura</div>
-        {emTeste ? (
-          <>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--texto2)' }}>Plano</span><strong>Teste Gratuito</strong></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--texto2)' }}>Status</span><strong style={{ color: 'var(--verde2)', display: 'inline-flex', alignItems: 'center', gap: 4 }}><CheckCircle2 size={13} /> Ativo</strong></div>
-              {perfil.assinatura_inicio && <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--texto2)' }}>Início</span><strong>{fdBr(perfil.assinatura_inicio)}</strong></div>}
-              {perfil.assinatura_vencimento && <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--texto2)' }}>Vencimento</span><strong>{fdBr(perfil.assinatura_vencimento)}</strong></div>}
-              {dias != null && <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--texto2)' }}>Dias restantes</span><strong style={{ color: dias <= 7 ? 'var(--perigo)' : 'var(--ouro)' }}>{dias}</strong></div>}
-            </div>
-            <button className="btn-primary" style={{ marginTop: 12 }} onClick={() => setVerPlanos((v) => !v)}>Renovar Assinatura</button>
-          </>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--texto2)' }}>Plano</span><strong>{planosAtuais().find((p) => p.id === perfil.plano)?.nome || perfil.plano}</strong></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--texto2)' }}>Próximo vencimento</span><strong>{fdBr(perfil.assinatura_vencimento)}</strong></div>
-            <div style={{ fontSize: 11, color: 'var(--texto2)', marginTop: 6 }}>Histórico de pagamentos: em breve.</div>
-          </div>
-        )}
-
-        {verPlanos && (
-          <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--c3)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {planosAtuais().map((p) => (
-              <button key={p.id} onClick={() => window.toast?.('Pagamento ainda não conectado — em breve você poderá assinar o plano ' + p.nome + ' por aqui.')}
-                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 8, padding: '10px 12px', color: 'var(--texto)', cursor: 'pointer' }}>
-                <span style={{ fontWeight: 700 }}>{p.nome}</span>
-                <span style={{ color: 'var(--ouro)', fontWeight: 800 }}>R$ {p.preco.toFixed(2).replace('.', ',')} <span style={{ color: 'var(--texto2)', fontWeight: 400, fontSize: 11 }}>{p.periodo}</span></span>
-              </button>
-            ))}
-          </div>
-        )}
       </div>
     </>
   );

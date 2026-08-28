@@ -97,6 +97,8 @@ function UsuarioDetalhe({ usuario, onVoltar, onMudou }) {
   async function aprovarAcesso() { await window.aprovarMembro(u.id); window.toast?.('Acesso aprovado'); onMudou(); onVoltar(); }
   async function rejeitarAcesso() { if (!confirm('Rejeitar o cadastro de ' + u.nome + '?')) return; await window.rejeitarMembro(u.id); onMudou(); onVoltar(); }
   async function escolherPlano(p) {
+    const acao = picker === 'aprovar' ? 'aprovar' : 'renovar';
+    if (!confirm(`Tem certeza que quer ${acao} o plano ${p.nome} para ${u.nome}?`)) return;
     const r = picker === 'aprovar' ? await window.adminAprovarPlano(u.id, p.id, p.dias) : await window.adminRenovarPlano(u.id, u.assinatura_vencimento, p.dias);
     setPicker(null);
     if (!r.ok) { window.toast?.('' + (r.msg || 'Erro ao salvar plano'), true); return; }
@@ -241,11 +243,13 @@ function AbaAssinaturas() {
   const lista = grupos[filtro] || [];
 
   async function renovarRapido(u, p) {
+    if (!confirm(`Renovar ${u.nome} por mais ${p.dias} dias (${p.nome})?`)) return;
     const r = await window.adminRenovarPlano(u.id, u.assinatura_vencimento, p.dias);
     if (!r.ok) { window.toast?.('Erro ao renovar', true); return; }
     window.toast?.('Renovado por mais ' + p.dias + ' dias'); recarregar();
   }
   async function trocarPlano(u, p) {
+    if (!confirm(`Trocar o plano de ${u.nome} para ${p.nome}?`)) return;
     const r = await window.adminAprovarPlano(u.id, p.id, p.dias);
     if (!r.ok) { window.toast?.('Erro ao trocar plano', true); return; }
     window.toast?.('Plano alterado para ' + p.nome); recarregar();
