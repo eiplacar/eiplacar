@@ -52,10 +52,9 @@ window.cfgAppCarregarNuvem = cfgAppCarregarNuvem;
 
 // ══ TELA "SEJA ASSINANTE" ══
 // Mostra os 3 planos com preço vindo de config_app (editável em Administração →
-// Sistema). O clique em "Assinar" ainda é um placeholder — vira chamada de
-// verdade pra Netlify function assim que o Mercado Pago estiver configurado
-// (MP_ACCESS_TOKEN). Não precisa mexer aqui de novo quando isso acontecer,
-// só trocar o corpo de iniciarAssinatura().
+// Sistema). Todo pagamento aqui é ÚNICO (Pix ou cartão/outro meio via
+// Checkout Pro) — ninguém fica cadastrado pra cobrança automática. Quando o
+// período acaba, a pessoa decide se quer voltar e pagar de novo.
 function renderAssinar(){
   const el = document.getElementById('assinarPlanos');
   if(!el) return;
@@ -72,45 +71,48 @@ function renderAssinar(){
     const podeCancelar = !!perfilAtual.assinatura_mp_id && !perfilAtual.assinatura_cancelada;
     el.innerHTML = `
       <div style="background:var(--c2);border:2px solid var(--verde2);border-radius:12px;padding:16px;text-align:center">
-        <div style="font-size:13px;font-weight:700;color:var(--verde2);margin-bottom:4px">✅ Assinatura ativa</div>
+        <div style="font-size:13px;font-weight:700;color:var(--verde2);margin-bottom:4px">✅ Acesso ativo</div>
         <div style="font-size:12px;color:var(--texto2)">Plano ${nomePlano} • ${perfilAtual.assinatura_cancelada ? 'acesso até' : 'válido até'} ${window.fd?.(perfilAtual.assinatura_vencimento) || perfilAtual.assinatura_vencimento}</div>
         ${perfilAtual.assinatura_cancelada
           ? `<div style="font-size:10.5px;color:var(--texto2);margin-top:10px">Cancelada — não vai renovar sozinha.</div>`
           : podeCancelar
             ? `<button onclick="cancelarAssinaturaTela()" style="margin-top:12px;background:none;border:1px solid var(--perigo);color:var(--perigo);border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer">Cancelar assinatura recorrente</button>`
-            : `<div style="font-size:10.5px;color:var(--texto2);margin-top:10px">Pago via Pix avulso — não renova sozinho.</div>`
+            : `<div style="font-size:10.5px;color:var(--texto2);margin-top:10px">Pagamento único — não renova sozinho. Quando vencer, você decide se paga de novo.</div>`
         }
       </div>`;
     return;
   }
 
   if(sub) sub.textContent = venceu
-    ? 'Seu período de teste grátis acabou. Assine um plano para continuar.'
+    ? 'Seu período de teste grátis acabou. Faça um pagamento único para continuar.'
     : 'Continue com acesso liberado a tudo do EI PLACAR.';
 
   const planos = [
-    { id:'mensal',      nome:'Mensal',      preco:cfg.precoMensal,      obs:'cobrado todo mês' },
-    { id:'trimestral',  nome:'Trimestral',  preco:cfg.precoTrimestral,  obs:'cobrado a cada 3 meses' },
-    { id:'semestral',   nome:'Semestral',   preco:cfg.precoSemestral,   obs:'cobrado a cada 6 meses' },
+    { id:'mensal',      nome:'Mensal',      preco:cfg.precoMensal,      obs:'30 dias de acesso' },
+    { id:'trimestral',  nome:'Trimestral',  preco:cfg.precoTrimestral,  obs:'90 dias de acesso' },
+    { id:'semestral',   nome:'Semestral',   preco:cfg.precoSemestral,   obs:'180 dias de acesso' },
   ];
   el.innerHTML = planos.map(p=>`
     <div style="background:var(--c2);border:2px solid var(--c3);border-radius:12px;padding:14px 16px">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
         <div>
           <div style="font-size:14px;font-weight:800">${p.nome}</div>
-          <div style="font-size:10.5px;color:var(--texto2)">${p.obs}</div>
+          <div style="font-size:10.5px;color:var(--texto2)">${p.obs} • pagamento único</div>
         </div>
         <div style="text-align:right">
           <div style="font-size:16px;font-weight:900;color:var(--ouro)">R$ ${Number(p.preco||0).toFixed(2).replace('.',',')}</div>
-          <button onclick="iniciarAssinatura('${p.id}')" style="margin-top:4px;background:var(--verde2);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer">Assinar</button>
+          <button onclick="iniciarAssinatura('${p.id}')" style="margin-top:4px;background:var(--verde2);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer">Pagar</button>
         </div>
       </div>
-      ${p.id==='mensal' ? `<button onclick="abrirModalPix()" style="margin-top:10px;width:100%;background:none;border:1px dashed var(--texto2);color:var(--texto2);border-radius:8px;padding:6px;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px"><span data-ic="qrCode" data-ic-size="13"></span>Pagar só este mês com Pix (sem renovar sozinho)</button>` : ''}
+      ${p.id==='mensal' ? `<button onclick="abrirModalPix()" style="margin-top:10px;width:100%;background:none;border:1px dashed var(--texto2);color:var(--texto2);border-radius:8px;padding:6px;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px"><span data-ic="qrCode" data-ic-size="13"></span>Pagar só este mês com Pix</button>` : ''}
     </div>`).join('');
   renderIcons(el);
 }
 window.renderAssinar = renderAssinar;
 
+// Apesar do nome (mantido por compatibilidade com a function/endpoint),
+// isso hoje gera um PAGAMENTO ÚNICO via Checkout Pro — não cadastra cartão
+// pra cobrança automática nenhuma. Ver netlify/functions/criar-assinatura.js.
 async function iniciarAssinatura(planoId){
   const btns = document.querySelectorAll('#assinarPlanos button');
   btns.forEach(b=>{ b.disabled = true; b.style.opacity = .6; });
@@ -228,6 +230,52 @@ function copiarPix(){
   navigator.clipboard?.writeText(campo.value).then(()=>toast('Código Pix copiado!')).catch(()=>{});
 }
 window.copiarPix = copiarPix;
+
+// ══ VOLTA DO CHECKOUT DE CARTÃO (Checkout Pro) ══
+// O Mercado Pago devolve a pessoa pra APP_URL com ?payment_id=...&status=...
+// na URL depois de pagar (ver back_urls/auto_return em criar-assinatura.js).
+// Confere esse pagamento específico na hora — mesma function que o Pix usa
+// pra checar status — em vez de depender só do webhook, que pode demorar
+// alguns segundos pra chegar.
+async function verificarRetornoPagamentoCartao(){
+  const params = new URLSearchParams(window.location.search);
+  const paymentId = params.get('payment_id') || params.get('collection_id');
+  const status = params.get('status') || params.get('collection_status');
+  if(!paymentId) return; // não voltou de um checkout — nada a fazer
+
+  // Limpa a URL pra não tentar checar de novo se a pessoa recarregar a página.
+  try {
+    const url = new URL(window.location.href);
+    url.search = '';
+    window.history.replaceState({}, '', url.toString());
+  } catch {}
+
+  if(status === 'rejected'){
+    toast('Pagamento não aprovado pelo Mercado Pago. Tente novamente ou use outro cartão.', true);
+    return;
+  }
+  if(status === 'pending' || status === 'in_process'){
+    toast('Pagamento em análise. Assim que for aprovado, seu acesso é liberado automaticamente.');
+    return;
+  }
+
+  try {
+    const sessao = authGetSessao();
+    if(!sessao?.access_token) return; // sem sessão aqui não tem como validar — o webhook ainda libera sozinho
+    const res = await fetch('/.netlify/functions/verificar-pagamento-pix', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sessao.access_token },
+      body: JSON.stringify({ paymentId }),
+    });
+    const data = await res.json();
+    if(data.status === 'approved'){
+      await window.perfilAtualRecarregarAssinatura?.();
+      toast('Pagamento confirmado! Seu acesso já está liberado.');
+      goTo('geral');
+    }
+  } catch {} // erro passageiro — o webhook é o reforço pra liberar de qualquer forma
+}
+window.verificarRetornoPagamentoCartao = verificarRetornoPagamentoCartao;
 
 // ══ USUÁRIOS (Administração → Usuários / Assinaturas) ══
 // Lê a lista inteira de perfis (a mesma política de RLS que já libera o organizador

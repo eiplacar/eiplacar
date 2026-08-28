@@ -1,24 +1,25 @@
 // ═══════════════════════════════════════════════════
-// FUNÇÃO SERVERLESS — recebe as notificações (webhook) do Mercado
-// Pago quando uma assinatura é autorizada ou uma cobrança recorrente
-// é paga, e atualiza o Supabase automaticamente — mesma coisa que o
-// organizador hoje faz na mão em Administração → Usuários
-// (adminAprovarPlano / adminRenovarPlano).
+// FUNÇÃO SERVERLESS — recebe as notificações (webhook) do Mercado Pago
+// quando um pagamento único (Pix avulso ou cartão/outro meio via Checkout
+// Pro) é aprovado, e atualiza o Supabase automaticamente — mesma coisa que
+// o organizador hoje faz na mão em Administração → Usuários
+// (adminAprovarPlano / adminRenovarPlano). Não existe mais assinatura
+// recorrente nesse app: todo pagamento é único, e quando o período acaba a
+// pessoa decide se quer voltar e pagar de novo.
 //
 // Configurar essa URL como webhook no painel do Mercado Pago:
 //   Suas integrações → aplicação → Webhooks → URL de produção:
 //   https://SEU-SITE.netlify.app/.netlify/functions/webhook-mercadopago
-//   Eventos: marcar TANTO "Assinaturas" (subscription_preapproval e
-//   subscription_authorized_payment) QUANTO "Pagamentos" (payment) — o Pix
-//   avulso gera evento de "Pagamentos", separado do de assinatura. Se só
-//   "Assinaturas" estiver marcado, o Mercado Pago nunca chama essa função
-//   pro Pix avulso e a conta fica presa em "Teste Grátis" mesmo com o
-//   pagamento aprovado.
-//   IMPORTANTE: mesmo que esse evento não esteja marcado no painel, o Pix
-//   avulso agora também é liberado por verificar-pagamento-pix.js (chamado
-//   pela própria tela de "aguardando confirmação" do app) — esse webhook
-//   deixou de ser o único caminho, é só um reforço para quando a pessoa
-//   fecha o app antes da tela confirmar sozinha.
+//   Eventos: marcar "Pagamentos" (payment) — é o evento que cobre tanto o
+//   Pix avulso quanto o pagamento único por cartão via Checkout Pro. Os
+//   eventos de "Assinaturas" (subscription_preapproval e
+//   subscription_authorized_payment) só importam se ainda sobrar alguma
+//   assinatura recorrente antiga ativa (ver comentário mais abaixo).
+//   IMPORTANTE: mesmo que o evento "Pagamentos" não esteja marcado no
+//   painel, todo pagamento único (Pix ou cartão) também é liberado na hora
+//   por verificar-pagamento-pix.js, chamado pela própria tela do app
+//   enquanto espera a confirmação — esse webhook deixou de ser o único
+//   caminho, é só um reforço para quando a pessoa fecha o app antes disso.
 //
 // IMPORTANTE: nunca confia no corpo da notificação sozinho (qualquer um pode
 // chamar essa URL forjando um payload) — sempre busca o dado de verdade na
@@ -131,8 +132,15 @@ export const handler = async function (event) {
   if (!id) return resposta(200); // notificação sem id útil — confirma recebido e ignora
 
   try {
-    // ── Assinatura autorizada pela primeira vez (pessoa acabou de confirmar
-    // o pagamento/cartão no checkout) ──
+    // ── LEGADO: assinatura recorrente (preapproval) ──
+    // O app não cria mais assinaturas recorrentes (criar-assinatura.js agora
+    // gera pagamento único via Checkout Pro — ver comentário no topo desse
+    // arquivo). Esses dois blocos ficam aqui só pra quem ainda tem uma
+    // assinatura antiga rodando (criada antes dessa mudança): o Mercado Pago
+    // continua mandando os eventos dela até a pessoa cancelar (Administração
+    // → Usuários, ou tela "Seja Assinante" → "Cancelar assinatura recorrente")
+    // ou ela mesma acabar. Pode remover esses dois blocos com segurança assim
+    // que não sobrar nenhuma assinatura antiga ativa.
     if (tipo === 'subscription_preapproval' || tipo === 'preapproval') {
       const { ok, data } = await mpFetch(`/preapproval/${id}`, mpToken);
       if (!ok) { console.log('Preapproval não encontrado na API do MP:', id); return resposta(200); }
@@ -148,7 +156,7 @@ export const handler = async function (event) {
       return resposta(200);
     }
 
-    // ── Cobrança recorrente (renovação automática mensal/trimestral/semestral) ──
+    // ── LEGADO: cobrança recorrente de uma assinatura antiga ──
     if (tipo === 'subscription_authorized_payment') {
       const { ok, data } = await mpFetch(`/authorized_payments/${id}`, mpToken);
       if (!ok) { console.log('Authorized payment não encontrado na API do MP:', id); return resposta(200); }
@@ -167,15 +175,25 @@ export const handler = async function (event) {
       return resposta(200);
     }
 
-    // ── Pagamento avulso via Pix (1 mês, sem recorrência — criar-pagamento-pix.js) ──
+    // ── Pagamento único (Pix avulso — criar-pagamento-pix.js — OU cartão/outro
+    // meio via Checkout Pro — criar-assinatura.js) ── Nenhum dos dois é
+    // recorrente: cada pagamento aprovado aqui libera um período fixo de
+    // acesso e não agenda cobrança nenhuma pro futuro.
     if (tipo === 'payment') {
       const { ok, data } = await mpFetch(`/v1/payments/${id}`, mpToken);
       if (!ok) { console.log('Pagamento não encontrado na API do MP:', id); return resposta(200); }
-      console.log('Pagamento avulso consultado:', { id, status: data.status, payment_method_id: data.payment_method_id, external_reference: data.external_reference });
+      console.log('Pagamento avulso consultado:', { id, status: data.status, payment_method_id: data.payment_method_id, external_reference: data.external_reference, metadata: data.metadata });
 
-      if (data.status === 'approved' && data.payment_method_id === 'pix' && data.external_reference) {
-        const ok2 = await liberarAssinatura({ supaUrl, supaServiceKey, userId: data.external_reference, dias: 30, plano: 'mensal', pixPaymentId: id });
-        console.log('Pix avulso liberou 1 mês:', { userId: data.external_reference, ok: ok2 });
+      if (data.status === 'approved' && data.external_reference) {
+        // dias/plano vêm do metadata gravado na hora de criar o pagamento
+        // (criar-assinatura.js grava plano_id/dias; criar-pagamento-pix.js
+        // também, desde essa versão). Pagamento Pix antigo, gerado antes
+        // dessa mudança e sem metadata, cai no padrão de 30 dias / mensal
+        // (era a única opção que o Pix avulso oferecia até aqui).
+        const dias = Number(data.metadata?.dias) || 30;
+        const plano = data.metadata?.plano_id || 'mensal';
+        const ok2 = await liberarAssinatura({ supaUrl, supaServiceKey, userId: data.external_reference, dias, plano, pixPaymentId: id });
+        console.log('Pagamento único liberou acesso:', { userId: data.external_reference, dias, plano, meio: data.payment_method_id, ok: ok2 });
       }
       return resposta(200);
     }

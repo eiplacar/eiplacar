@@ -1,11 +1,20 @@
 // ═══════════════════════════════════════════════════
-// FUNÇÃO SERVERLESS — consulta o status de um pagamento Pix específico
-// direto na API do Mercado Pago, pelo paymentId devolvido por
-// criar-pagamento-pix.js, e — se estiver aprovado — já libera o mês de
-// acesso na hora, sem depender do webhook do Mercado Pago ter sido
-// entregue (o Pix avulso é um evento de "Pagamentos", separado do de
-// "Assinaturas", e fica sem efeito se esse tópico não estiver marcado
-// no painel do Mercado Pago — ver webhook-mercadopago.js).
+// FUNÇÃO SERVERLESS — consulta o status de um pagamento único específico
+// direto na API do Mercado Pago (Pix avulso, gerado por
+// criar-pagamento-pix.js, OU cartão/outro meio via Checkout Pro, gerado por
+// criar-assinatura.js), e — se estiver aprovado — já libera o acesso na
+// hora, sem depender do webhook do Mercado Pago ter sido entregue.
+//
+// Usada em dois momentos:
+//   1) Pix avulso: a tela de "aguardando confirmação" fica chamando essa
+//      function a cada poucos segundos até o Pix ser pago.
+//      (Nome mantido "verificar-pagamento-pix" por compatibilidade, mas
+//      hoje ela também confere pagamento por cartão — não é mais exclusiva
+//      de Pix.)
+//   2) Cartão via Checkout Pro: quando a pessoa volta pro app depois de
+//      pagar (ver verificarRetornoPagamentoCartao em 16-admin.js), o app
+//      chama essa function uma vez com o payment_id que veio na URL de
+//      retorno, pra liberar o acesso na hora em vez de esperar o webhook.
 //
 // Chamada pelo app em: POST /.netlify/functions/verificar-pagamento-pix
 //   body: { "paymentId": "123456789" }
@@ -109,15 +118,21 @@ export const handler = async function (event) {
     const dataMp = await resMp.json();
     if (!resMp.ok) return resposta(502, { erro: 'Mercado Pago recusou a consulta' });
 
-    if (dataMp.status === 'approved' && dataMp.payment_method_id === 'pix' && dataMp.external_reference) {
+    if (dataMp.status === 'approved' && dataMp.external_reference) {
+      // dias/plano vêm do metadata gravado na hora de criar o pagamento
+      // (Pix avulso ou cartão via Checkout Pro — ver comentário no topo).
+      // Sem metadata (Pix avulso antigo, de antes dessa mudança), assume
+      // 30 dias / mensal, que era a única opção que o Pix avulso oferecia.
+      const dias = Number(dataMp.metadata?.dias) || 30;
+      const plano = dataMp.metadata?.plano_id || 'mensal';
       const ok = await liberarAssinatura({
         supaUrl, supaServiceKey,
         userId: dataMp.external_reference,
-        dias: 30,
-        plano: 'mensal',
+        dias,
+        plano,
         pixPaymentId: dataMp.id,
       });
-      console.log('Pix avulso liberado via polling da tela:', { userId: dataMp.external_reference, paymentId: dataMp.id, ok });
+      console.log('Pagamento único liberado via checagem da tela:', { userId: dataMp.external_reference, paymentId: dataMp.id, dias, plano, meio: dataMp.payment_method_id, ok });
     }
 
     return resposta(200, { status: dataMp.status });

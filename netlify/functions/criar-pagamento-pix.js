@@ -71,6 +71,7 @@ export const handler = async function (event) {
     description: 'EI PLACAR — 1 mês de acesso (Pix avulso)',
     payment_method_id: 'pix',
     external_reference: usuario.id, // usado no webhook pra saber de quem é o pagamento
+    metadata: { plano_id: 'mensal', dias: 30 }, // usado no webhook/verificação pra saber quantos dias liberar (mesmo padrão do pagamento único por cartão)
     date_of_expiration: expiraEm.toISOString(), // ISO8601 em UTC — o Mercado Pago aceita normalmente
     payer: {
       email: usuario.email,

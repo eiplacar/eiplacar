@@ -35,6 +35,10 @@
         ophCarregarNuvem().then(()=>ophRenderLista?.()),
         favIndiceCarregarNuvem().then(()=>window.favIndiceRefresh?.()),
       ]);
+      // Se a pessoa acabou de voltar do checkout de cartão (Mercado Pago
+      // devolve com ?payment_id=...&status=... na URL), confere e libera o
+      // acesso na hora em vez de esperar o webhook.
+      window.verificarRetornoPagamentoCartao?.();
     }
   }
   // Sem sessão nenhuma (visita nova, ou acabou de confirmar e-mail e voltou pro
