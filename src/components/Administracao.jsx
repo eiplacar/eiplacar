@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
-  Users, CreditCard, Settings, Search, ArrowLeft, CheckCircle2, XCircle,
+  Users, CreditCard, Settings, Search, ArrowLeft,
   RefreshCw, Ban, Trash2, ShieldCheck, Save, Circle,
 } from 'lucide-react';
 
@@ -15,7 +15,6 @@ import {
 // Pontes com o JS puro (public/js/16-admin.js e 01-config-auth.js):
 //   - window.adminListarUsuarios() / adminAtualizarUsuario / adminExcluirUsuario
 //   - window.adminAprovarPlano / adminRenovarPlano / adminCancelarAssinatura / adminBloquearUsuario
-//   - window.aprovarMembro(id) / rejeitarMembro(id) → aprovação de acesso (pendente → aprovado)
 //   - window.cfgAppLoad() / cfgAppSave(d) → preço dos planos e dias de teste
 
 const PLANOS_BASE = [
@@ -30,8 +29,6 @@ function diasRestantes(vencimento) {
   return Math.ceil((new Date(vencimento + 'T00:00:00') - new Date(new Date().toDateString())) / 86400000);
 }
 function statusUsuario(u) {
-  if (u.status === 'pendente') return { cor: 'var(--ouro)', texto: 'Pendente de aprovação' };
-  if (u.status === 'rejeitado') return { cor: 'var(--texto3)', texto: 'Cadastro rejeitado' };
   if (u.bloqueado) return { cor: 'var(--texto3)', texto: 'Bloqueado' };
   const dias = diasRestantes(u.assinatura_vencimento);
   const nomePlano = u.plano ? (PLANOS_BASE.find((p) => p.id === u.plano)?.nome || u.plano) : 'Teste';
@@ -94,8 +91,6 @@ function UsuarioDetalhe({ usuario, onVoltar, onMudou }) {
     if (!r.ok) { window.toast?.('Não foi possível salvar (talvez falte a coluna "telefone")', true); return; }
     window.toast?.('Dados atualizados'); onMudou();
   }
-  async function aprovarAcesso() { await window.aprovarMembro(u.id); window.toast?.('Acesso aprovado'); onMudou(); onVoltar(); }
-  async function rejeitarAcesso() { if (!confirm('Rejeitar o cadastro de ' + u.nome + '?')) return; await window.rejeitarMembro(u.id); onMudou(); onVoltar(); }
   async function escolherPlano(p) {
     const acao = picker === 'aprovar' ? 'aprovar' : 'renovar';
     if (!confirm(`Tem certeza que quer ${acao} o plano ${p.nome} para ${u.nome}?`)) return;
@@ -154,19 +149,12 @@ function UsuarioDetalhe({ usuario, onVoltar, onMudou }) {
           {st.linha && <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--texto2)' }}>{st.linha.split(':')[0]}</span><strong>{st.linha.split(': ')[1]}</strong></div>}
         </div>
 
-        {u.status === 'pendente' ? (
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn-primary" style={{ flex: 1 }} onClick={aprovarAcesso}><CheckCircle2 size={14} style={{ verticalAlign: -2, marginRight: 4 }} />Aprovar Acesso</button>
-            <button onClick={rejeitarAcesso} className="btn-danger" style={{ flex: 1 }}><XCircle size={13} style={{ verticalAlign: -2, marginRight: 4 }} />Rejeitar</button>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <button className="btn-primary" onClick={() => setPicker(picker === 'aprovar' ? null : 'aprovar')}><ShieldCheck size={14} style={{ verticalAlign: -2, marginRight: 4 }} />Aprovar Plano</button>
-            <button onClick={() => setPicker(picker === 'renovar' ? null : 'renovar')} style={{ background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 8, padding: '10px', color: 'var(--ouro)', fontWeight: 700, cursor: 'pointer' }}><RefreshCw size={13} style={{ verticalAlign: -2, marginRight: 4 }} />Renovar</button>
-            {picker && <PlanoPicker titulo={picker === 'aprovar' ? 'Aprovar qual plano?' : 'Renovar por quanto tempo?'} onEscolher={escolherPlano} onCancelar={() => setPicker(null)} />}
-            <button onClick={cancelar} style={{ background: 'none', border: '1px solid var(--c3)', borderRadius: 8, padding: '10px', color: 'var(--texto2)', fontWeight: 700, cursor: 'pointer' }}>Cancelar Assinatura</button>
-          </div>
-        )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <button className="btn-primary" onClick={() => setPicker(picker === 'aprovar' ? null : 'aprovar')}><ShieldCheck size={14} style={{ verticalAlign: -2, marginRight: 4 }} />Aprovar Plano</button>
+          <button onClick={() => setPicker(picker === 'renovar' ? null : 'renovar')} style={{ background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 8, padding: '10px', color: 'var(--ouro)', fontWeight: 700, cursor: 'pointer' }}><RefreshCw size={13} style={{ verticalAlign: -2, marginRight: 4 }} />Renovar</button>
+          {picker && <PlanoPicker titulo={picker === 'aprovar' ? 'Aprovar qual plano?' : 'Renovar por quanto tempo?'} onEscolher={escolherPlano} onCancelar={() => setPicker(null)} />}
+          <button onClick={cancelar} style={{ background: 'none', border: '1px solid var(--c3)', borderRadius: 8, padding: '10px', color: 'var(--texto2)', fontWeight: 700, cursor: 'pointer' }}>Cancelar Assinatura</button>
+        </div>
       </div>
 
       <div className="card">
@@ -236,9 +224,9 @@ function AbaAssinaturas() {
   const [abrirPara, setAbrirPara] = useState(null);
 
   const grupos = {
-    trial: usuarios.filter((u) => u.status === 'aprovado' && (!u.plano || u.plano === '') && u.assinatura_status !== 'cancelado'),
-    ativos: usuarios.filter((u) => u.status === 'aprovado' && u.plano && (diasRestantes(u.assinatura_vencimento) ?? 0) >= 0 && u.assinatura_status !== 'cancelado'),
-    expirados: usuarios.filter((u) => u.status === 'aprovado' && (u.assinatura_status === 'cancelado' || (u.plano && (diasRestantes(u.assinatura_vencimento) ?? 0) < 0))),
+    trial: usuarios.filter((u) => (!u.plano || u.plano === '') && u.assinatura_status !== 'cancelado'),
+    ativos: usuarios.filter((u) => u.plano && (diasRestantes(u.assinatura_vencimento) ?? 0) >= 0 && u.assinatura_status !== 'cancelado'),
+    expirados: usuarios.filter((u) => u.assinatura_status === 'cancelado' || (u.plano && (diasRestantes(u.assinatura_vencimento) ?? 0) < 0)),
   };
   const lista = grupos[filtro] || [];
 

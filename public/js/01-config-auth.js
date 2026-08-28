@@ -395,7 +395,6 @@ async function salvarNovaSenha(){
       document.addEventListener('DOMContentLoaded', ()=>{
         authGoTab('novasenha');
         document.getElementById('authScreen').classList.add('open');
-        document.getElementById('waitScreen').classList.remove('open');
         document.getElementById('blockScreen').classList.remove('open');
       });
     }
@@ -530,11 +529,9 @@ async function authIniciarSessao(){
 // Decide entre: tela de login, espera de aprovação, ou app liberado
 function authAplicarTela(){
   const elAuth  = document.getElementById('authScreen');
-  const elWait  = document.getElementById('waitScreen');
   const elBlock = document.getElementById('blockScreen');
 
   elAuth.classList.remove('open');
-  elWait.classList.remove('open');
   elBlock.classList.remove('open');
   document.body.classList.remove('papel-organizador','papel-membro');
 
@@ -566,11 +563,6 @@ function authAplicarTela(){
   // a partir daqui é membro: esconde botões de criar/editar/excluir em todo o app
   document.body.classList.add('papel-membro');
 
-  if(perfilAtual.status !== 'aprovado'){
-    elWait.classList.add('open');
-    return;
-  }
-
   // Checa bloqueio (Administração → Usuários → Bloquear). Consulta separada e tolerante a
   // falha: se a coluna "bloqueado" ainda não existir nessa base, simplesmente não bloqueia ninguém.
   authVerificarBloqueio();
@@ -588,67 +580,6 @@ async function authVerificarBloqueio(){
   // então não existe mais checagem de saldo pra liberar o acesso do membro).
 }
 
-// ══ APROVAÇÕES (organizador) — agora mora em Minha Conta → Administração ══
-async function carregarPendentes(){
-  const el = document.getElementById('listaPendentes');
-  if(!el) return;
-  try {
-    const res = await fetch(sbUrlPerfis('?status=eq.pendente&select=id,nome,status'), { headers: sbHeaders() });
-    if(!res.ok) throw new Error('Erro ao buscar pendentes');
-    const lista = await res.json();
-    if(!lista.length){
-      el.innerHTML = '<div class="empty"><div class="icon"><span data-ic="circleCheck" data-ic-size="38"></span></div><p>Nenhum cadastro pendente.</p></div>';
-      window.renderIcons?.(el);
-      return;
-    }
-    el.innerHTML = lista.map(p=>`
-      <div class="aprov-card">
-        <div class="aprov-info">
-          <div class="aprov-nome">${p.nome}</div>
-        </div>
-        <div class="aprov-btns">
-          <button class="btn-aprovar" onclick="aprovarMembro('${p.id}')"><span data-ic="circleCheck" data-ic-size="13"></span> Aprovar</button>
-          <button class="btn-rejeitar" onclick="rejeitarMembro('${p.id}')"><span data-ic="circleX" data-ic-size="13"></span> Rejeitar</button>
-        </div>
-      </div>
-    `).join('');
-    window.renderIcons?.(el);
-  } catch(e){
-    el.innerHTML = `<div class="empty"><div class="icon"><span data-ic="circleAlert" data-ic-size="38"></span></div><p>Erro ao carregar: ${e.message}</p></div>`;
-    window.renderIcons?.(el);
-  }
-}
-
-// Aprova só o acesso (a Banca agora é individual — não existe mais membro/cota na banca)
-async function aprovarMembro(perfilId){
-  try {
-    const upd = await fetch(sbUrlPerfis('?id=eq.'+perfilId), {
-      method:'PATCH', headers: { ...sbHeaders(), 'Prefer':'return=representation' },
-      body: JSON.stringify({ status:'aprovado' })
-    });
-    if(!upd.ok){ const t = await upd.text(); throw new Error(t); }
-
-    toast('Membro aprovado!');
-    carregarPendentes();
-  } catch(e){
-    toast('Erro ao aprovar: ' + e.message, true);
-  }
-}
-
-async function rejeitarMembro(perfilId){
-  if(!confirm('Rejeitar este cadastro? A pessoa não terá acesso ao app.')) return;
-  try {
-    const res = await fetch(sbUrlPerfis('?id=eq.'+perfilId), {
-      method:'PATCH', headers: sbHeaders(),
-      body: JSON.stringify({ status:'rejeitado' })
-    });
-    if(!res.ok){ const t = await res.text(); throw new Error(t); }
-    toast('Cadastro rejeitado');
-    carregarPendentes();
-  } catch(e){
-    toast('Erro: ' + e.message, true);
-  }
-}
 
 // URL base da tabela
 function sbUrl(filtros) {

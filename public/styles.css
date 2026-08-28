@@ -564,22 +564,13 @@ input:disabled, select:disabled { opacity:.5; cursor:not-allowed; background:var
 .termos-texto .termos-data { font-size:11px; color:var(--texto2); opacity:.7; margin-bottom:12px; }
 .termos-texto strong { color:var(--texto); }
 
-/* Tela de espera de aprovação / acesso restrito */
-#waitScreen, #blockScreen { display:none; position:fixed; inset:0; background:var(--c1); z-index:480; align-items:center; justify-content:center; padding:20px; text-align:center; }
-#waitScreen.open, #blockScreen.open { display:flex; }
+/* Tela de acesso restrito */
+#blockScreen { display:none; position:fixed; inset:0; background:var(--c1); z-index:480; align-items:center; justify-content:center; padding:20px; text-align:center; }
+#blockScreen.open { display:flex; }
 .wait-box { max-width:340px; }
 .wait-box .icon { font-size:48px; margin-bottom:14px; }
 .wait-box h2 { font-size:18px; font-weight:800; color:var(--ouro); margin-bottom:8px; }
 .wait-box p { font-size:13px; color:var(--texto2); line-height:1.6; margin-bottom:18px; }
-
-/* Painel de aprovação (organizador) */
-.aprov-card { background:var(--c1); border:1px solid var(--c3); border-radius:16px; padding:12px; margin-bottom:12px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-.aprov-info { flex:1; min-width:140px; }
-.aprov-nome { font-weight:700; font-size:14px; }
-.aprov-email { font-size:11px; color:var(--texto2); }
-.aprov-btns { display:flex; gap:6px; }
-.btn-aprovar { background:var(--verde); border:none; border-radius:7px; padding:7px 12px; color:#fff; font-size:12px; font-weight:700; cursor:pointer; }
-.btn-rejeitar { background:none; border:1px solid var(--perigo); border-radius:7px; padding:7px 12px; color:var(--perigo); font-size:12px; font-weight:700; cursor:pointer; }
 
 /* Indicador de usuário logado no header */
 .user-badge { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--texto2); cursor:pointer; }

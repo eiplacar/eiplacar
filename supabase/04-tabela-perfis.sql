@@ -8,15 +8,14 @@ create table if not exists perfis (
   id uuid primary key references auth.users(id) on delete cascade,
   nome text,
   papel text default 'membro',      -- 'organizador' ou 'membro'
-  status text default 'pendente',   -- 'pendente' ou 'aprovado'
+  status text default 'aprovado',   -- aprovação manual de cadastro removida; sempre 'aprovado'
   membro_id bigint,                 -- vincula ao participante correspondente na Banca
   created_at timestamptz default now()
 );
 
 -- ── GATILHO: cria o perfil automaticamente sempre que alguém se cadastra ──
--- A PRIMEIRA pessoa a se cadastrar vira organizador aprovado sozinho;
--- todo mundo depois disso entra como membro pendente, esperando aprovação
--- na Aba Banca.
+-- A PRIMEIRA pessoa a se cadastrar vira organizador; todo mundo depois disso
+-- entra como membro. Aprovação manual removida: todo mundo já entra "aprovado".
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
@@ -25,7 +24,7 @@ begin
     new.id,
     new.raw_user_meta_data->>'nome',
     case when (select count(*) from public.perfis) = 0 then 'organizador' else 'membro' end,
-    case when (select count(*) from public.perfis) = 0 then 'aprovado' else 'pendente' end
+    'aprovado'
   );
   return new;
 end;
