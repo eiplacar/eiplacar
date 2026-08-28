@@ -26,3 +26,8 @@ pode rodar tudo de novo sem medo — os comandos usam "if not exists" e
 "drop ... if exists", então não duplicam nem dão erro. Não precisa
 apagar nada manualmente antes: pode simplesmente rodar os 5 arquivos
 de novo, na ordem, por cima do que já existir.
+
+ATENÇÃO — se telefone/data de nascimento/e-mail não estão salvando no
+cadastro: rode também o 16-cadastro-dados-completos.sql (corrige o
+gatilho de criação de conta pra gravar esses campos na hora, e completa
+o e-mail de quem já tinha conta).

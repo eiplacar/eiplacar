@@ -220,7 +220,8 @@ async function fazerCadastro(){
       method:'POST', headers: authHeadersBase(),
       body: JSON.stringify({ email, password: senha, data: { nome, telefone, data_nascimento: dataNascimento } })
     });
-    const data = await res.json();
+    let data = {};
+    try { data = await res.json(); } catch {} // corpo vazio/inesperado não pode derrubar a função sem mostrar nada
     if(!res.ok){
       const msg = (data && data.msg) || (data && data.error_description) || 'Erro ao criar conta';
       if(msg.toLowerCase().includes('already') || msg.toLowerCase().includes('registered')){
@@ -238,7 +239,15 @@ async function fazerCadastro(){
       const dias = (cfgAppLoad().diasTeste) || 60;
       const hoje = hojeBR(); // corrigido pro fuso de Brasília (ver 04-utils.js)
       salvarPerfil({ assinatura_status:'trial', assinatura_inicio:hoje, assinatura_vencimento: hojeBR(dias) }).catch(()=>{});
-      salvarPerfil({ telefone, data_nascimento: dataNascimento, termos_aceitos_em: new Date().toISOString() }).catch(()=>{});
+      // Telefone/data de nascimento/e-mail: o gatilho do banco (handle_new_user, ver
+      // supabase/04-tabela-perfis.sql) já grava isso direto na criação da conta, então
+      // esse PATCH aqui é só um reforço (ex: base antiga sem a migração mais recente).
+      // Antes, um erro aqui era 100% silencioso (.catch(()=>{}) sem log nenhum) — se
+      // falhasse, a pessoa preenchia telefone/nascimento no cadastro e eles simplesmente
+      // sumiam, sem nenhum aviso. Agora ao menos fica registrado no console pra investigar.
+      salvarPerfil({ telefone, data_nascimento: dataNascimento, email, termos_aceitos_em: new Date().toISOString() })
+        .then(r=>{ if(!r.ok) console.warn('Não foi possível salvar telefone/nascimento/e-mail no perfil (o gatilho do banco deve ter coberto isso mesmo assim):', r.msg); })
+        .catch(e=>console.warn('Erro ao salvar dados extras do perfil:', e));
     } else if(data.user && Array.isArray(data.user.identities) && data.user.identities.length===0){
       // O Supabase, por segurança, não revela se o e-mail já existe: quando a confirmação por
       // e-mail está ativada, um cadastro repetido volta como "sucesso" mas com identities:[] —
@@ -249,11 +258,38 @@ async function fazerCadastro(){
       // projeto com confirmação por e-mail ativada
       authMostrarMsg('Conta criada! Verifique seu e-mail para confirmar, depois faça login.','ok');
       authAplicarTela();
-      authGoTab('login');
+      // Espera a pessoa ler a mensagem antes de trocar de aba — authGoTab() limpa a
+      // mensagem da tela (authLimparMsg no final dela), então chamar isso na hora
+      // apagava o aviso "Conta criada!" antes de aparecer, dando a impressão de que
+      // o cadastro simplesmente falhou e voltou pro login sem dizer nada.
+      setTimeout(()=>authGoTab('login'), 3000);
     }
   } catch(e){
-    authMostrarMsg('Erro de conexão:'+ e.message,'erro');
+    authMostrarMsg('️ Não foi possível conectar. Verifique sua internet e tente novamente.','erro');
   }
+}
+
+// Traduz os erros que o Supabase Auth devolve (em inglês, por códigos) pra
+// mensagens em português que dizem pra pessoa o que aconteceu de verdade —
+// antes disso, alguns retornos (corpo vazio, formato inesperado) faziam a
+// tela não mostrar mensagem NENHUMA quando o login falhava.
+function mensagemErroLogin(data){
+  const codigo = ((data && (data.error_code || data.code || data.error)) || '').toLowerCase();
+  const bruto = ((data && (data.error_description || data.msg)) || '').toLowerCase();
+  const junto = codigo + ' ' + bruto;
+  if(/invalid.*credentials|invalid_grant/.test(junto)){
+    return '️ E-mail ou senha inválidos. Confira os dados e tente novamente.';
+  }
+  if(/email.*not.*confirmed/.test(junto)){
+    return '️ Confirme seu e-mail antes de entrar — verifique sua caixa de entrada (e o spam).';
+  }
+  if(/too many requests|rate limit/.test(junto)){
+    return '️ Muitas tentativas seguidas. Aguarde um instante e tente novamente.';
+  }
+  if(/user.*banned|user.*disabled/.test(junto)){
+    return '️ Esta conta está bloqueada. Fale com o organizador.';
+  }
+  return '️ Não foi possível entrar. Confira o e-mail e a senha e tente novamente.';
 }
 
 // ── LOGIN ──
@@ -262,22 +298,31 @@ async function fazerLogin(){
   const senha = document.getElementById('loginSenha').value;
   authLimparMsg();
   if(!email||!senha){ authMostrarMsg('️ Informe e-mail e senha','erro'); return; }
+  if(!emailValido(email)){ authMostrarMsg('️ Digite um e-mail válido','erro'); return; }
 
+  const btn = document.querySelector('#aform-login .btn-primary');
+  if(btn){ btn.disabled = true; btn.style.opacity = .6; }
   try {
     const res = await fetch(authUrl('/token?grant_type=password'), {
       method:'POST', headers: authHeadersBase(),
       body: JSON.stringify({ email, password: senha })
     });
-    const data = await res.json();
+    // O corpo pode vir vazio ou num formato inesperado em alguns erros de rede/
+    // proxy — sem esse try/catch, um JSON inválido derrubava a função inteira
+    // antes de mostrar qualquer mensagem, e a tela ficava exatamente como
+    // estava (botão apertado, nada acontece).
+    let data = {};
+    try { data = await res.json(); } catch {}
     if(!res.ok){
-      const msg = (data && data.error_description) || (data && data.msg) || 'E-mail ou senha incorretos';
-      authMostrarMsg('️'+ msg,'erro');
+      authMostrarMsg(mensagemErroLogin(data), 'erro');
       return;
     }
     authSaveSessao(data);
     await authIniciarSessao();
   } catch(e){
-    authMostrarMsg('Erro de conexão:'+ e.message,'erro');
+    authMostrarMsg('️ Não foi possível conectar. Verifique sua internet e tente novamente.','erro');
+  } finally {
+    if(btn){ btn.disabled = false; btn.style.opacity = 1; }
   }
 }
 

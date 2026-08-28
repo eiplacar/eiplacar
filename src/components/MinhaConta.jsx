@@ -78,18 +78,46 @@ function AbaPerfil() {
   }
 
   function escolherFoto() { fileRef.current?.click(); }
-  function onFoto(e) {
+
+  // Redimensiona/comprime a foto antes de salvar. Antes, a foto ia direto pro banco
+  // em base64 do arquivo original (até 1,5MB vira ~2MB de texto) — fotos de celular
+  // hoje em dia passam fácil disso, e um payload grande desse jeito podia ser
+  // recusado pelo Supabase (limite de tamanho de requisição) SEM erro nenhum
+  // aparecer com clareza, dando a impressão de "a foto não salva". Reduzindo pra no
+  // máximo 512px e comprimindo em JPEG, o arquivo final fica na casa de poucos KB.
+  function comprimirImagem(file) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const max = 512;
+        const escala = Math.min(1, max / Math.max(img.width, img.height));
+        const w = Math.round(img.width * escala);
+        const h = Math.round(img.height * escala);
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.82));
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Não foi possível ler essa imagem')); };
+      img.src = url;
+    });
+  }
+
+  async function onFoto(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 1.5 * 1024 * 1024) { window.toast?.('Escolha uma foto menor (até 1,5MB)', true); return; }
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const dataUri = reader.result;
+    if (file.size > 8 * 1024 * 1024) { window.toast?.('Escolha uma foto menor (até 8MB)', true); return; }
+    try {
+      const dataUri = await comprimirImagem(file);
       setPerfil((p) => ({ ...p, foto_url: dataUri }));
       const r = await window.salvarPerfil({ foto_url: dataUri });
       if (!r.ok) window.toast?.('' + r.msg, true); else window.toast?.('Foto atualizada');
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      window.toast?.('Não foi possível processar essa foto: ' + err.message, true);
+    }
   }
 
   return (
