@@ -48,4 +48,6 @@ alter table perfis
   add column if not exists assinatura_inicio date,
   add column if not exists assinatura_vencimento date,
   add column if not exists assinatura_mp_id text,          -- id da assinatura (preapproval) no Mercado Pago, pra poder cancelar depois
-  add column if not exists assinatura_cancelada boolean default false; -- true = não cobra mais, mas mantém acesso até assinatura_vencimento
+  add column if not exists assinatura_cancelada boolean default false, -- true = não cobra mais, mas mantém acesso até assinatura_vencimento
+  add column if not exists assinatura_pix_pagamento_id text; -- id do último pagamento Pix avulso já creditado, pra não liberar o mesmo pagamento
+                                                               -- duas vezes (o polling da tela e o webhook do Mercado Pago podem chegar quase juntos)

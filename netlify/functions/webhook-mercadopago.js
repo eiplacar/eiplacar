@@ -8,7 +8,17 @@
 // Configurar essa URL como webhook no painel do Mercado Pago:
 //   Suas integrações → aplicação → Webhooks → URL de produção:
 //   https://SEU-SITE.netlify.app/.netlify/functions/webhook-mercadopago
-//   Eventos: "Assinaturas" (subscription_preapproval e subscription_authorized_payment)
+//   Eventos: marcar TANTO "Assinaturas" (subscription_preapproval e
+//   subscription_authorized_payment) QUANTO "Pagamentos" (payment) — o Pix
+//   avulso gera evento de "Pagamentos", separado do de assinatura. Se só
+//   "Assinaturas" estiver marcado, o Mercado Pago nunca chama essa função
+//   pro Pix avulso e a conta fica presa em "Teste Grátis" mesmo com o
+//   pagamento aprovado.
+//   IMPORTANTE: mesmo que esse evento não esteja marcado no painel, o Pix
+//   avulso agora também é liberado por verificar-pagamento-pix.js (chamado
+//   pela própria tela de "aguardando confirmação" do app) — esse webhook
+//   deixou de ser o único caminho, é só um reforço para quando a pessoa
+//   fecha o app antes da tela confirmar sozinha.
 //
 // IMPORTANTE: nunca confia no corpo da notificação sozinho (qualquer um pode
 // chamar essa URL forjando um payload) — sempre busca o dado de verdade na
@@ -61,7 +71,14 @@ async function mpFetch(path, mpToken) {
 // Ativa/renova o plano do usuário no Supabase — mesma lógica de
 // adminAprovarPlano/adminRenovarPlano (16-admin.js): renova a partir do
 // vencimento atual se ele ainda não passou, ou de hoje se já passou.
-async function liberarAssinatura({ supaUrl, supaServiceKey, userId, dias, mpId, plano }) {
+//
+// pixPaymentId: só é passado pro Pix avulso (não pra assinatura recorrente).
+// Esse mesmo pagamento pode chegar aqui por dois caminhos — o webhook do
+// Mercado Pago E o polling da tela de "aguardando confirmação" no app
+// (verificar-pagamento-pix.js), quase ao mesmo tempo. Por isso, antes de
+// creditar, checa se esse paymentId já foi creditado antes; se sim, não
+// soma os 30 dias de novo.
+async function liberarAssinatura({ supaUrl, supaServiceKey, userId, dias, mpId, plano, pixPaymentId }) {
   const headers = {
     'Content-Type': 'application/json',
     apikey: supaServiceKey,
@@ -70,15 +87,22 @@ async function liberarAssinatura({ supaUrl, supaServiceKey, userId, dias, mpId, 
   };
   const base = supaUrl.replace(/\/$/, '');
 
-  const resAtual = await fetch(`${base}/rest/v1/perfis?id=eq.${userId}&select=assinatura_vencimento`, { headers });
+  const resAtual = await fetch(`${base}/rest/v1/perfis?id=eq.${userId}&select=assinatura_vencimento,assinatura_pix_pagamento_id`, { headers });
   const atual = resAtual.ok ? await resAtual.json() : [];
-  const vencAtual = atual?.[0]?.assinatura_vencimento;
+  const perfil = atual?.[0] || {};
+
+  if (pixPaymentId && perfil.assinatura_pix_pagamento_id === String(pixPaymentId)) {
+    return true; // esse pagamento Pix já foi creditado (webhook ou polling chegou primeiro) — não credita de novo
+  }
+
+  const vencAtual = perfil.assinatura_vencimento;
   const hoje = hojeSaoPaulo();
   const dataBase = (vencAtual && vencAtual >= hoje) ? vencAtual : hoje;
 
   const corpo = { assinatura_status: 'ativo', assinatura_vencimento: somarDias(dataBase, dias), assinatura_cancelada: false };
   if (mpId) corpo.assinatura_mp_id = mpId; // só grava/atualiza quando vem de uma assinatura recorrente (não no Pix avulso)
   if (plano) corpo.plano = plano; // faltava isso — sem gravar, a tela continuava mostrando "Teste Gratuito" mesmo após pagar
+  if (pixPaymentId) corpo.assinatura_pix_pagamento_id = String(pixPaymentId);
 
   const resUpdate = await fetch(`${base}/rest/v1/perfis?id=eq.${userId}`, {
     method: 'PATCH',
@@ -150,7 +174,7 @@ export const handler = async function (event) {
       console.log('Pagamento avulso consultado:', { id, status: data.status, payment_method_id: data.payment_method_id, external_reference: data.external_reference });
 
       if (data.status === 'approved' && data.payment_method_id === 'pix' && data.external_reference) {
-        const ok2 = await liberarAssinatura({ supaUrl, supaServiceKey, userId: data.external_reference, dias: 30, plano: 'mensal' });
+        const ok2 = await liberarAssinatura({ supaUrl, supaServiceKey, userId: data.external_reference, dias: 30, plano: 'mensal', pixPaymentId: id });
         console.log('Pix avulso liberou 1 mês:', { userId: data.external_reference, ok: ok2 });
       }
       return resposta(200);

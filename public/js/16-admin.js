@@ -206,7 +206,7 @@ async function gerarPagamentoPix(){
         const statusData = await resStatus.json();
         if(statusData.status === 'approved'){
           clearInterval(pixPollTimer); pixPollTimer = null;
-          await window.perfilAtualRecarregarAssinatura?.(); // já dá tempo do webhook ter processado
+          await window.perfilAtualRecarregarAssinatura?.(); // verificar-pagamento-pix já liberou o acesso antes de responder "approved"
           document.getElementById('pixStatus').textContent = '✅ Pagamento confirmado! Acesso liberado.';
           toast('Pagamento confirmado! Seu acesso já está liberado.');
           setTimeout(()=>{ fecharModalPix(); goTo('geral'); }, 1500);
