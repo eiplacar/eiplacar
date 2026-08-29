@@ -347,40 +347,83 @@ function AbaConfiguracoes() {
           <p style={{ marginBottom: 10, fontWeight: 700, color: 'var(--texto)' }}>Política de Privacidade</p>
           <p style={{ marginBottom: 10 }}>Última atualização: 2026</p>
           <p style={{ marginBottom: 10 }}>
-            O EI PLACAR respeita a privacidade dos seus usuários e está comprometido com a proteção dos dados pessoais.
+            O EI PLACAR respeita a privacidade dos seus usuários e está comprometido com a proteção dos dados pessoais e com a transparência no tratamento das informações.
           </p>
           <p style={{ marginBottom: 4, fontWeight: 700, color: 'var(--texto)' }}>1. Coleta de informações</p>
+          <p style={{ marginBottom: 6 }}>
+            Coletamos apenas as informações necessárias para o funcionamento da plataforma, como nome, e-mail, telefone (quando informado) e demais dados fornecidos pelo usuário durante o cadastro e utilização do serviço.
+          </p>
           <p style={{ marginBottom: 10 }}>
-            Coletamos apenas as informações necessárias para o funcionamento da plataforma, como nome, e-mail, telefone (quando informado) e demais dados fornecidos pelo usuário durante o cadastro.
+            O EI PLACAR poderá também receber informações relacionadas à utilização da plataforma e à contratação dos serviços.
           </p>
           <p style={{ marginBottom: 4, fontWeight: 700, color: 'var(--texto)' }}>2. Uso das informações</p>
           <p style={{ marginBottom: 4 }}>As informações coletadas são utilizadas para:</p>
           <p style={{ marginBottom: 10 }}>
-            Identificar o usuário na plataforma; gerenciar assinaturas e acessos; melhorar a experiência de uso; enviar comunicações importantes sobre o serviço.
+            • Identificar e autenticar o usuário na plataforma;<br />
+            • Gerenciar contas e acessos;<br />
+            • Disponibilizar os recursos contratados;<br />
+            • Processar e confirmar pagamentos;<br />
+            • Melhorar a experiência de uso da plataforma;<br />
+            • Enviar comunicações importantes relacionadas ao serviço;<br />
+            • Cumprir obrigações legais e regulatórias, quando aplicável.
           </p>
-          <p style={{ marginBottom: 4, fontWeight: 700, color: 'var(--texto)' }}>3. Compartilhamento de dados</p>
+          <p style={{ marginBottom: 4, fontWeight: 700, color: 'var(--texto)' }}>3. Pagamentos e Mercado Pago</p>
+          <p style={{ marginBottom: 6 }}>
+            Para realizar o processamento dos pagamentos, o EI PLACAR utiliza os serviços do Mercado Pago.
+          </p>
+          <p style={{ marginBottom: 6 }}>
+            Durante o processo de pagamento, o usuário poderá ser direcionado ao ambiente ou fluxo de pagamento disponibilizado pelo Mercado Pago. Dependendo do meio de pagamento utilizado, o Mercado Pago poderá solicitar informações adicionais, incluindo CPF, e-mail ou outros dados necessários para identificação, validação e processamento da transação.
+          </p>
+          <p style={{ marginBottom: 6 }}>
+            A eventual solicitação de CPF durante o pagamento não significa que o CPF seja necessário para criar ou manter o cadastro do usuário no EI PLACAR. Quando solicitado, o dado está relacionado ao processamento e à validação da transação pelo Mercado Pago.
+          </p>
+          <p style={{ marginBottom: 6 }}>
+            Nos pagamentos via Pix, o Mercado Pago poderá gerar e disponibilizar QR Code e/ou código Pix Copia e Cola para que o usuário conclua a transação.
+          </p>
+          <p style={{ marginBottom: 6 }}>
+            Cada pagamento libera o período de acesso adquirido (30, 90 ou 180 dias, conforme o plano escolhido). O EI PLACAR não realiza cobranças automáticas: ao final do período contratado, o usuário decide se deseja realizar um novo pagamento para continuar utilizando a plataforma.
+          </p>
+          <p style={{ marginBottom: 6 }}>
+            Os pagamentos são processados pelo Mercado Pago. Os dados financeiros e as informações necessárias para a realização da transação são tratados pelo Mercado Pago, conforme seus termos e políticas aplicáveis. O EI PLACAR não armazena dados financeiros sensíveis utilizados para a realização do pagamento.
+          </p>
           <p style={{ marginBottom: 10 }}>
-            O EI PLACAR não vende nem comercializa dados pessoais dos usuários. As informações poderão ser compartilhadas apenas quando exigido por lei ou quando necessário para o funcionamento dos serviços contratados.
+            Para identificar e confirmar o pagamento e liberar o serviço contratado, o EI PLACAR poderá receber e armazenar informações relacionadas à transação, como identificador da cobrança, valor, método de pagamento, status da transação e informações relacionadas ao plano adquirido.
           </p>
-          <p style={{ marginBottom: 4, fontWeight: 700, color: 'var(--texto)' }}>4. Segurança</p>
+          <p style={{ marginBottom: 4, fontWeight: 700, color: 'var(--texto)' }}>4. Compartilhamento de dados</p>
+          <p style={{ marginBottom: 6 }}>
+            O EI PLACAR não vende, aluga ou comercializa dados pessoais dos usuários.
+          </p>
+          <p style={{ marginBottom: 6 }}>
+            As informações poderão ser compartilhadas com prestadores de serviços e parceiros tecnológicos quando necessário para o funcionamento da plataforma e dos serviços contratados, incluindo serviços de processamento de pagamentos, hospedagem, comunicação e infraestrutura tecnológica.
+          </p>
           <p style={{ marginBottom: 10 }}>
-            Adotamos medidas de segurança para proteger os dados dos usuários contra acesso não autorizado, alteração, divulgação ou destruição.
+            Também poderão ser compartilhadas quando exigido por lei, determinação de autoridade competente ou para cumprimento de obrigações legais.
           </p>
-          <p style={{ marginBottom: 4, fontWeight: 700, color: 'var(--texto)' }}>5. Cookies</p>
+          <p style={{ marginBottom: 4, fontWeight: 700, color: 'var(--texto)' }}>5. Segurança</p>
+          <p style={{ marginBottom: 6 }}>
+            Adotamos medidas técnicas e organizacionais razoáveis para proteger os dados dos usuários contra acesso não autorizado, alteração, divulgação, perda ou destruição.
+          </p>
           <p style={{ marginBottom: 10 }}>
-            O aplicativo poderá utilizar tecnologias semelhantes a cookies para melhorar a experiência do usuário e analisar o uso da plataforma.
+            Apesar das medidas de segurança adotadas, nenhum sistema eletrônico pode ser considerado completamente imune a riscos.
           </p>
-          <p style={{ marginBottom: 4, fontWeight: 700, color: 'var(--texto)' }}>6. Direitos do usuário</p>
+          <p style={{ marginBottom: 4, fontWeight: 700, color: 'var(--texto)' }}>6. Cookies e tecnologias semelhantes</p>
           <p style={{ marginBottom: 10 }}>
-            O usuário poderá solicitar a atualização, correção ou exclusão de seus dados, conforme permitido pela legislação aplicável.
+            O aplicativo e/ou site poderá utilizar cookies e tecnologias semelhantes para manter funcionalidades, melhorar a experiência do usuário, realizar análises de utilização e aprimorar os serviços oferecidos.
           </p>
-          <p style={{ marginBottom: 4, fontWeight: 700, color: 'var(--texto)' }}>7. Alterações</p>
+          <p style={{ marginBottom: 4, fontWeight: 700, color: 'var(--texto)' }}>7. Direitos do usuário</p>
           <p style={{ marginBottom: 10 }}>
-            Esta Política de Privacidade poderá ser atualizada a qualquer momento. A versão mais recente estará sempre disponível no aplicativo.
+            O usuário poderá solicitar, conforme aplicável pela legislação vigente, informações sobre o tratamento de seus dados, bem como a atualização, correção ou exclusão de dados pessoais, observadas as hipóteses em que a legislação permita ou exija sua conservação.
           </p>
-          <p style={{ marginBottom: 4, fontWeight: 700, color: 'var(--texto)' }}>8. Contato</p>
+          <p style={{ marginBottom: 4, fontWeight: 700, color: 'var(--texto)' }}>8. Alterações desta Política</p>
+          <p style={{ marginBottom: 6 }}>
+            Esta Política de Privacidade poderá ser atualizada a qualquer momento para refletir alterações nos serviços, na legislação ou nas práticas de tratamento de dados.
+          </p>
+          <p style={{ marginBottom: 10 }}>
+            A versão mais recente estará sempre disponível no aplicativo e/ou site do EI PLACAR.
+          </p>
+          <p style={{ marginBottom: 4, fontWeight: 700, color: 'var(--texto)' }}>9. Contato</p>
           <p>
-            Em caso de dúvidas sobre esta Política de Privacidade, entre em contato pelos canais oficiais de suporte do EI PLACAR.
+            Em caso de dúvidas, solicitações ou esclarecimentos relacionados a esta Política de Privacidade e ao tratamento de dados pessoais, o usuário poderá entrar em contato pelos canais oficiais de suporte do EI PLACAR.
           </p>
         </div>
       )}

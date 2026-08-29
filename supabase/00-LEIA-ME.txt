@@ -4,13 +4,18 @@ SETUP DO BANCO DE DADOS — EI PLACAR
 Rode os arquivos NESSA ORDEM no SQL Editor do Supabase (um de cada vez,
 ou todos colados juntos — a ordem numerada já garante que funciona):
 
-1. 01-tabela-jogos.sql     → cria a tabela de jogos
-2. 02-tabela-banca.sql     → cria a tabela da banca
-3. 03-tabela-escudos.sql   → cria a tabela de escudos dos times
-4. 04-tabela-perfis.sql    → cria a tabela de login/perfis + gatilho automático + colunas extras
-5. 05-seguranca-rls.sql    → ativa a segurança (só quem logar acessa os dados)
-6. 06-tabela-config-app.sql → cria a tabela de configuração do sistema (preços/planos)
-7. 07-jogos-fixture-id.sql → adiciona a coluna que evita duplicar jogos importados da API-Football
+1. 01-tabela-jogos.sql       → cria a tabela de jogos
+2. 02-tabela-banca.sql       → cria a tabela da banca
+3. 03-tabela-escudos.sql     → cria a tabela de escudos dos times
+4. 04-tabela-perfis.sql      → cria a tabela de login/perfis + gatilho automático (grava nome,
+                                 telefone, data de nascimento e e-mail já na criação da conta)
+                                 + todas as colunas extras (assinatura, pagamento, foto etc.)
+5. 05-seguranca-rls.sql      → ativa a segurança (só quem logar acessa os dados)
+6. 06-tabela-config-app.sql  → cria a tabela de configuração do sistema (preços/planos)
+7. 07-jogos-fixture-id.sql   → adiciona a coluna que evita duplicar jogos importados da API-Football
+8. 08 a 14                   → ajustes incrementais (nomes de campeonato, país, termos, jogos
+                                 agendados, favoritos, remover jogos ao vivo) — pode rodar todos,
+                                 são independentes entre si
 
 IMPORTANTE: o arquivo 05 depende das tabelas dos arquivos 01 a 04 já
 existirem — por isso ele tem que rodar depois delas. O 06 pode rodar a
@@ -24,10 +29,13 @@ Depois de rodar tudo:
 Se você já tinha essas tabelas criadas antes (de uma versão anterior),
 pode rodar tudo de novo sem medo — os comandos usam "if not exists" e
 "drop ... if exists", então não duplicam nem dão erro. Não precisa
-apagar nada manualmente antes: pode simplesmente rodar os 5 arquivos
-de novo, na ordem, por cima do que já existir.
+apagar nada manualmente antes: pode simplesmente rodar os arquivos de
+novo, na ordem, por cima do que já existir.
 
-ATENÇÃO — se telefone/data de nascimento/e-mail não estão salvando no
-cadastro: rode também o 16-cadastro-dados-completos.sql (corrige o
-gatilho de criação de conta pra gravar esses campos na hora, e completa
-o e-mail de quem já tinha conta).
+Todas as colunas de perfil (telefone, data de nascimento, foto, e-mail,
+assinatura, pagamento) e o gatilho de cadastro completo já estão dentro
+do 04-tabela-perfis.sql — não tem mais nenhum arquivo separado só pra
+isso. Se antes você tinha rodado um "15-pix-idempotencia.sql" ou
+"16-cadastro-dados-completos.sql" de uma versão anterior, pode ignorar:
+já foi tudo incorporado ao 04. Basta rodar o 04 de novo (por cima) que
+fica tudo igual.
