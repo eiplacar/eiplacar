@@ -10,11 +10,12 @@
 // Configurar essa URL como webhook no painel do Mercado Pago:
 //   Suas integrações → aplicação → Webhooks → URL de produção:
 //   https://SEU-SITE.netlify.app/.netlify/functions/webhook-mercadopago
-//   Eventos: marcar "Pagamentos" (payment) — é o evento que cobre tanto o
-//   Pix avulso quanto o pagamento único por cartão via Checkout Pro. Os
-//   eventos de "Assinaturas" (subscription_preapproval e
-//   subscription_authorized_payment) só importam se ainda sobrar alguma
-//   assinatura recorrente antiga ativa (ver comentário mais abaixo).
+//   Evento: marcar "Pagamentos (legacy)" (formato IPN, parâmetros na URL) OU
+//   "Pagamentos"/"payment" (formato novo, JSON no corpo) — o código abaixo
+//   lê os dois formatos, então qualquer um dos dois funciona. Os eventos de
+//   "Assinaturas" (subscription_preapproval e subscription_authorized_payment)
+//   só importam se ainda sobrar alguma assinatura recorrente antiga ativa
+//   (ver comentário mais abaixo).
 //   IMPORTANTE: mesmo que o evento "Pagamentos" não esteja marcado no
 //   painel, todo pagamento único (Pix ou cartão) também é liberado na hora
 //   por verificar-pagamento-pix.js, chamado pela própria tela do app
@@ -125,9 +126,17 @@ export const handler = async function (event) {
   }
 
   let payload;
-  try { payload = JSON.parse(event.body || '{}'); } catch { return resposta(400); }
-  const tipo = payload.type || payload.topic;
-  const id = payload.data?.id || payload['data.id'] || event.queryStringParameters?.id;
+  try { payload = JSON.parse(event.body || '{}'); } catch { payload = {}; } // corpo vazio/inválido não pode derrubar a function — o formato "legacy" abaixo não depende dele
+  // O tipo do evento pode vir de duas formas diferentes, dependendo de qual
+  // opção foi marcada no painel do Mercado Pago (Webhooks → Suas integrações):
+  //   • Formato novo (JSON no corpo): { "type": "payment", "data": { "id": "..." } }
+  //   • Formato "Pagamentos (legacy)" / IPN (parâmetros na URL, corpo vazio):
+  //     POST .../webhook-mercadopago?topic=payment&id=123456789
+  // Sem checar os dois, uma notificação "legacy" chega mas não é reconhecida
+  // — o código cai direto no "ignora" do final e nada é atualizado, mesmo com
+  // o webhook certinho configurado no painel.
+  const tipo = payload.type || payload.topic || event.queryStringParameters?.type || event.queryStringParameters?.topic;
+  const id = payload.data?.id || payload['data.id'] || event.queryStringParameters?.id || event.queryStringParameters?.['data.id'];
   console.log('Webhook Mercado Pago recebido:', { tipo, id });
   if (!id) return resposta(200); // notificação sem id útil — confirma recebido e ignora
 
