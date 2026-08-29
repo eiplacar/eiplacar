@@ -21,8 +21,15 @@ alter table perfis  enable row level security;
 drop policy if exists "logado le/escreve jogos" on jogos;
 create policy "logado le/escreve jogos" on jogos for all to authenticated using (true) with check (true);
 
+-- A Banca é uma carteira INDIVIDUAL (ver 02-tabela-banca.sql) — cada pessoa
+-- só pode ler/escrever a PRÓPRIA linha (user_id = quem está logado), nunca a
+-- de outra pessoa. Antes disso qualquer pessoa logada conseguia ler/editar a
+-- banca de qualquer outra pessoa direto pela API, mesmo sem aparecer no app.
 drop policy if exists "logado le/escreve banca" on banca;
-create policy "logado le/escreve banca" on banca for all to authenticated using (true) with check (true);
+drop policy if exists "cada um le/escreve so a propria banca" on banca;
+create policy "cada um le/escreve so a propria banca" on banca for all to authenticated
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid());
 
 drop policy if exists "logado le/escreve escudos" on escudos;
 create policy "logado le/escreve escudos" on escudos for all to authenticated using (true) with check (true);

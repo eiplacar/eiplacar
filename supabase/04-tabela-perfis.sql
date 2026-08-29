@@ -56,8 +56,9 @@ alter table perfis
   add column if not exists assinatura_vencimento date,
   add column if not exists assinatura_mp_id text,          -- id da assinatura (preapproval) no Mercado Pago, só usado por assinaturas recorrentes antigas — pagamento novo é sempre único e não preenche essa coluna
   add column if not exists assinatura_cancelada boolean default false, -- true = não cobra mais, mas mantém acesso até assinatura_vencimento (só relevante pras assinaturas recorrentes antigas)
-  add column if not exists assinatura_pix_pagamento_id text; -- id do último pagamento único (Pix ou cartão via Checkout Pro) já creditado, pra não liberar o mesmo pagamento
+  add column if not exists assinatura_pix_pagamento_id text, -- id do último pagamento único (Pix ou cartão via Checkout Pro) já creditado, pra não liberar o mesmo pagamento
                                                                -- duas vezes (a verificação da tela do app e o webhook do Mercado Pago podem chegar quase juntos)
+  add column if not exists termos_aceitos_em timestamptz;    -- data/hora em que a pessoa aceitou os Termos de Uso e a Política de Privacidade no cadastro (comprovante)
 
 -- Contas que já existiam antes do gatilho gravar e-mail (linhas antigas com
 -- email vazio no perfil) — completa a partir de auth.users, que sempre tem
