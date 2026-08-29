@@ -3,12 +3,9 @@
 // (Checkout Pro / API de Preferências) pra liberar 30/90/180 dias de
 // acesso. NÃO É MAIS ASSINATURA RECORRENTE: o Mercado Pago não guarda
 // cartão nem cobra de novo sozinho no futuro — quando o período acabar,
-// a pessoa decide se quer voltar aqui e pagar de novo ou não.
-//
-// (Endpoint mantido com o nome "criar-assinatura" pra não precisar mudar
-// o front nem a config da Netlify — mas o que ele faz hoje é 100% pagamento
-// avulso, igual ao Pix de criar-pagamento-pix.js, só que também aceita
-// cartão/outros meios do Checkout Pro além de Pix.)
+// a pessoa decide se quer voltar aqui e pagar de novo ou não. A pessoa
+// escolhe cartão, Pix, boleto etc. direto na tela do Checkout Pro — não
+// existe mais um fluxo de Pix separado dentro do app.
 //
 // Chamada pelo app em: POST /.netlify/functions/criar-assinatura
 //   body: { "planoId": "mensal" | "trimestral" | "semestral" }
@@ -33,9 +30,9 @@
 //                            para o retorno automático "auto_return").
 // ═══════════════════════════════════════════════════
 
-// Mesmo mapeamento usado na aprovação manual (Administração → Usuários) e no
-// Pix avulso, pra ficar tudo consistente não importa qual meio de pagamento
-// ou quem processou (automático ou aprovação manual do organizador).
+// Mesmo mapeamento usado na aprovação manual (Administração → Usuários),
+// pra ficar tudo consistente não importa qual meio de pagamento (cartão,
+// Pix, boleto) ou quem processou (automático ou aprovação manual do organizador).
 const PLANOS = {
   mensal:     { nome: 'Mensal',     dias: 30,  precoCampo: 'precoMensal' },
   trimestral: { nome: 'Trimestral', dias: 90,  precoCampo: 'precoTrimestral' },

@@ -1,20 +1,18 @@
 // ═══════════════════════════════════════════════════
 // FUNÇÃO SERVERLESS — consulta o status de um pagamento único específico
-// direto na API do Mercado Pago (Pix avulso, gerado por
-// criar-pagamento-pix.js, OU cartão/outro meio via Checkout Pro, gerado por
-// criar-assinatura.js), e — se estiver aprovado — já libera o acesso na
-// hora, sem depender do webhook do Mercado Pago ter sido entregue.
+// direto na API do Mercado Pago (qualquer meio pago via Checkout Pro —
+// cartão, Pix, boleto — todos gerados por criar-assinatura.js), e — se
+// estiver aprovado — já libera o acesso na hora, sem depender do webhook
+// do Mercado Pago ter sido entregue.
 //
-// Usada em dois momentos:
-//   1) Pix avulso: a tela de "aguardando confirmação" fica chamando essa
-//      function a cada poucos segundos até o Pix ser pago.
-//      (Nome mantido "verificar-pagamento-pix" por compatibilidade, mas
-//      hoje ela também confere pagamento por cartão — não é mais exclusiva
-//      de Pix.)
-//   2) Cartão via Checkout Pro: quando a pessoa volta pro app depois de
-//      pagar (ver verificarRetornoPagamentoCartao em 16-admin.js), o app
-//      chama essa function uma vez com o payment_id que veio na URL de
-//      retorno, pra liberar o acesso na hora em vez de esperar o webhook.
+// Usada quando a pessoa volta pro app depois de pagar no Checkout Pro (ver
+// verificarRetornoPagamentoCartao em 16-admin.js): o app chama essa
+// function uma vez com o payment_id que veio na URL de retorno, pra liberar
+// o acesso na hora em vez de esperar o webhook.
+//
+// (Nome mantido "verificar-pagamento-pix" por compatibilidade com versões
+// anteriores que tinham um fluxo de Pix avulso separado — hoje ela cobre
+// qualquer meio de pagamento único, não só Pix.)
 //
 // Chamada pelo app em: POST /.netlify/functions/verificar-pagamento-pix
 //   body: { "paymentId": "123456789" }

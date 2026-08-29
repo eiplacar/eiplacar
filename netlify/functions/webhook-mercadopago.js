@@ -175,10 +175,10 @@ export const handler = async function (event) {
       return resposta(200);
     }
 
-    // ── Pagamento único (Pix avulso — criar-pagamento-pix.js — OU cartão/outro
-    // meio via Checkout Pro — criar-assinatura.js) ── Nenhum dos dois é
-    // recorrente: cada pagamento aprovado aqui libera um período fixo de
-    // acesso e não agenda cobrança nenhuma pro futuro.
+    // ── Pagamento único via Checkout Pro (cartão, Pix, boleto — tudo
+    // gerado por criar-assinatura.js) ── Não é recorrente: cada pagamento
+    // aprovado aqui libera um período fixo de acesso e não agenda cobrança
+    // nenhuma pro futuro.
     if (tipo === 'payment') {
       const { ok, data } = await mpFetch(`/v1/payments/${id}`, mpToken);
       if (!ok) { console.log('Pagamento não encontrado na API do MP:', id); return resposta(200); }
@@ -186,10 +186,9 @@ export const handler = async function (event) {
 
       if (data.status === 'approved' && data.external_reference) {
         // dias/plano vêm do metadata gravado na hora de criar o pagamento
-        // (criar-assinatura.js grava plano_id/dias; criar-pagamento-pix.js
-        // também, desde essa versão). Pagamento Pix antigo, gerado antes
-        // dessa mudança e sem metadata, cai no padrão de 30 dias / mensal
-        // (era a única opção que o Pix avulso oferecia até aqui).
+        // (criar-assinatura.js grava plano_id/dias). Pagamento antigo, de
+        // antes dessa mudança e sem metadata, cai no padrão de 30 dias /
+        // mensal (era a única opção que existia até aqui).
         const dias = Number(data.metadata?.dias) || 30;
         const plano = data.metadata?.plano_id || 'mensal';
         const ok2 = await liberarAssinatura({ supaUrl, supaServiceKey, userId: data.external_reference, dias, plano, pixPaymentId: id });

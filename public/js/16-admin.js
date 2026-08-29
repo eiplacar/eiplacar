@@ -66,25 +66,25 @@ function renderAssinar(){
   // cobrança/Pix de novo à toa, só mostra que está tudo certo.
   const jaEmDia = perfilAtual?.assinatura_status === 'ativo' && !venceu;
   if(jaEmDia){
-    if(sub) sub.textContent = 'Sua assinatura está em dia!';
-    const nomePlano = perfilAtual.plano ? perfilAtual.plano.charAt(0).toUpperCase()+perfilAtual.plano.slice(1) : '';
+    if(sub) sub.textContent = '';
     const podeCancelar = !!perfilAtual.assinatura_mp_id && !perfilAtual.assinatura_cancelada;
     el.innerHTML = `
       <div style="background:var(--c2);border:2px solid var(--verde2);border-radius:12px;padding:16px;text-align:center">
-        <div style="font-size:13px;font-weight:700;color:var(--verde2);margin-bottom:4px">✅ Acesso ativo</div>
-        <div style="font-size:12px;color:var(--texto2)">Plano ${nomePlano} • ${perfilAtual.assinatura_cancelada ? 'acesso até' : 'válido até'} ${window.fd?.(perfilAtual.assinatura_vencimento) || perfilAtual.assinatura_vencimento}</div>
+        <div style="font-size:13px;font-weight:700;color:var(--verde2);margin-bottom:4px">✅ Assinatura ativa</div>
+        <div style="font-size:12px;color:var(--texto2)">${perfilAtual.assinatura_cancelada ? 'Acesso até' : 'Válida até'}: ${window.fd?.(perfilAtual.assinatura_vencimento) || perfilAtual.assinatura_vencimento}</div>
         ${perfilAtual.assinatura_cancelada
           ? `<div style="font-size:10.5px;color:var(--texto2);margin-top:10px">Cancelada — não vai renovar sozinha.</div>`
           : podeCancelar
             ? `<button onclick="cancelarAssinaturaTela()" style="margin-top:12px;background:none;border:1px solid var(--perigo);color:var(--perigo);border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer">Cancelar assinatura recorrente</button>`
-            : `<div style="font-size:10.5px;color:var(--texto2);margin-top:10px">Pagamento único — não renova sozinho. Quando vencer, você decide se paga de novo.</div>`
+            : `<div style="font-size:11px;color:var(--texto2);margin-top:10px">Sua assinatura não possui renovação automática. Após o vencimento, você poderá renová-la.</div>`
         }
+        <div style="font-size:10px;color:var(--texto2);margin-top:12px;opacity:.75">🔒 Pagamento processado com segurança pelo Mercado Pago.</div>
       </div>`;
     return;
   }
 
   if(sub) sub.textContent = venceu
-    ? 'Seu período de teste grátis acabou. Faça um pagamento único para continuar.'
+    ? 'Seu período de teste grátis acabou. Escolha um plano para continuar.'
     : 'Continue com acesso liberado a tudo do EI PLACAR.';
 
   const planos = [
@@ -97,14 +97,14 @@ function renderAssinar(){
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
         <div>
           <div style="font-size:14px;font-weight:800">${p.nome}</div>
-          <div style="font-size:10.5px;color:var(--texto2)">${p.obs} • pagamento único</div>
+          <div style="font-size:10.5px;color:var(--texto2)">${p.obs}</div>
         </div>
         <div style="text-align:right">
           <div style="font-size:16px;font-weight:900;color:var(--ouro)">R$ ${Number(p.preco||0).toFixed(2).replace('.',',')}</div>
           <button onclick="iniciarAssinatura('${p.id}')" style="margin-top:4px;background:var(--verde2);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer">Pagar</button>
         </div>
       </div>
-      ${p.id==='mensal' ? `<button onclick="abrirModalPix()" style="margin-top:10px;width:100%;background:none;border:1px dashed var(--texto2);color:var(--texto2);border-radius:8px;padding:6px;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px"><span data-ic="qrCode" data-ic-size="13"></span>Pagar só este mês com Pix</button>` : ''}
+      <div style="margin-top:8px;font-size:10px;color:var(--texto2)">Cartão, Pix ou outro meio — você escolhe na próxima tela</div>
     </div>`).join('');
   renderIcons(el);
 }
@@ -152,91 +152,11 @@ async function cancelarAssinaturaTela(){
 }
 window.cancelarAssinaturaTela = cancelarAssinaturaTela;
 
-// ══ PIX AVULSO (1 mês, sem renovação automática) ══
-let pixPollTimer = null;
-
-function abrirModalPix(){
-  document.getElementById('pixEtapaCpf').style.display = 'block';
-  document.getElementById('pixEtapaQr').style.display = 'none';
-  document.getElementById('pixCpf').value = '';
-  const cfg = cfgAppLoad();
-  document.getElementById('pixValor').textContent = Number(cfg.precoMensal||0).toFixed(2).replace('.',',');
-  document.getElementById('modalPix').classList.add('open');
-}
-window.abrirModalPix = abrirModalPix;
-
-function fecharModalPix(){
-  document.getElementById('modalPix').classList.remove('open');
-  if(pixPollTimer){ clearInterval(pixPollTimer); pixPollTimer = null; }
-}
-window.fecharModalPix = fecharModalPix;
-
-async function gerarPagamentoPix(){
-  const cpf = document.getElementById('pixCpf').value.replace(/\D/g,'');
-  if(cpf.length !== 11){ toast('Digite um CPF válido!'); return; }
-  try {
-    const sessao = authGetSessao();
-    const res = await fetch('/.netlify/functions/criar-pagamento-pix', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (sessao?.access_token || '') },
-      body: JSON.stringify({ cpf }),
-    });
-    const data = await res.json();
-    if(!res.ok || !data.qrCode) throw new Error(data.erro || 'Não foi possível gerar o Pix');
-
-    document.getElementById('pixEtapaCpf').style.display = 'none';
-    document.getElementById('pixEtapaQr').style.display = 'block';
-    document.getElementById('pixQrImg').src = 'data:image/png;base64,' + data.qrCodeBase64;
-    document.getElementById('pixCopiaCola').value = data.qrCode;
-    document.getElementById('pixStatus').textContent = '⏳ Aguardando confirmação do pagamento...';
-
-    // Fica checando o status DESSE pagamento específico direto no Mercado
-    // Pago (não só "a assinatura tá liberada?", porque isso pode já estar
-    // liberado por outro motivo — teste grátis, plano anterior — e daria
-    // falso positivo antes da pessoa pagar de verdade).
-    if(pixPollTimer) clearInterval(pixPollTimer);
-    let tentativas = 0;
-    pixPollTimer = setInterval(async () => {
-      tentativas++;
-      if(tentativas > 300){ clearInterval(pixPollTimer); pixPollTimer = null; document.getElementById('pixStatus').textContent = '⌛ Esse código Pix expirou. Feche e gere um novo.'; return; } // 30min (mesmo prazo do date_of_expiration) e desiste de checar sozinho
-      try {
-        const resStatus = await fetch('/.netlify/functions/verificar-pagamento-pix', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (authGetSessao()?.access_token || '') },
-          body: JSON.stringify({ paymentId: data.paymentId }),
-        });
-        const statusData = await resStatus.json();
-        if(statusData.status === 'approved'){
-          clearInterval(pixPollTimer); pixPollTimer = null;
-          await window.perfilAtualRecarregarAssinatura?.(); // verificar-pagamento-pix já liberou o acesso antes de responder "approved"
-          document.getElementById('pixStatus').textContent = '✅ Pagamento confirmado! Acesso liberado.';
-          toast('Pagamento confirmado! Seu acesso já está liberado.');
-          setTimeout(()=>{ fecharModalPix(); goTo('geral'); }, 1500);
-        } else if(statusData.status === 'rejected' || statusData.status === 'cancelled'){
-          clearInterval(pixPollTimer); pixPollTimer = null;
-          document.getElementById('pixStatus').textContent = '❌ Pagamento não aprovado. Tente gerar um novo Pix.';
-        }
-      } catch {} // erro passageiro de rede — tenta de novo na próxima
-    }, 6000);
-  } catch(e){
-    toast('Erro ao gerar Pix: ' + e.message, true);
-  }
-}
-window.gerarPagamentoPix = gerarPagamentoPix;
-
-function copiarPix(){
-  const campo = document.getElementById('pixCopiaCola');
-  campo.select();
-  navigator.clipboard?.writeText(campo.value).then(()=>toast('Código Pix copiado!')).catch(()=>{});
-}
-window.copiarPix = copiarPix;
-
-// ══ VOLTA DO CHECKOUT DE CARTÃO (Checkout Pro) ══
+// ══ VOLTA DO CHECKOUT (Checkout Pro — cartão, Pix, boleto etc.) ══
 // O Mercado Pago devolve a pessoa pra APP_URL com ?payment_id=...&status=...
 // na URL depois de pagar (ver back_urls/auto_return em criar-assinatura.js).
-// Confere esse pagamento específico na hora — mesma function que o Pix usa
-// pra checar status — em vez de depender só do webhook, que pode demorar
-// alguns segundos pra chegar.
+// Confere esse pagamento específico na hora, em vez de depender só do
+// webhook, que pode demorar alguns segundos pra chegar.
 async function verificarRetornoPagamentoCartao(){
   const params = new URLSearchParams(window.location.search);
   const paymentId = params.get('payment_id') || params.get('collection_id');
