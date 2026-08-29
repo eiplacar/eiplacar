@@ -90,11 +90,20 @@ async function liberarAssinatura({ supaUrl, supaServiceKey, userId, dias, mpId, 
   const base = supaUrl.replace(/\/$/, '');
 
   const resAtual = await fetch(`${base}/rest/v1/perfis?id=eq.${userId}&select=assinatura_vencimento,assinatura_pix_pagamento_id`, { headers });
-  const atual = resAtual.ok ? await resAtual.json() : [];
+  if (!resAtual.ok) {
+    // Antes essa falha passava batido — o resto da function seguia com um perfil
+    // vazio como se a pessoa não tivesse pagamento anterior nenhum, e o erro de
+    // verdade (token errado, RLS bloqueando, coluna que não existe) nunca aparecia
+    // no log. Por isso o "ok: false" saía sem nenhuma pista do motivo.
+    const corpoErro = await resAtual.text().catch(() => '');
+    console.log('Erro ao buscar perfil atual antes de liberar acesso:', { status: resAtual.status, corpo: corpoErro });
+    return false;
+  }
+  const atual = await resAtual.json();
   const perfil = atual?.[0] || {};
 
   if (pixPaymentId && perfil.assinatura_pix_pagamento_id === String(pixPaymentId)) {
-    return true; // esse pagamento Pix já foi creditado (webhook ou polling chegou primeiro) — não credita de novo
+    return true; // esse pagamento já foi creditado antes (webhook ou verificação da tela chegou primeiro) — não credita de novo
   }
 
   const vencAtual = perfil.assinatura_vencimento;
@@ -102,7 +111,7 @@ async function liberarAssinatura({ supaUrl, supaServiceKey, userId, dias, mpId, 
   const dataBase = (vencAtual && vencAtual >= hoje) ? vencAtual : hoje;
 
   const corpo = { assinatura_status: 'ativo', assinatura_vencimento: somarDias(dataBase, dias), assinatura_cancelada: false };
-  if (mpId) corpo.assinatura_mp_id = mpId; // só grava/atualiza quando vem de uma assinatura recorrente (não no Pix avulso)
+  if (mpId) corpo.assinatura_mp_id = mpId; // só grava/atualiza quando vem de uma assinatura recorrente (não no pagamento único)
   if (plano) corpo.plano = plano; // faltava isso — sem gravar, a tela continuava mostrando "Teste Gratuito" mesmo após pagar
   if (pixPaymentId) corpo.assinatura_pix_pagamento_id = String(pixPaymentId);
 
@@ -111,6 +120,12 @@ async function liberarAssinatura({ supaUrl, supaServiceKey, userId, dias, mpId, 
     headers,
     body: JSON.stringify(corpo),
   });
+  if (!resUpdate.ok) {
+    // Mesma coisa aqui: agora o motivo exato (RLS, coluna inexistente, chave
+    // errada etc.) fica registrado no log em vez de sumir num "ok: false" sem contexto.
+    const corpoErro = await resUpdate.text().catch(() => '');
+    console.log('Erro ao gravar o perfil (PATCH falhou):', { status: resUpdate.status, corpo: corpoErro, userId, enviado: corpo });
+  }
   return resUpdate.ok;
 }
 

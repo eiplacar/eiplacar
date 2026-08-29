@@ -55,7 +55,12 @@ async function liberarAssinatura({ supaUrl, supaServiceKey, userId, dias, plano,
   const base = supaUrl.replace(/\/$/, '');
 
   const resAtual = await fetch(`${base}/rest/v1/perfis?id=eq.${userId}&select=assinatura_vencimento,assinatura_pix_pagamento_id`, { headers });
-  const atual = resAtual.ok ? await resAtual.json() : [];
+  if (!resAtual.ok) {
+    const corpoErro = await resAtual.text().catch(() => '');
+    console.log('Erro ao buscar perfil atual antes de liberar acesso:', { status: resAtual.status, corpo: corpoErro });
+    return false;
+  }
+  const atual = await resAtual.json();
   const perfil = atual?.[0] || {};
 
   if (pixPaymentId && perfil.assinatura_pix_pagamento_id === String(pixPaymentId)) {
@@ -79,6 +84,10 @@ async function liberarAssinatura({ supaUrl, supaServiceKey, userId, dias, plano,
     headers,
     body: JSON.stringify(corpo),
   });
+  if (!resUpdate.ok) {
+    const corpoErro = await resUpdate.text().catch(() => '');
+    console.log('Erro ao gravar o perfil (PATCH falhou):', { status: resUpdate.status, corpo: corpoErro, userId, enviado: corpo });
+  }
   return resUpdate.ok;
 }
 
