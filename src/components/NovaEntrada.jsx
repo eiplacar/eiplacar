@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Target, Dice5, Plus, Circle, TrendingUp, Wallet, CheckCircle2, Trophy, Shield, ArrowLeftRight, Coins, PiggyBank } from 'lucide-react';
+import { Target, Dice5, Plus, Circle, TrendingUp, Wallet, CheckCircle2, Trophy, Shield, ArrowLeftRight, Coins, PiggyBank, ShieldQuestion } from 'lucide-react';
 import SeletorMercado from './SeletorMercado';
 
 // ══ Nova Entrada (sub-aba "Registrar Operação" dentro de Apostas) ══
@@ -26,10 +26,28 @@ import SeletorMercado from './SeletorMercado';
 //   - Novo campo "Retorno" (calculado sozinho: stake + lucro), com legenda pequena
 //   - Resultado agora é Green / Red / Void / Cash Out (era Green/Red/Void/Cancelado)
 
+// Escudo do time — mesmo padrão usado na aba Análise/Classificação/Estratégias.
+function EscudoImg({ nome, size = 20 }) {
+  const url = window.getEscudo ? window.getEscudo(nome) : null;
+  if (url) return <img src={url} alt="" style={{ width: size, height: size, objectFit: 'contain', flexShrink: 0 }} />;
+  return <ShieldQuestion size={size * 0.8} color="var(--texto2)" style={{ flexShrink: 0 }} />;
+}
+
 export default function NovaEntrada() {
   const [seletorAberto, setSeletorAberto] = useState(false);
   const [seletorOperacao, setSeletorOperacao] = useState('bet');
   const [operacaoAtual, setOperacaoAtual] = useState('bet'); // fonte única da verdade pro campo #eOperacao — ver input controlado abaixo
+  const [timesPreview, setTimesPreview] = useState({ casa: '', vis: '' }); // só pro escudo aparecer — o campo #eTimes continua sendo a fonte de verdade pro lançamento
+
+  // #eTimes é um campo não-controlado (a fonte de verdade pro lançamento continua sendo
+  // o valor dele, digitado à mão OU preenchido pelos selects Mandante/Visitante). Pra
+  // mostrar o escudo — igual já acontece na aba Análise/Estratégias — só precisamos ler
+  // esse valor depois de qualquer mudança e separar pelo "×" usado em todo o app.
+  function sincronizarPreviewTimes() {
+    const valor = document.getElementById('eTimes')?.value || '';
+    const [casa, vis] = valor.split('×').map((s) => s.trim());
+    setTimesPreview({ casa: casa || '', vis: vis || '' });
+  }
 
   // Clicar em Bet ou Exchange já define a Operação (função de sempre, window.setOperacao,
   // que só cuida do visual dos botões — o valor de verdade vive aqui, no estado do React)
@@ -82,15 +100,24 @@ export default function NovaEntrada() {
           abaixo aparecem como atalho — escolher os dois já preenche o campo sozinho. */}
       <div style={{ marginBottom: 12 }}>
         <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Shield size={13} /> Jogo (Mandante × Visitante)</label>
-        <input type="text" id="eTimes" placeholder="Ex: Botafogo-SP × Avaí" onInput={() => window.atualizarResumoEntrada?.()} />
+        <input type="text" id="eTimes" placeholder="Ex: Botafogo-SP × Avaí" onInput={() => { window.atualizarResumoEntrada?.(); sincronizarPreviewTimes(); }} />
+        {(timesPreview.casa || timesPreview.vis) && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 8, padding: '6px 10px' }}>
+            <EscudoImg nome={timesPreview.casa} />
+            <span style={{ fontSize: 11, fontWeight: 700, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{timesPreview.casa || '—'}</span>
+            <span style={{ fontSize: 10, color: 'var(--texto2)' }}>×</span>
+            <span style={{ fontSize: 11, fontWeight: 700, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right' }}>{timesPreview.vis || '—'}</span>
+            <EscudoImg nome={timesPreview.vis} />
+          </div>
+        )}
       </div>
       <div id="blocoJogoEntrada" style={{ marginBottom: 12, display: 'none' }}>
         <div style={{ fontSize: 10, color: 'var(--texto2)', marginBottom: 4 }}>Ou escolha da lista:</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          <select id="eMandanteSel" onChange={() => window.atualizarTimesEntrada?.()}>
+          <select id="eMandanteSel" onChange={() => { window.atualizarTimesEntrada?.(); sincronizarPreviewTimes(); }}>
             <option value="">Mandante</option>
           </select>
-          <select id="eVisitanteSel" onChange={() => window.atualizarTimesEntrada?.()}>
+          <select id="eVisitanteSel" onChange={() => { window.atualizarTimesEntrada?.(); sincronizarPreviewTimes(); }}>
             <option value="">Visitante</option>
           </select>
         </div>
@@ -121,7 +148,7 @@ export default function NovaEntrada() {
         </label>
         <div id="blocoConfrontoCombo" style={{ display: 'none', marginBottom: 10 }}>
           <label>Confronto (Casa × Visitante)</label>
-          <input type="text" id="eTimesCombo" placeholder="Ex: Botafogo-SP × Avaí" onInput={(e) => { const eTimes = document.getElementById('eTimes'); if (eTimes) eTimes.value = e.target.value.trim(); window.atualizarResumoEntrada?.(); }} />
+          <input type="text" id="eTimesCombo" placeholder="Ex: Botafogo-SP × Avaí" onInput={(e) => { const eTimes = document.getElementById('eTimes'); if (eTimes) eTimes.value = e.target.value.trim(); window.atualizarResumoEntrada?.(); sincronizarPreviewTimes(); }} />
         </div>
         <label style={{ marginBottom: 6 }}>Mercados combinados</label>
         <div id="pernasLista" style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8 }}></div>

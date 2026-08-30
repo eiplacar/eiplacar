@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Trophy, BarChart3, ArrowRight } from 'lucide-react';
+import { Trophy, BarChart3, ArrowRight, ShieldQuestion } from 'lucide-react';
 
 // ══ Classificação — nono módulo migrado para React ══
 //
@@ -22,6 +22,15 @@ function CampeonatoOptions({ camps }) {
   return lista.map((c) => <option key={c} value={c}>{c}</option>);
 }
 
+// Escudo do time — mesmo padrão usado na aba Análise (SeletorAnalise.jsx) e na aba
+// Estratégias: busca em window.getEscudo(nome) (cadastrado em Dados/Confrontos) e cai
+// pro ícone genérico quando não tem. Fica igual em toda a lista de seleção do app.
+function EscudoImg({ nome, size = 20 }) {
+  const url = window.getEscudo ? window.getEscudo(nome) : null;
+  if (url) return <img src={url} alt="" style={{ width: size, height: size, objectFit: 'contain', flexShrink: 0 }} />;
+  return <ShieldQuestion size={size * 0.8} color="var(--texto2)" style={{ flexShrink: 0 }} />;
+}
+
 // Champions League: fora da Fase Liga (pontos corridos), o resto é mata-mata — cada
 // etapa guardada na "rodada" do jogo como "Qualificação - <etapa>" / "Playoffs - <etapa>"
 // (ver AdicionarPartida.jsx / 14-banca-gestao.js). Sem tabela de pontos, só lista de jogos.
@@ -30,7 +39,6 @@ const ETAPAS_PLAYOFFS = ['16 Avos de Final', 'Oitavas de Final', 'Quartas de Fin
 
 function ListaJogosFase({ jogosCache, camp, prefixoFase, etapa }) {
   const fd = window.fd || ((d) => d);
-  const escudoImgOuIcone = window.escudoImgOuIcone || (() => '');
   const jogos = jogosCache
     .filter((j) => j.camp === camp && j.rodada === `${prefixoFase} - ${etapa}`)
     .sort((a, b) => (a.data || '').localeCompare(b.data || ''));
@@ -68,7 +76,7 @@ function ListaJogosFase({ jogosCache, camp, prefixoFase, etapa }) {
             {j.data && <div style={{ fontSize: 9, color: 'var(--texto2)', textAlign: 'center', marginBottom: 4 }}>{fd(j.data)}</div>}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <div style={{ width: 20, height: 20, flexShrink: 0 }} dangerouslySetInnerHTML={{ __html: escudoImgOuIcone(j.casa) }} />
+                <EscudoImg nome={j.casa} />
                 <span style={{ fontSize: 11, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.casa || '—'}</span>
                 {avancouCasa && <ArrowRight size={12} strokeWidth={3} style={{ color: 'var(--verde2)', flexShrink: 0 }} />}
               </div>
@@ -76,7 +84,7 @@ function ListaJogosFase({ jogosCache, camp, prefixoFase, etapa }) {
               <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'flex-end' }}>
                 {avancouVis && <ArrowRight size={12} strokeWidth={3} style={{ color: 'var(--verde2)', flexShrink: 0 }} />}
                 <span style={{ fontSize: 11, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right' }}>{j.vis || '—'}</span>
-                <div style={{ width: 20, height: 20, flexShrink: 0 }} dangerouslySetInnerHTML={{ __html: escudoImgOuIcone(j.vis) }} />
+                <EscudoImg nome={j.vis} />
               </div>
             </div>
           </div>
@@ -177,7 +185,12 @@ export default function Classificacao() {
               {data.estado === 'ok' && data.linhas.map((l) => (
                 <tr key={l.nome}>
                   <td style={l.zona ? { boxShadow: `inset 4px 0 0 0 ${l.zona.cor}` } : undefined} title={l.zona ? l.zona.label : ''}>{l.rank ?? '—'}</td>
-                  <td style={{ textAlign: 'left' }}>{l.nome}</td>
+                  <td style={{ textAlign: 'left' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <EscudoImg nome={l.nome} size={18} />
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.nome}</span>
+                    </div>
+                  </td>
                   <td><strong>{l.pts}</strong></td>
                   <td>{l.j}</td>
                   <td>{l.v}</td>

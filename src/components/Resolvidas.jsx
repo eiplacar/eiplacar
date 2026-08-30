@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, XCircle, Undo2, Coins, Pencil, Trash2, Calendar, Target } from 'lucide-react';
+import { CheckCircle2, XCircle, Undo2, Coins, Pencil, Trash2, Calendar, Target, ShieldQuestion } from 'lucide-react';
 
 // ══ Apostas Resolvidas — 11º módulo migrado para React ══
 // Lista o histórico de entradas lançadas na Calculadora, com filtro por data.
@@ -15,6 +15,24 @@ import { CheckCircle2, XCircle, Undo2, Coins, Pencil, Trash2, Calendar, Target }
 
 const ROTULO_APOSTA = { simples: 'Simples', dupla: 'Dupla', multipla: 'Múltipla', sistema: 'Sistema' };
 const COR_APOSTA = { dupla: 'var(--ouro)', multipla: 'var(--perigo)', sistema: '#8b7ae8' };
+
+// Escudo do time — mesmo padrão usado na aba Análise/Classificação/Operações (Nova Entrada).
+function EscudoImg({ nome, size = 16 }) {
+  const url = window.getEscudo ? window.getEscudo(nome) : null;
+  if (url) return <img src={url} alt="" style={{ width: size, height: size, objectFit: 'contain', flexShrink: 0 }} />;
+  return <ShieldQuestion size={size * 0.8} color="var(--texto2)" style={{ flexShrink: 0 }} />;
+}
+
+// e.times vem sempre como "Mandante × Visitante" (mesmo separador usado em toda a
+// aba Operações — ver atualizarTimesEntrada em 13-calculadora.js). Entradas muito
+// antigas, de antes desse campo existir separado, não têm e.times — nesse caso não
+// tem como saber os dois nomes com segurança, então não mostra escudo nenhum.
+function timesDaEntrada(e) {
+  if (!e.times) return null;
+  const [casa, vis] = e.times.split('×').map((s) => s.trim());
+  if (!casa || !vis) return null;
+  return { casa, vis };
+}
 
 export default function Resolvidas() {
   const [, setTick] = useState(0);
@@ -80,11 +98,19 @@ export default function Resolvidas() {
           }
           const rotuloAposta = ROTULO_APOSTA[e.tipoAposta] || 'Simples';
           const corAposta = COR_APOSTA[e.tipoAposta] || 'var(--texto2)';
+          const times = timesDaEntrada(e);
           return (
             <div key={e.id} className="entrada-item" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 6 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
                 <Icone size={18} color={cor} style={{ flexShrink: 0 }} />
                 <div style={{ flex: 1 }}>
+                  {times && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3 }}>
+                      <EscudoImg nome={times.casa} />
+                      <span style={{ fontSize: 10, color: 'var(--texto2)' }}>×</span>
+                      <EscudoImg nome={times.vis} />
+                    </div>
+                  )}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                     <span style={{ fontWeight: 700, fontSize: 13 }}>{e.desc}</span>
                     <span style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', color: corAposta, border: `1px solid ${corAposta}`, borderRadius: 4, padding: '1px 5px' }}>{rotuloAposta}</span>
