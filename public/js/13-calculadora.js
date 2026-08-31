@@ -336,23 +336,6 @@ async function lancarEntrada(){
     if(!mercado){ toast('Informe o mercado'); return; }
     pct = parseFloat(document.getElementById('ePct').value);
     odd = numBR(document.getElementById('eOdd').value);
-    // Rede de segurança: #ePct só é preenchido quando a pessoa digita o Stake em R$
-    // (setValorStake), convertendo pra % com o saldo que estava em cache NAQUELE
-    // momento. Se a Banca ainda não tinha carregado da nuvem quando ela digitou (saldo
-    // temporariamente 0), a conversão falhava e #ePct ficava vazio — obrigando a
-    // apagar e digitar o Stake de novo pra "pegar". Aqui, na hora de salvar (quando o
-    // saldo real já teve tempo de sobra pra carregar), tenta recalcular de novo a
-    // partir do valor em R$ que já está no campo, sem precisar que a pessoa refaça nada.
-    if(!pct){
-      const valorStakeRaw = document.getElementById('eValorStake')?.value;
-      const valorStakeNum = numBR(valorStakeRaw);
-      const dRecalc = bpLoad();
-      const totRecalc = dRecalc.saldo||0;
-      if(valorStakeNum && totRecalc){
-        pct = Math.round((valorStakeNum/totRecalc*100)*100)/100;
-        document.getElementById('ePct').value = pct;
-      }
-    }
     if(!pct)  { toast('Informe a % da banca ou o Stake'); return; }
     if(!odd)  { toast('Informe a odd'); return; }
   }
@@ -430,8 +413,8 @@ async function lancarEntrada(){
   retornoEditadoManualmente = false;
   const mjEl=document.getElementById('mesmoJogoCheck'); if(mjEl) mjEl.checked=false;
   const erEl=document.getElementById('eResultado'); if(erEl) erEl.value='';
-  const selM=document.getElementById('eMandanteSel'); if(selM) selM.value='';
-  const selV=document.getElementById('eVisitanteSel'); if(selV) selV.value='';
+  const selM=document.getElementById('eMandanteSel'); if(selM) selM.innerHTML='<option value="">Casa</option>';
+  const selV=document.getElementById('eVisitanteSel'); if(selV) selV.innerHTML='<option value="">Visitante</option>';
   const wrapJogo=document.getElementById('blocoJogoEntrada'); if(wrapJogo) wrapJogo.style.display='none';
   setOperacao('bet');
   setTipoEntrada('prelive');

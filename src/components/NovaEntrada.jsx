@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Target, Dice5, Plus, Circle, TrendingUp, Wallet, CheckCircle2, Trophy, Shield, ArrowLeftRight, Coins, PiggyBank } from 'lucide-react';
 import SeletorMercado from './SeletorMercado';
 
@@ -11,9 +11,15 @@ import SeletorMercado from './SeletorMercado';
 // sempre (window.setTipoAposta, window.lancarEntrada, window.calcEntrada...), agora
 // em public/js/13-calculadora.js.
 //
-// Mudanças pedidas nessa leva (baseadas no mockup "Registrar Operação"):
+// O campo "Jogo" JÁ TENTOU ter um seletor com escudo (bottom-sheet, igual à aba
+// Análise) no lugar do texto livre — foi revertido: causava o campo #eTimes ficar
+// vazio na hora de salvar mesmo depois de escolher os dois times (a troca entre
+// "campo de texto" e "seletor com escudo" — que dependiam de bater exatamente com o
+// nome da Liga digitada — remontava o elemento #eTimes e perdia o valor). Campo de
+// texto livre simples é mais confiável aqui; o escudo continua no Histórico
+// (Resolvidas.jsx), que já lê o texto digitado pra montar o par de escudos.
 //   - Tirou o "Importar da Análise" (não vamos mais puxar da Análise aqui)
-//   - Liga → ao escolher, aparecem dois selects (Mandante/Visitante) com os times
+//   - Liga → ao escolher, aparecem dois selects (Casa/Visitante) com os times
 //     daquele campeonato — em vez do combo "Jogo" único do mockup
 //   - Mercado: além do campo de texto livre (com datalist), agora tem um seletor
 //     guiado (SeletorMercado.jsx) — abre sozinho ao clicar em Bet/Exchange. Categorias:
@@ -25,35 +31,11 @@ import SeletorMercado from './SeletorMercado';
 //   - Nova seção "Operação": Bet ou Exchange
 //   - Novo campo "Retorno" (calculado sozinho: stake + lucro), com legenda pequena
 //   - Resultado agora é Green / Red / Void / Cash Out (era Green/Red/Void/Cancelado)
-//   - Jogo (Casa × Visitante): voltou a ser um campo de texto livre simples (com
-//     sugestões via datalist pra facilitar). O seletor guiado com escudo (botões
-//     Casa/Visitante + bottom-sheet) foi removido — ele ficava recriando o campo
-//     #eTimes do zero toda vez que a Liga mudava, fazendo o time escolhido "sumir"
-//     bem na hora de salvar a operação.
 
 export default function NovaEntrada() {
   const [seletorAberto, setSeletorAberto] = useState(false);
   const [seletorOperacao, setSeletorOperacao] = useState('bet');
   const [operacaoAtual, setOperacaoAtual] = useState('bet'); // fonte única da verdade pro campo #eOperacao — ver input controlado abaixo
-  const [liga, setLiga] = useState(''); // sincronizado do #eLiga (não-controlado) só pra montar a lista de sugestões (datalist) do campo Jogo
-
-  const jogosCache = window.jogosCache || [];
-  // Sugestões de "Casa × Visitante" pra essa Liga (datalist) — só facilita digitar/
-  // identificar, não trava nada: o campo continua sendo texto livre sempre.
-  const jogosSugeridos = useMemo(() => {
-    if (!liga) return [];
-    return [...new Set(jogosCache.filter((j) => j.camp === liga).map((j) => `${j.casa} × ${j.vis}`))].sort();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [liga, jogosCache.length]);
-
-  // Só pra alimentar os botões de "Resultado" do Seletor de Mercado guiado (que mostra
-  // "Vitória do Botafogo" em vez de um texto genérico) — tenta separar o que foi digitado
-  // em #eTimes pelo "×". Não trava nada se não conseguir separar (times fica só o texto puro).
-  function sincronizarSelsDeResultado(textoTimes) {
-    const partes = textoTimes.split('×').map((p) => p.trim()).filter(Boolean);
-    const selM = document.getElementById('eMandanteSel'); if (selM) selM.value = partes[0] || '';
-    const selV = document.getElementById('eVisitanteSel'); if (selV) selV.value = partes[1] || '';
-  }
 
   // Clicar em Bet ou Exchange já define a Operação (função de sempre, window.setOperacao,
   // que só cuida do visual dos botões — o valor de verdade vive aqui, no estado do React)
@@ -98,30 +80,27 @@ export default function NovaEntrada() {
       {/* Liga */}
       <div style={{ marginBottom: 12 }}>
         <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Trophy size={13} /> Liga</label>
-        <input type="text" id="eLiga" list="campSugEntrada" placeholder="Ex: Premier League" onInput={(e) => { setLiga(e.target.value.trim()); window.atualizarResumoEntrada?.(); }} />
+        <input type="text" id="eLiga" list="campSugEntrada" placeholder="Ex: Premier League" onInput={() => { window.popularTimesLigaEntrada?.(); window.atualizarResumoEntrada?.(); }} />
       </div>
 
-      {/* Jogo — Mandante × Visitante. Quando a Liga digitada bate com uma já cadastrada
-          (com times conhecidos em Dados/Confrontos), abre o seletor com busca + escudo —
-          mesmo padrão da aba Análise. Sem isso, cai no campo de texto livre de sempre. */}
+      {/* Jogo — Casa × Visitante. Campo de texto sempre visível e editável na mão
+          (obrigatório); quando a Liga digitada bate com uma já conhecida, os selects
+          abaixo aparecem como atalho — escolher os dois já preenche o campo sozinho. */}
       <div style={{ marginBottom: 12 }}>
         <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Shield size={13} /> Jogo (Casa × Visitante)</label>
-        {/* Campo de texto livre, sempre — sem botão nem seletor de escudo (isso já causou
-            bugs de sincronização). A lista de sugestões (datalist) só ajuda a identificar
-            e digitar mais rápido; nunca trava nem exige nada além do texto. */}
-        <input
-          type="text"
-          id="eTimes"
-          list="jogosSugEntrada"
-          placeholder="Ex: Botafogo-SP × Avaí"
-          onInput={(e) => { sincronizarSelsDeResultado(e.target.value); window.atualizarResumoEntrada?.(); }}
-        />
-        <datalist id="jogosSugEntrada">
-          {jogosSugeridos.map((j) => <option key={j} value={j} />)}
-        </datalist>
+        <input type="text" id="eTimes" placeholder="Ex: Botafogo-SP × Avaí" onInput={() => window.atualizarResumoEntrada?.()} />
       </div>
-      <input type="hidden" id="eMandanteSel" defaultValue="" />
-      <input type="hidden" id="eVisitanteSel" defaultValue="" />
+      <div id="blocoJogoEntrada" style={{ marginBottom: 12, display: 'none' }}>
+        <div style={{ fontSize: 10, color: 'var(--texto2)', marginBottom: 4 }}>Ou escolha da lista:</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <select id="eMandanteSel" onChange={() => window.atualizarTimesEntrada?.()}>
+            <option value="">Casa</option>
+          </select>
+          <select id="eVisitanteSel" onChange={() => window.atualizarTimesEntrada?.()}>
+            <option value="">Visitante</option>
+          </select>
+        </div>
+      </div>
 
       {/* Tipo de Aposta (chips) */}
       <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}><Dice5 size={13} /> Tipo de Aposta</label>
