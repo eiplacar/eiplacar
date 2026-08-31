@@ -125,7 +125,7 @@ function syncNomesEdicao(){
 
 // ══ SYNC NOMES ══
 function syncNomes() {
-  const c=document.getElementById('iCasa').value.trim()||'Mandante';
+  const c=document.getElementById('iCasa').value.trim()||'Casa';
   const v=document.getElementById('iVis').value.trim()||'Visitante';
   const htmlC=escudoImgOuIcone(c), htmlV=escudoImgOuIcone(v);
   const pc=document.getElementById('pNomeCasa'); if(pc) pc.textContent=c;
@@ -160,7 +160,7 @@ function _addGolGenerico(temp, ids, time){
   const min=parseInt(document.getElementById(ids.min).value);
   const acr=parseInt(document.getElementById(ids.acr).value)||0;
   if(!min||min<1||min>90){ toast('Informe o minuto (1–90, sem somar o acréscimo)'); return; }
-  const c=document.getElementById(ids.casa).value.trim()||'Mandante';
+  const c=document.getElementById(ids.casa).value.trim()||'Casa';
   const v=document.getElementById(ids.vis).value.trim()||'Visitante';
   temp.push({ min, acr, time, nome:time==='casa'?c:v });
   temp.sort((a,b)=>(a.min+a.acr)-(b.min+b.acr));

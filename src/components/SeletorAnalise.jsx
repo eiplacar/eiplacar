@@ -195,7 +195,7 @@ export default function SeletorAnalise() {
           <button type="button" onClick={() => setSeletorAberto('casa')}
             style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 8, padding: '6px', cursor: 'pointer', textAlign: 'left' }}>
             <EscudoBox html={escudoCasaHtml} />
-            <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: timeCasa ? 'var(--texto)' : 'var(--texto2)', fontSize: 12, fontWeight: 800 }}>{timeCasa || '— Mandante —'}</span>
+            <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: timeCasa ? 'var(--texto)' : 'var(--texto2)', fontSize: 12, fontWeight: 800 }}>{timeCasa || '— Casa —'}</span>
           </button>
           <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--texto2)' }}>×</div>
           <button type="button" onClick={() => setSeletorAberto('vis')}
@@ -206,7 +206,7 @@ export default function SeletorAnalise() {
         </div>
 
         {seletorAberto === 'casa' && (
-          <SeletorTimeSheet titulo="Escolha o Mandante" times={times} valorAtual={timeCasa} onSelecionar={escolherTimeCasa} onFechar={() => setSeletorAberto(null)} />
+          <SeletorTimeSheet titulo="Escolha a Casa" times={times} valorAtual={timeCasa} onSelecionar={escolherTimeCasa} onFechar={() => setSeletorAberto(null)} />
         )}
         {seletorAberto === 'vis' && (
           <SeletorTimeSheet titulo="Escolha o Visitante" times={times} valorAtual={timeVis} onSelecionar={escolherTimeVis} onFechar={() => setSeletorAberto(null)} />
@@ -216,7 +216,7 @@ export default function SeletorAnalise() {
         <div style={{ background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 10, padding: 10 }}>
           <div style={{ fontSize: 10, color: 'var(--texto2)', marginBottom: 6, fontWeight: 700, letterSpacing: '.3px' }}>APLICAR FILTRO PARA</div>
           <div style={{ display: 'flex', gap: 4, marginBottom: 10 }}>
-            <button className={`local-btn ${escopo === 'casa' ? 'active-all' : ''}`} onClick={() => setEscopo('casa')} style={btnStyle}>Mandante</button>
+            <button className={`local-btn ${escopo === 'casa' ? 'active-all' : ''}`} onClick={() => setEscopo('casa')} style={btnStyle}>Casa</button>
             <button className={`local-btn ${escopo === 'ambos' ? 'active-all' : ''}`} onClick={() => setEscopo('ambos')} style={btnStyle}>Ambos</button>
             <button className={`local-btn ${escopo === 'vis' ? 'active-all' : ''}`} onClick={() => setEscopo('vis')} style={btnStyle}>Visitante</button>
           </div>

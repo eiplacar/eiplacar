@@ -18,7 +18,7 @@ async function salvarJogo() {
   if(!casa)   { toast('Informe o time mandante!'); document.getElementById('iCasa').focus(); return; }
   if(!vis)    { toast('Informe o time visitante!'); document.getElementById('iVis').focus(); return; }
   if(!rodada) { toast('Informe a rodada/fase!'); document.getElementById('iRodada').focus(); return; }
-  if(casa===vis){ toast('Mandante e visitante não podem ser o mesmo time!'); return; }
+  if(casa===vis){ toast('Casa e visitante não podem ser o mesmo time!'); return; }
 
   // Bloqueia se esse nome de campeonato já existe cadastrado com OUTRO país — evita
   // misturar duas ligas homônimas (ex: "Série A" do Brasil x "Série A" da Itália)

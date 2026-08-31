@@ -166,7 +166,7 @@ export default function Estatistica() {
           </select>
           <select value={fTimeFiltroLocal} onChange={(e) => setFTimeFiltroLocal(e.target.value)}>
             <option value="">Geral (casa + fora)</option>
-            <option value="casa">Só como Mandante</option>
+            <option value="casa">Só como Casa</option>
             <option value="fora">Só como Visitante</option>
           </select>
         </div>

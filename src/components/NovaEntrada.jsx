@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Target, Dice5, Plus, Circle, TrendingUp, Wallet, CheckCircle2, Trophy, Shield, ArrowLeftRight, Coins, PiggyBank, ShieldQuestion } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Target, Dice5, Plus, Circle, TrendingUp, Wallet, CheckCircle2, Trophy, Shield, ArrowLeftRight, Coins, PiggyBank, ShieldQuestion, X, Check } from 'lucide-react';
 import SeletorMercado from './SeletorMercado';
 
 // ══ Nova Entrada (sub-aba "Registrar Operação" dentro de Apostas) ══
@@ -33,21 +33,75 @@ function EscudoImg({ nome, size = 20 }) {
   return <ShieldQuestion size={size * 0.8} color="var(--texto2)" style={{ flexShrink: 0 }} />;
 }
 
+// Bottom-sheet com busca + escudo de cada time no seletor — mesmo componente/padrão
+// usado na aba Análise (SeletorAnalise.jsx) e Estratégias, pra escolher Mandante/Visitante
+// sem precisar rolar um <select> nativo sem escudo nenhum.
+function SeletorTimeSheet({ titulo, times, valorAtual, onSelecionar, onFechar }) {
+  const [busca, setBusca] = useState('');
+  const filtrados = busca ? times.filter((t) => t.toLowerCase().includes(busca.toLowerCase())) : times;
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 300, display: 'flex', alignItems: 'flex-end' }} onClick={onFechar}>
+      <div style={{ background: 'var(--c2)', width: '100%', maxHeight: '78vh', borderRadius: '16px 16px 0 0', padding: '14px 16px 20px', overflowY: 'auto', borderTop: '1px solid var(--c3)' }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <div style={{ fontWeight: 700, fontSize: 14 }}>{titulo}</div>
+          <button type="button" onClick={onFechar} style={{ background: 'none', border: 'none', color: 'var(--texto2)', padding: 4, cursor: 'pointer' }}><X size={20} /></button>
+        </div>
+        {times.length > 8 && (
+          <input autoFocus placeholder="Buscar time..." value={busca} onChange={(e) => setBusca(e.target.value)} style={{ width: '100%', marginBottom: 10 }} />
+        )}
+        <div>
+          {filtrados.map((t) => (
+            <div key={t} onClick={() => { onSelecionar(t); onFechar(); }}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 6px', borderBottom: '1px solid var(--c3)', cursor: 'pointer', borderRadius: 6, background: t === valorAtual ? 'rgba(77,216,122,0.08)' : 'transparent' }}>
+              <EscudoImg nome={t} size={24} />
+              <span style={{ flex: 1, fontSize: 13.5 }}>{t}</span>
+              {t === valorAtual && <Check size={16} color="var(--verde2)" />}
+            </div>
+          ))}
+          {!filtrados.length && <div style={{ textAlign: 'center', color: 'var(--texto2)', padding: 20, fontSize: 13 }}>Nada encontrado.</div>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function NovaEntrada() {
   const [seletorAberto, setSeletorAberto] = useState(false);
   const [seletorOperacao, setSeletorOperacao] = useState('bet');
   const [operacaoAtual, setOperacaoAtual] = useState('bet'); // fonte única da verdade pro campo #eOperacao — ver input controlado abaixo
-  const [timesPreview, setTimesPreview] = useState({ casa: '', vis: '' }); // só pro escudo aparecer — o campo #eTimes continua sendo a fonte de verdade pro lançamento
+  const [liga, setLiga] = useState(''); // sincronizado do #eLiga (não-controlado) só pra filtrar a lista de times do seletor
+  const [mandante, setMandante] = useState('');
+  const [visitante, setVisitante] = useState('');
+  const [seletorTimeAberto, setSeletorTimeAberto] = useState(null); // null | 'mandante' | 'visitante'
 
-  // #eTimes é um campo não-controlado (a fonte de verdade pro lançamento continua sendo
-  // o valor dele, digitado à mão OU preenchido pelos selects Mandante/Visitante). Pra
-  // mostrar o escudo — igual já acontece na aba Análise/Estratégias — só precisamos ler
-  // esse valor depois de qualquer mudança e separar pelo "×" usado em todo o app.
-  function sincronizarPreviewTimes() {
-    const valor = document.getElementById('eTimes')?.value || '';
-    const [casa, vis] = valor.split('×').map((s) => s.trim());
-    setTimesPreview({ casa: casa || '', vis: vis || '' });
+  const jogosCache = window.jogosCache || [];
+  const timesDaLiga = useMemo(() => {
+    if (!liga) return [];
+    return [...new Set(jogosCache.filter((j) => j.camp === liga).flatMap((j) => [j.casa, j.vis]))].sort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liga, jogosCache.length]);
+
+  // Escreve "Mandante × Visitante" direto no campo #eTimes de verdade (o mesmo de
+  // sempre, continua não-controlado — é ele que lancarEntrada/editarEntrada leem pra
+  // valer) e nos inputs escondidos #eMandanteSel/#eVisitanteSel, mantidos só pra
+  // compatibilidade com SeletorMercado.jsx, que ainda lê esses ids direto do DOM.
+  function sincronizarCamposOcultos(novoMandante, novoVisitante) {
+    const eTimes = document.getElementById('eTimes');
+    if (eTimes) eTimes.value = (novoMandante && novoVisitante) ? `${novoMandante} × ${novoVisitante}` : (novoMandante || novoVisitante || '');
+    const selM = document.getElementById('eMandanteSel'); if (selM) selM.value = novoMandante;
+    const selV = document.getElementById('eVisitanteSel'); if (selV) selV.value = novoVisitante;
+    window.atualizarResumoEntrada?.();
   }
+  function escolherMandante(nome) { setMandante(nome); sincronizarCamposOcultos(nome, visitante); }
+  function escolherVisitante(nome) { setVisitante(nome); sincronizarCamposOcultos(mandante, nome); }
+
+  // Ponte pra 13-calculadora.js: depois de salvar a operação, o form inteiro é limpo
+  // (inclusive na mão, via DOM) — isso avisa esse componente React pra limpar a seleção
+  // de Mandante/Visitante/Liga junto, senão o botão continuava mostrando o time antigo.
+  useEffect(() => {
+    window.novaEntradaResetarSelecaoTimes = () => { setLiga(''); setMandante(''); setVisitante(''); };
+    return () => { delete window.novaEntradaResetarSelecaoTimes; };
+  }, []);
 
   // Clicar em Bet ou Exchange já define a Operação (função de sempre, window.setOperacao,
   // que só cuida do visual dos botões — o valor de verdade vive aqui, no estado do React)
@@ -92,36 +146,46 @@ export default function NovaEntrada() {
       {/* Liga */}
       <div style={{ marginBottom: 12 }}>
         <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Trophy size={13} /> Liga</label>
-        <input type="text" id="eLiga" list="campSugEntrada" placeholder="Ex: Premier League" onInput={() => { window.popularTimesLigaEntrada?.(); window.atualizarResumoEntrada?.(); }} />
+        <input type="text" id="eLiga" list="campSugEntrada" placeholder="Ex: Premier League" onInput={(e) => { setLiga(e.target.value.trim()); window.atualizarResumoEntrada?.(); }} />
       </div>
 
-      {/* Jogo — Mandante × Visitante. Campo de texto sempre visível e editável na mão
-          (obrigatório); quando a Liga digitada bate com uma já conhecida, os selects
-          abaixo aparecem como atalho — escolher os dois já preenche o campo sozinho. */}
+      {/* Jogo — Mandante × Visitante. Quando a Liga digitada bate com uma já cadastrada
+          (com times conhecidos em Dados/Confrontos), abre o seletor com busca + escudo —
+          mesmo padrão da aba Análise. Sem isso, cai no campo de texto livre de sempre. */}
       <div style={{ marginBottom: 12 }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Shield size={13} /> Jogo (Mandante × Visitante)</label>
-        <input type="text" id="eTimes" placeholder="Ex: Botafogo-SP × Avaí" onInput={() => { window.atualizarResumoEntrada?.(); sincronizarPreviewTimes(); }} />
-        {(timesPreview.casa || timesPreview.vis) && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 8, padding: '6px 10px' }}>
-            <EscudoImg nome={timesPreview.casa} />
-            <span style={{ fontSize: 11, fontWeight: 700, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{timesPreview.casa || '—'}</span>
-            <span style={{ fontSize: 10, color: 'var(--texto2)' }}>×</span>
-            <span style={{ fontSize: 11, fontWeight: 700, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right' }}>{timesPreview.vis || '—'}</span>
-            <EscudoImg nome={timesPreview.vis} />
-          </div>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Shield size={13} /> Jogo (Casa × Visitante)</label>
+        {timesDaLiga.length > 0 ? (
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 8 }}>
+              <button type="button" onClick={() => setSeletorTimeAberto('mandante')}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 8, padding: '8px', cursor: 'pointer', textAlign: 'left' }}>
+                <EscudoImg nome={mandante} />
+                <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: mandante ? 'var(--texto)' : 'var(--texto2)', fontSize: 12, fontWeight: 700 }}>{mandante || 'Casa'}</span>
+              </button>
+              <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--texto2)' }}>×</div>
+              <button type="button" onClick={() => setSeletorTimeAberto('visitante')}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 8, padding: '8px', cursor: 'pointer', textAlign: 'right', justifyContent: 'flex-end' }}>
+                <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: visitante ? 'var(--texto)' : 'var(--texto2)', fontSize: 12, fontWeight: 700 }}>{visitante || 'Visitante'}</span>
+                <EscudoImg nome={visitante} />
+              </button>
+            </div>
+            {/* #eTimes continua existindo no DOM (lancarEntrada/editarEntrada leem ele direto
+                pra valer) — só fica escondido aqui porque os botões acima já mostram tudo. */}
+            <input type="hidden" id="eTimes" defaultValue="" />
+          </>
+        ) : (
+          <input type="text" id="eTimes" placeholder="Ex: Botafogo-SP × Avaí" onInput={() => window.atualizarResumoEntrada?.()} />
         )}
       </div>
-      <div id="blocoJogoEntrada" style={{ marginBottom: 12, display: 'none' }}>
-        <div style={{ fontSize: 10, color: 'var(--texto2)', marginBottom: 4 }}>Ou escolha da lista:</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          <select id="eMandanteSel" onChange={() => { window.atualizarTimesEntrada?.(); sincronizarPreviewTimes(); }}>
-            <option value="">Mandante</option>
-          </select>
-          <select id="eVisitanteSel" onChange={() => { window.atualizarTimesEntrada?.(); sincronizarPreviewTimes(); }}>
-            <option value="">Visitante</option>
-          </select>
-        </div>
-      </div>
+      <input type="hidden" id="eMandanteSel" defaultValue="" />
+      <input type="hidden" id="eVisitanteSel" defaultValue="" />
+
+      {seletorTimeAberto === 'mandante' && (
+        <SeletorTimeSheet titulo="Escolha a Casa" times={timesDaLiga} valorAtual={mandante} onSelecionar={escolherMandante} onFechar={() => setSeletorTimeAberto(null)} />
+      )}
+      {seletorTimeAberto === 'visitante' && (
+        <SeletorTimeSheet titulo="Escolha o Visitante" times={timesDaLiga} valorAtual={visitante} onSelecionar={escolherVisitante} onFechar={() => setSeletorTimeAberto(null)} />
+      )}
 
       {/* Tipo de Aposta (chips) */}
       <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}><Dice5 size={13} /> Tipo de Aposta</label>
@@ -148,7 +212,7 @@ export default function NovaEntrada() {
         </label>
         <div id="blocoConfrontoCombo" style={{ display: 'none', marginBottom: 10 }}>
           <label>Confronto (Casa × Visitante)</label>
-          <input type="text" id="eTimesCombo" placeholder="Ex: Botafogo-SP × Avaí" onInput={(e) => { const eTimes = document.getElementById('eTimes'); if (eTimes) eTimes.value = e.target.value.trim(); window.atualizarResumoEntrada?.(); sincronizarPreviewTimes(); }} />
+          <input type="text" id="eTimesCombo" placeholder="Ex: Botafogo-SP × Avaí" onInput={(e) => { const eTimes = document.getElementById('eTimes'); if (eTimes) eTimes.value = e.target.value.trim(); window.atualizarResumoEntrada?.(); }} />
         </div>
         <label style={{ marginBottom: 6 }}>Mercados combinados</label>
         <div id="pernasLista" style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8 }}></div>

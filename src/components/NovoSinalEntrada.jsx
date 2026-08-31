@@ -231,7 +231,7 @@ export default function NovoSinalEntrada() {
             {escudoCasaHtml ? <span dangerouslySetInnerHTML={{ __html: escudoCasaHtml }} /> : <Shield size={16} />}
           </div>
           <select value={casa} onChange={(e) => setCasa(e.target.value)} style={{ flex: 1, minWidth: 0 }}>
-            <option value="">— Mandante —</option>
+            <option value="">— Casa —</option>
             {times.map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
         </div>

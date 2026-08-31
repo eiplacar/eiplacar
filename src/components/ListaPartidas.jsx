@@ -201,7 +201,7 @@ export default function ListaPartidas() {
         <table>
           <thead>
             <tr>
-              <th>#</th><th>Camp.</th><th>Data</th><th>Rodada</th><th>Local</th><th>Mandante</th><th>Placar</th><th>Visitante</th>
+              <th>#</th><th>Camp.</th><th>Data</th><th>Rodada</th><th>Local</th><th>Casa</th><th>Placar</th><th>Visitante</th>
               <th>Rk M</th><th>Rk V</th><th>1ºT</th><th>2ºT</th><th>Chutes</th><th>No Alvo</th><th>Cantos</th><th>Cartões</th><th>Gols (min)</th><th></th>
             </tr>
           </thead>

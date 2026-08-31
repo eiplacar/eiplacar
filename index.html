@@ -313,7 +313,7 @@
     <h2 style="font-size:15px;margin-bottom:12px"><span data-ic="pencil" data-ic-size="15"></span> Editar Entrada</h2>
     <div style="margin-bottom:10px"><label>Mercado</label><input type="text" id="editEMercado"></div>
     <div style="margin-bottom:10px"><label>Liga</label><input type="text" id="editELiga"></div>
-    <div style="margin-bottom:10px"><label>Jogo (Mandante × Visitante)</label><input type="text" id="editETimes" placeholder="Ex: Botafogo-SP × Avaí"></div>
+    <div style="margin-bottom:10px"><label>Jogo (Casa × Visitante)</label><input type="text" id="editETimes" placeholder="Ex: Botafogo-SP × Avaí"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
       <div>
         <label>Tipo de Entrada</label>
@@ -441,7 +441,7 @@
       <div></div>
     </div>
     <div class="fg fg2">
-      <div><label>Time Mandante</label><input type="text" id="eCasa" oninput="syncNomesEdicao()"></div>
+      <div><label>Time Casa</label><input type="text" id="eCasa" oninput="syncNomesEdicao()"></div>
       <div><label>Time Visitante</label><input type="text" id="eVis" oninput="syncNomesEdicao()"></div>
     </div>
     <div class="card-title" style="margin-bottom:8px">Placar Final</div>
@@ -457,7 +457,7 @@
       </div>
     </div>
     <div class="fg fg2">
-      <div><label>Ranking Mandante</label><input type="number" id="eRC" min="1"></div>
+      <div><label>Ranking Casa</label><input type="number" id="eRC" min="1"></div>
       <div><label>Ranking Visitante</label><input type="number" id="eRV" min="1"></div>
     </div>
     <details class="adv-details" style="margin-bottom:16px">
@@ -465,30 +465,30 @@
       <div class="adv-content">
         <div class="adv-group-title"><span data-ic="clock" data-ic-size="12"></span> Gols 1º Tempo</div>
         <div class="fg fg2">
-          <div><label>Mandante</label><input type="number" id="eHTC" min="0"></div>
+          <div><label>Casa</label><input type="number" id="eHTC" min="0"></div>
           <div><label>Visitante</label><input type="number" id="eHTV" min="0"></div>
         </div>
         <div class="adv-group-title"><span data-ic="target" data-ic-size="12"></span> Chutes</div>
         <div class="fg fg2">
-          <div><label>Totais — Mandante</label><input type="number" id="eChutesC" min="0"></div>
+          <div><label>Totais — Casa</label><input type="number" id="eChutesC" min="0"></div>
           <div><label>Totais — Visitante</label><input type="number" id="eChutesV" min="0"></div>
         </div>
         <div class="fg fg2">
-          <div><label>No gol — Mandante</label><input type="number" id="eChutesGolC" min="0"></div>
+          <div><label>No gol — Casa</label><input type="number" id="eChutesGolC" min="0"></div>
           <div><label>No gol — Visitante</label><input type="number" id="eChutesGolV" min="0"></div>
         </div>
         <div class="adv-group-title"><span data-ic="flag" data-ic-size="12"></span> Escanteios</div>
         <div class="fg fg2">
-          <div><label>Mandante</label><input type="number" id="eEscanteiosC" min="0"></div>
+          <div><label>Casa</label><input type="number" id="eEscanteiosC" min="0"></div>
           <div><label>Visitante</label><input type="number" id="eEscanteiosV" min="0"></div>
         </div>
         <div class="adv-group-title"><span data-ic="square" data-ic-size="12"></span> Cartões</div>
         <div class="fg fg2">
-          <div><label>Amarelos — Mandante</label><input type="number" id="eAmarelosC" min="0"></div>
+          <div><label>Amarelos — Casa</label><input type="number" id="eAmarelosC" min="0"></div>
           <div><label>Amarelos — Visitante</label><input type="number" id="eAmarelosV" min="0"></div>
         </div>
         <div class="fg fg2">
-          <div><label>Vermelhos — Mandante</label><input type="number" id="eVermelhosC" min="0"></div>
+          <div><label>Vermelhos — Casa</label><input type="number" id="eVermelhosC" min="0"></div>
           <div><label>Vermelhos — Visitante</label><input type="number" id="eVermelhosV" min="0"></div>
         </div>
       </div>
@@ -501,7 +501,7 @@
         <div style="flex:1">
           <label>Quem marcou?</label>
           <div style="display:flex;gap:8px">
-            <button class="btn-time casa-btn" onclick="addGolEdit('casa')">Mandante</button>
+            <button class="btn-time casa-btn" onclick="addGolEdit('casa')">Casa</button>
             <button class="btn-time vis-btn" onclick="addGolEdit('vis')">Visitante</button>
           </div>
         </div>
@@ -509,7 +509,7 @@
       <div style="font-size:10px;color:var(--texto2);margin:-4px 0 8px">Gol nos acréscimos do 1º tempo: Minuto 45 + Acréscimo (ex: 3) — não digite 48 direto no Minuto.</div>
       <div class="campo" id="eCampoVisual"></div>
       <div class="legenda">
-        <div class="legenda-item"><div class="dot dot-c"></div><span>Mandante</span></div>
+        <div class="legenda-item"><div class="dot dot-c"></div><span>Casa</span></div>
         <div class="legenda-item"><div class="dot dot-v"></div><span>Visitante</span></div>
         <div style="flex:1"></div>
         <span id="eContGols">0 gols</span>
@@ -557,7 +557,7 @@
 
     <div class="nav-group-title"><span data-ic="dollarSign" data-ic-size="13"></span>Ferramentas</div>
     <button class="nav-tab" onclick="goTo('apostas')" id="tab-apostas"><span class="nav-ic" data-ic="target"></span><span>Operações</span></button>
-    <button class="nav-tab"        onclick="goTo('banca')"     id="tab-banca"><span class="nav-ic" data-ic="wallet"></span><span>Capital</span></button>
+    <button class="nav-tab"        onclick="goTo('banca')"     id="tab-banca"><span class="nav-ic" data-ic="wallet"></span><span>Banca</span></button>
     <button class="nav-tab"        onclick="goTo('estrategias')" id="tab-estrategias"><span class="nav-ic" data-ic="lightbulb"></span><span>Estratégias</span></button>
 
     <div class="nav-group-title"><span data-ic="star" data-ic-size="13"></span>Descubra</div>
@@ -565,6 +565,7 @@
     <button class="nav-tab" onclick="convidarAmigo();toggleSidebar(false)"><span class="nav-ic" data-ic="userPlus"></span><span>Convide um Amigo</span></button>
 
     <div class="nav-group-title"><span data-ic="messageCircle" data-ic-size="13"></span>Comunidade</div>
+    <a class="nav-tab" href="https://www.youtube.com/@EiPlacar" target="_blank" rel="noopener noreferrer" onclick="toggleSidebar(false)"><span class="nav-ic" data-ic="youtube"></span><span>Canal no YouTube</span></a>
     <button class="nav-tab" onclick="abrirEmail('suporte@eiplacar.com.br','Suporte - EI PLACAR');toggleSidebar(false)"><span class="nav-ic" data-ic="lifeBuoy"></span><span>Suporte</span></button>
     <button class="nav-tab" onclick="abrirEmail('sugestoes@eiplacar.com.br','Sugestão - EI PLACAR');toggleSidebar(false)"><span class="nav-ic" data-ic="messageSquare"></span><span>Sugestões e Feedback</span></button>
   </nav>

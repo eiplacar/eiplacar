@@ -196,7 +196,7 @@ async function confirmarEdicaoOph(){
   const vis  = document.getElementById('ophEditVis').value.trim();
   const data = document.getElementById('ophEditData').value;
   if(!casa || !vis){ toast('Informe os dois times!'); return; }
-  if(casa===vis){ toast('Mandante e visitante não podem ser o mesmo time!'); return; }
+  if(casa===vis){ toast('Casa e visitante não podem ser o mesmo time!'); return; }
 
   const antes = ophCache.slice();
   const idx = ophCache.findIndex(x=>x.id===id);

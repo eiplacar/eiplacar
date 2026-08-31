@@ -383,7 +383,7 @@ function computeAnalise(casa, vis, camp, filtroAtual){
   ultimaAnalise = {
     casa, vis, liga: camp||'',
     mercados: [
-      { nome: 'Vitória Mandante', prob: pVit },
+      { nome: 'Vitória Casa', prob: pVit },
       { nome: 'Empate',           prob: pEmp },
       { nome: 'Vitória Visitante',prob: pDer },
       { nome: 'Over 1.5',       prob: o15  },
@@ -403,7 +403,7 @@ function computeAnalise(casa, vis, camp, filtroAtual){
         { nome: 'Gols HT Under 2.5', prob: 100-o25HT },
         { nome: 'Gols HT Over 3.5',  prob: o35HT },
         { nome: 'Gols HT Under 3.5', prob: 100-o35HT },
-        { nome: 'Vitória Mandante HT', prob: resultadoHT.pVit },
+        { nome: 'Vitória Casa HT', prob: resultadoHT.pVit },
         { nome: 'Empate HT',           prob: resultadoHT.pEmp },
         { nome: 'Vitória Visitante HT',prob: resultadoHT.pDer },
         { nome: 'Ambas Marcam HT',     prob: pBttsHT },

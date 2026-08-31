@@ -81,7 +81,7 @@ export default function AdicionarPartida() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 8, marginBottom: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
           <div className="escudo-upload" id="escudoCasa" onClick={() => window.escudoInput?.('iCasa')} title="Toque para adicionar o escudo" style={{ width: 40, height: 40, margin: 0, fontSize: 16 }}><Shield size={17} /></div>
-          <input type="text" id="iCasa" placeholder="Mandante" list="timesSug" style={{ flex: 1, minWidth: 0 }} onInput={() => { window.syncNomes?.(); window.onTimeInput?.(); }} />
+          <input type="text" id="iCasa" placeholder="Casa" list="timesSug" style={{ flex: 1, minWidth: 0 }} onInput={() => { window.syncNomes?.(); window.onTimeInput?.(); }} />
         </div>
         <Swords size={14} style={{ color: 'var(--texto2)' }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
@@ -90,12 +90,12 @@ export default function AdicionarPartida() {
         </div>
       </div>
       {/* Compat: syncNomes() ainda escreve nome aqui, mas fica escondido — o nome já aparece nos inputs acima */}
-      <div style={{ display: 'none' }}><span id="pNomeCasa">Mandante</span><span id="pNomeVis">Visitante</span></div>
+      <div style={{ display: 'none' }}><span id="pNomeCasa">Casa</span><span id="pNomeVis">Visitante</span></div>
       <datalist id="timesSug"></datalist>
 
       {/* Alerta time duplicado */}
       <div id="alertaDupTime" style={{ display: 'none', alignItems: 'center', gap: 6, background: 'rgba(224,92,58,.15)', border: '1px solid var(--perigo)', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: 'var(--perigo)', marginBottom: 10 }}>
-        <AlertTriangle size={14} style={{ flexShrink: 0 }} /> Mandante e Visitante não podem ser o mesmo time!
+        <AlertTriangle size={14} style={{ flexShrink: 0 }} /> Casa e Visitante não podem ser o mesmo time!
       </div>
       {/* Alerta jogo duplicado */}
       <div id="alertaDupJogo" style={{ display: 'none', alignItems: 'center', gap: 6, background: 'rgba(245,197,24,.12)', border: '1px solid var(--ouro)', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: 'var(--ouro)', marginBottom: 10 }}>
@@ -174,7 +174,7 @@ export default function AdicionarPartida() {
           <div style={{ flex: 1 }}>
             <label>Quem marcou?</label>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button className="btn-time casa-btn" id="btnCasa" onClick={() => window.addGol?.('casa')}>Mandante</button>
+              <button className="btn-time casa-btn" id="btnCasa" onClick={() => window.addGol?.('casa')}>Casa</button>
               <button className="btn-time vis-btn" id="btnVis" onClick={() => window.addGol?.('vis')}>Visitante</button>
             </div>
           </div>
@@ -182,7 +182,7 @@ export default function AdicionarPartida() {
         <div style={{ fontSize: 10, color: 'var(--texto2)', marginTop: -4, marginBottom: 8 }}>Gol nos acréscimos do 1º tempo: Minuto 45 + Acréscimo (ex: 3) — NÃO digite 48 direto no Minuto, senão ele cai errado no 2º tempo.</div>
         <div className="campo" id="campoVisual"></div>
         <div className="legenda">
-          <div className="legenda-item"><div className="dot dot-c"></div><span id="legCasa">Mandante</span></div>
+          <div className="legenda-item"><div className="dot dot-c"></div><span id="legCasa">Casa</span></div>
           <div className="legenda-item"><div className="dot dot-v"></div><span id="legVis">Visitante</span></div>
           <div style={{ flex: 1 }}></div>
           <span id="contGols" style={{ fontSize: 11, color: 'var(--texto2)' }}>0 gols</span>

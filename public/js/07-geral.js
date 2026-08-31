@@ -109,7 +109,7 @@ function renderGeral(){
 
   document.getElementById('statsExtras').innerHTML=`
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
-      <div class="stat-extra-box" style="text-align:center"><div class="seb-label">Mandante</div><div class="seb-val">${vit}</div><div class="seb-sub">${total?Math.round(vit/total*100):0}%</div></div>
+      <div class="stat-extra-box" style="text-align:center"><div class="seb-label">Casa</div><div class="seb-val">${vit}</div><div class="seb-sub">${total?Math.round(vit/total*100):0}%</div></div>
       <div class="stat-extra-box" style="text-align:center"><div class="seb-label">Empate</div><div class="seb-val">${emp}</div><div class="seb-sub">${total?Math.round(emp/total*100):0}%</div></div>
       <div class="stat-extra-box" style="text-align:center"><div class="seb-label">Visitante</div><div class="seb-val">${der}</div><div class="seb-sub">${total?Math.round(der/total*100):0}%</div></div>
     </div>

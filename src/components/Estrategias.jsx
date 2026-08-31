@@ -407,7 +407,7 @@ export default function Estrategias() {
           <FiltroCard label="Mercado" corAnel="var(--ouro)" valor={mercadoLabel}
             icon={<Goal size={22} color="var(--ouro)" />}
             onClick={() => setSheetAberto('mercado')} />
-          <FiltroCard label="Mandante" corAnel="var(--verde2)" valor={mandanteE}
+          <FiltroCard label="Casa" corAnel="var(--verde2)" valor={mandanteE}
             icon={mandanteE ? <EscudoImg nome={mandanteE} size={36} /> : <Home size={20} color="var(--texto2)" />}
             onClick={() => setSheetAberto('mandante')} />
           <FiltroCard label="Visitante" corAnel="#e05a5a" valor={visitanteE}
@@ -419,7 +419,7 @@ export default function Estrategias() {
           <div className="card">
             <div className="empty">
               <div className="icon"><ShieldHalf size={24} /></div>
-              <p>Escolha um Mandante e um Visitante nos cards acima pra calcular o Score da Estratégia.</p>
+              <p>Escolha um time da Casa e um Visitante nos cards acima pra calcular o Score da Estratégia.</p>
             </div>
           </div>
         ) : !resultado ? (
@@ -568,7 +568,7 @@ export default function Estrategias() {
                 <option value={0}>Temporada (todos os jogos)</option>
               </select>
 
-              <div className="sel-card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Users size={13} /> Mandante Joga</div>
+              <div className="sel-card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Users size={13} /> Casa Joga</div>
               <select value={modoMandanteE} onChange={(e) => setModoMandanteE(e.target.value)} style={{ marginBottom: 10 }}>
                 <option value="ambas">Ambas (casa e fora)</option>
                 <option value="casa">Só em Casa</option>
@@ -617,7 +617,7 @@ export default function Estrategias() {
 
         {/* Card "Mandante" e "Visitante" — lista de times */}
         {sheetAberto === 'mandante' && (
-          <SeletorSheet titulo="Escolha o Mandante" valorAtual={mandanteE} onFechar={() => setSheetAberto(null)}
+          <SeletorSheet titulo="Escolha a Casa" valorAtual={mandanteE} onFechar={() => setSheetAberto(null)}
             onSelecionar={setMandanteE}
             opcoes={times.filter((t) => t !== visitanteE).map((t) => ({ value: t, label: t, icon: <EscudoImg nome={t} size={22} /> }))} />
         )}

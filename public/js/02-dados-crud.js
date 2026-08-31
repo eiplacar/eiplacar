@@ -172,7 +172,7 @@ async function confirmarEdicaoJogo(){
   if(!pais){ toast('Informe o país!'); return; }
   if(!data){ toast('Informe a data!'); return; }
   if(!casa || !vis){ toast('Informe os dois times!'); return; }
-  if(casa===vis){ toast('Mandante e visitante não podem ser o mesmo time!'); return; }
+  if(casa===vis){ toast('Casa e visitante não podem ser o mesmo time!'); return; }
 
   const conflitoPais = jogosCache.find(j=>j.camp===camp && j.pais && j.pais!==pais && j.id!==jogoEditandoId);
   if(conflitoPais){ toast(`"${camp}" já está cadastrado como ${conflitoPais.pais}. Use um nome diferente pra este campeonato.`, true); return; }

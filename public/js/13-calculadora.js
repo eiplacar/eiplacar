@@ -17,7 +17,7 @@ function popularTimesLigaEntrada(){
   const times = [...new Set(jogosCache.filter(j=>j.camp===liga).flatMap(j=>[j.casa,j.vis]))].sort();
   if(!times.length){ wrap.style.display='none'; return; }
   const valM = selM.value, valV = selV.value;
-  selM.innerHTML = '<option value="">Mandante</option>' + times.map(t=>`<option value="${t}">${t}</option>`).join('');
+  selM.innerHTML = '<option value="">Casa</option>' + times.map(t=>`<option value="${t}">${t}</option>`).join('');
   selV.innerHTML = '<option value="">Visitante</option>' + times.map(t=>`<option value="${t}">${t}</option>`).join('');
   if(times.includes(valM)) selM.value = valM;
   if(times.includes(valV)) selV.value = valV;
@@ -319,7 +319,7 @@ async function lancarEntrada(){
   const operacao = document.getElementById('eOperacao')?.value || 'bet';
   const desc     = mercado + (times?' · '+times:'') + (liga?' · '+liga:'');
   const res      = document.getElementById('eResultado').value;
-  if(!times){ toast('Informe o Jogo (Mandante × Visitante)'); return; }
+  if(!times){ toast('Informe o Jogo (Casa × Visitante)'); return; }
   if(!res)  { toast('Selecione o resultado'); return; }
 
   // Sistema: valor investido e lucro são digitados direto, sem % da banca nem odd.
@@ -413,9 +413,10 @@ async function lancarEntrada(){
   retornoEditadoManualmente = false;
   const mjEl=document.getElementById('mesmoJogoCheck'); if(mjEl) mjEl.checked=false;
   const erEl=document.getElementById('eResultado'); if(erEl) erEl.value='';
-  const selM=document.getElementById('eMandanteSel'); if(selM) selM.innerHTML='<option value="">Mandante</option>';
-  const selV=document.getElementById('eVisitanteSel'); if(selV) selV.innerHTML='<option value="">Visitante</option>';
+  const selM=document.getElementById('eMandanteSel'); if(selM) selM.value='';
+  const selV=document.getElementById('eVisitanteSel'); if(selV) selV.value='';
   const wrapJogo=document.getElementById('blocoJogoEntrada'); if(wrapJogo) wrapJogo.style.display='none';
+  window.novaEntradaResetarSelecaoTimes?.(); // limpa o estado React do seletor de Mandante/Visitante (bottom-sheet com escudo)
   setOperacao('bet');
   setTipoEntrada('prelive');
   pernas = [];
@@ -522,7 +523,7 @@ function salvarEdicaoEntrada(){
   const novaData     = document.getElementById('editEData').value || antiga.data;
 
   if(!novoMercado){ toast('Informe o mercado'); return; }
-  if(!novoTimes){ toast('Informe o Jogo (Mandante × Visitante)'); return; }
+  if(!novoTimes){ toast('Informe o Jogo (Casa × Visitante)'); return; }
   if(!novoOdd)     { toast('Informe a odd'); return; }
   if(!novoStakeInformado || novoStakeInformado<=0) { toast('Informe o valor apostado'); return; }
 

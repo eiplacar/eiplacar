@@ -103,7 +103,7 @@ export default function SeletorMercado({ aberto, operacao = 'bet', onFechar, onS
     if (passo === 'backlay') { setPasso(categoria === 'outros' ? 'outros' : 'mercados'); return; }
   }
 
-  const labelMandante = mandante || 'Mandante';
+  const labelMandante = mandante || 'Casa';
   const labelVisitante = visitante || 'Visitante';
 
   const botoesResultado = [
