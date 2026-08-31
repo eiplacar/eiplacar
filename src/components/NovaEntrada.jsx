@@ -95,6 +95,17 @@ export default function NovaEntrada() {
   function escolherMandante(nome) { setMandante(nome); sincronizarCamposOcultos(nome, visitante); }
   function escolherVisitante(nome) { setVisitante(nome); sincronizarCamposOcultos(mandante, nome); }
 
+  // Rede de segurança: sempre que Mandante/Visitante mudarem (ou o campo #eTimes for
+  // recriado do zero — ex.: quando o usuário mexe na Liga e o formulário alterna entre
+  // o campo de texto livre e os botões com escudo, o que troca o nó do DOM e perde
+  // qualquer valor setado antes), re-sincroniza pra garantir que #eTimes nunca fique
+  // desatualizado em relação ao que já foi escolhido. Isso corrige o bug de "Salvar
+  // Operação" pedindo pra selecionar o time mesmo com Casa/Visitante já preenchidos.
+  useEffect(() => {
+    if (mandante || visitante) sincronizarCamposOcultos(mandante, visitante);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mandante, visitante, timesDaLiga.length]);
+
   // Ponte pra 13-calculadora.js: depois de salvar a operação, o form inteiro é limpo
   // (inclusive na mão, via DOM) — isso avisa esse componente React pra limpar a seleção
   // de Mandante/Visitante/Liga junto, senão o botão continuava mostrando o time antigo.
