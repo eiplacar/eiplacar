@@ -165,28 +165,35 @@ export default function NovaEntrada() {
           mesmo padrão da aba Análise. Sem isso, cai no campo de texto livre de sempre. */}
       <div style={{ marginBottom: 12 }}>
         <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Shield size={13} /> Jogo (Casa × Visitante)</label>
-        {timesDaLiga.length > 0 ? (
-          <>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 8 }}>
-              <button type="button" onClick={() => setSeletorTimeAberto('mandante')}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 8, padding: '8px', cursor: 'pointer', textAlign: 'left' }}>
-                <EscudoImg nome={mandante} />
-                <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: mandante ? 'var(--texto)' : 'var(--texto2)', fontSize: 12, fontWeight: 700 }}>{mandante || 'Casa'}</span>
-              </button>
-              <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--texto2)' }}>×</div>
-              <button type="button" onClick={() => setSeletorTimeAberto('visitante')}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 8, padding: '8px', cursor: 'pointer', textAlign: 'right', justifyContent: 'flex-end' }}>
-                <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: visitante ? 'var(--texto)' : 'var(--texto2)', fontSize: 12, fontWeight: 700 }}>{visitante || 'Visitante'}</span>
-                <EscudoImg nome={visitante} />
-              </button>
-            </div>
-            {/* #eTimes continua existindo no DOM (lancarEntrada/editarEntrada leem ele direto
-                pra valer) — só fica escondido aqui porque os botões acima já mostram tudo. */}
-            <input type="hidden" id="eTimes" defaultValue="" />
-          </>
-        ) : (
-          <input type="text" id="eTimes" placeholder="Ex: Botafogo-SP × Avaí" onInput={() => window.atualizarResumoEntrada?.()} />
+        {timesDaLiga.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+            <button type="button" onClick={() => setSeletorTimeAberto('mandante')}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 8, padding: '8px', cursor: 'pointer', textAlign: 'left' }}>
+              <EscudoImg nome={mandante} />
+              <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: mandante ? 'var(--texto)' : 'var(--texto2)', fontSize: 12, fontWeight: 700 }}>{mandante || 'Casa'}</span>
+            </button>
+            <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--texto2)' }}>×</div>
+            <button type="button" onClick={() => setSeletorTimeAberto('visitante')}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 8, padding: '8px', cursor: 'pointer', textAlign: 'right', justifyContent: 'flex-end' }}>
+              <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: visitante ? 'var(--texto)' : 'var(--texto2)', fontSize: 12, fontWeight: 700 }}>{visitante || 'Visitante'}</span>
+              <EscudoImg nome={visitante} />
+            </button>
+          </div>
         )}
+        {/* #eTimes é SEMPRE o mesmo elemento (só troca o "type" e o placeholder) —
+            antes ele vivia dentro de um if/else que trocava entre <>fragmento+botões</> e
+            um <input> solto; toda vez que a Liga alternava entre "times conhecidos" e
+            "texto livre", o React via isso como DOIS elementos diferentes e recriava o
+            campo do ZERO, apagando o valor que já tinha sido preenchido pelos botões
+            (o time "desmarcava"). Mantendo sempre o mesmo <input>, o React só atualiza o
+            atributo type/placeholder e o valor nunca se perde. */}
+        <input
+          type={timesDaLiga.length > 0 ? 'hidden' : 'text'}
+          id="eTimes"
+          placeholder="Ex: Botafogo-SP × Avaí"
+          defaultValue=""
+          onInput={() => window.atualizarResumoEntrada?.()}
+        />
       </div>
       <input type="hidden" id="eMandanteSel" defaultValue="" />
       <input type="hidden" id="eVisitanteSel" defaultValue="" />
