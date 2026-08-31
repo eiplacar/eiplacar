@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Target, Dice5, Plus, Circle, TrendingUp, Wallet, CheckCircle2, Trophy, Shield, ArrowLeftRight, Coins, PiggyBank, ShieldQuestion, X, Check } from 'lucide-react';
+import { Target, Dice5, Plus, Circle, TrendingUp, Wallet, CheckCircle2, Trophy, Shield, ArrowLeftRight, Coins, PiggyBank } from 'lucide-react';
 import SeletorMercado from './SeletorMercado';
 
 // ══ Nova Entrada (sub-aba "Registrar Operação" dentro de Apostas) ══
@@ -25,94 +25,35 @@ import SeletorMercado from './SeletorMercado';
 //   - Nova seção "Operação": Bet ou Exchange
 //   - Novo campo "Retorno" (calculado sozinho: stake + lucro), com legenda pequena
 //   - Resultado agora é Green / Red / Void / Cash Out (era Green/Red/Void/Cancelado)
-
-// Escudo do time — mesmo padrão usado na aba Análise/Classificação/Estratégias.
-function EscudoImg({ nome, size = 20 }) {
-  const url = window.getEscudo ? window.getEscudo(nome) : null;
-  if (url) return <img src={url} alt="" style={{ width: size, height: size, objectFit: 'contain', flexShrink: 0 }} />;
-  return <ShieldQuestion size={size * 0.8} color="var(--texto2)" style={{ flexShrink: 0 }} />;
-}
-
-// Bottom-sheet com busca + escudo de cada time no seletor — mesmo componente/padrão
-// usado na aba Análise (SeletorAnalise.jsx) e Estratégias, pra escolher Mandante/Visitante
-// sem precisar rolar um <select> nativo sem escudo nenhum.
-function SeletorTimeSheet({ titulo, times, valorAtual, onSelecionar, onFechar }) {
-  const [busca, setBusca] = useState('');
-  const filtrados = busca ? times.filter((t) => t.toLowerCase().includes(busca.toLowerCase())) : times;
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 300, display: 'flex', alignItems: 'flex-end' }} onClick={onFechar}>
-      <div style={{ background: 'var(--c2)', width: '100%', maxHeight: '78vh', borderRadius: '16px 16px 0 0', padding: '14px 16px 20px', overflowY: 'auto', borderTop: '1px solid var(--c3)' }} onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-          <div style={{ fontWeight: 700, fontSize: 14 }}>{titulo}</div>
-          <button type="button" onClick={onFechar} style={{ background: 'none', border: 'none', color: 'var(--texto2)', padding: 4, cursor: 'pointer' }}><X size={20} /></button>
-        </div>
-        {times.length > 8 && (
-          <input autoFocus placeholder="Buscar time..." value={busca} onChange={(e) => setBusca(e.target.value)} style={{ width: '100%', marginBottom: 10 }} />
-        )}
-        <div>
-          {filtrados.map((t) => (
-            <div key={t} onClick={() => { onSelecionar(t); onFechar(); }}
-              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 6px', borderBottom: '1px solid var(--c3)', cursor: 'pointer', borderRadius: 6, background: t === valorAtual ? 'rgba(77,216,122,0.08)' : 'transparent' }}>
-              <EscudoImg nome={t} size={24} />
-              <span style={{ flex: 1, fontSize: 13.5 }}>{t}</span>
-              {t === valorAtual && <Check size={16} color="var(--verde2)" />}
-            </div>
-          ))}
-          {!filtrados.length && <div style={{ textAlign: 'center', color: 'var(--texto2)', padding: 20, fontSize: 13 }}>Nada encontrado.</div>}
-        </div>
-      </div>
-    </div>
-  );
-}
+//   - Jogo (Casa × Visitante): voltou a ser um campo de texto livre simples (com
+//     sugestões via datalist pra facilitar). O seletor guiado com escudo (botões
+//     Casa/Visitante + bottom-sheet) foi removido — ele ficava recriando o campo
+//     #eTimes do zero toda vez que a Liga mudava, fazendo o time escolhido "sumir"
+//     bem na hora de salvar a operação.
 
 export default function NovaEntrada() {
   const [seletorAberto, setSeletorAberto] = useState(false);
   const [seletorOperacao, setSeletorOperacao] = useState('bet');
   const [operacaoAtual, setOperacaoAtual] = useState('bet'); // fonte única da verdade pro campo #eOperacao — ver input controlado abaixo
-  const [liga, setLiga] = useState(''); // sincronizado do #eLiga (não-controlado) só pra filtrar a lista de times do seletor
-  const [mandante, setMandante] = useState('');
-  const [visitante, setVisitante] = useState('');
-  const [seletorTimeAberto, setSeletorTimeAberto] = useState(null); // null | 'mandante' | 'visitante'
+  const [liga, setLiga] = useState(''); // sincronizado do #eLiga (não-controlado) só pra montar a lista de sugestões (datalist) do campo Jogo
 
   const jogosCache = window.jogosCache || [];
-  const timesDaLiga = useMemo(() => {
+  // Sugestões de "Casa × Visitante" pra essa Liga (datalist) — só facilita digitar/
+  // identificar, não trava nada: o campo continua sendo texto livre sempre.
+  const jogosSugeridos = useMemo(() => {
     if (!liga) return [];
-    return [...new Set(jogosCache.filter((j) => j.camp === liga).flatMap((j) => [j.casa, j.vis]))].sort();
+    return [...new Set(jogosCache.filter((j) => j.camp === liga).map((j) => `${j.casa} × ${j.vis}`))].sort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [liga, jogosCache.length]);
 
-  // Escreve "Mandante × Visitante" direto no campo #eTimes de verdade (o mesmo de
-  // sempre, continua não-controlado — é ele que lancarEntrada/editarEntrada leem pra
-  // valer) e nos inputs escondidos #eMandanteSel/#eVisitanteSel, mantidos só pra
-  // compatibilidade com SeletorMercado.jsx, que ainda lê esses ids direto do DOM.
-  function sincronizarCamposOcultos(novoMandante, novoVisitante) {
-    const eTimes = document.getElementById('eTimes');
-    if (eTimes) eTimes.value = (novoMandante && novoVisitante) ? `${novoMandante} × ${novoVisitante}` : (novoMandante || novoVisitante || '');
-    const selM = document.getElementById('eMandanteSel'); if (selM) selM.value = novoMandante;
-    const selV = document.getElementById('eVisitanteSel'); if (selV) selV.value = novoVisitante;
-    window.atualizarResumoEntrada?.();
+  // Só pra alimentar os botões de "Resultado" do Seletor de Mercado guiado (que mostra
+  // "Vitória do Botafogo" em vez de um texto genérico) — tenta separar o que foi digitado
+  // em #eTimes pelo "×". Não trava nada se não conseguir separar (times fica só o texto puro).
+  function sincronizarSelsDeResultado(textoTimes) {
+    const partes = textoTimes.split('×').map((p) => p.trim()).filter(Boolean);
+    const selM = document.getElementById('eMandanteSel'); if (selM) selM.value = partes[0] || '';
+    const selV = document.getElementById('eVisitanteSel'); if (selV) selV.value = partes[1] || '';
   }
-  function escolherMandante(nome) { setMandante(nome); sincronizarCamposOcultos(nome, visitante); }
-  function escolherVisitante(nome) { setVisitante(nome); sincronizarCamposOcultos(mandante, nome); }
-
-  // Rede de segurança: sempre que Mandante/Visitante mudarem (ou o campo #eTimes for
-  // recriado do zero — ex.: quando o usuário mexe na Liga e o formulário alterna entre
-  // o campo de texto livre e os botões com escudo, o que troca o nó do DOM e perde
-  // qualquer valor setado antes), re-sincroniza pra garantir que #eTimes nunca fique
-  // desatualizado em relação ao que já foi escolhido. Isso corrige o bug de "Salvar
-  // Operação" pedindo pra selecionar o time mesmo com Casa/Visitante já preenchidos.
-  useEffect(() => {
-    if (mandante || visitante) sincronizarCamposOcultos(mandante, visitante);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mandante, visitante, timesDaLiga.length]);
-
-  // Ponte pra 13-calculadora.js: depois de salvar a operação, o form inteiro é limpo
-  // (inclusive na mão, via DOM) — isso avisa esse componente React pra limpar a seleção
-  // de Mandante/Visitante/Liga junto, senão o botão continuava mostrando o time antigo.
-  useEffect(() => {
-    window.novaEntradaResetarSelecaoTimes = () => { setLiga(''); setMandante(''); setVisitante(''); };
-    return () => { delete window.novaEntradaResetarSelecaoTimes; };
-  }, []);
 
   // Clicar em Bet ou Exchange já define a Operação (função de sempre, window.setOperacao,
   // que só cuida do visual dos botões — o valor de verdade vive aqui, no estado do React)
@@ -165,45 +106,22 @@ export default function NovaEntrada() {
           mesmo padrão da aba Análise. Sem isso, cai no campo de texto livre de sempre. */}
       <div style={{ marginBottom: 12 }}>
         <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Shield size={13} /> Jogo (Casa × Visitante)</label>
-        {timesDaLiga.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-            <button type="button" onClick={() => setSeletorTimeAberto('mandante')}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 8, padding: '8px', cursor: 'pointer', textAlign: 'left' }}>
-              <EscudoImg nome={mandante} />
-              <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: mandante ? 'var(--texto)' : 'var(--texto2)', fontSize: 12, fontWeight: 700 }}>{mandante || 'Casa'}</span>
-            </button>
-            <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--texto2)' }}>×</div>
-            <button type="button" onClick={() => setSeletorTimeAberto('visitante')}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 8, padding: '8px', cursor: 'pointer', textAlign: 'right', justifyContent: 'flex-end' }}>
-              <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: visitante ? 'var(--texto)' : 'var(--texto2)', fontSize: 12, fontWeight: 700 }}>{visitante || 'Visitante'}</span>
-              <EscudoImg nome={visitante} />
-            </button>
-          </div>
-        )}
-        {/* #eTimes é SEMPRE o mesmo elemento (só troca o "type" e o placeholder) —
-            antes ele vivia dentro de um if/else que trocava entre <>fragmento+botões</> e
-            um <input> solto; toda vez que a Liga alternava entre "times conhecidos" e
-            "texto livre", o React via isso como DOIS elementos diferentes e recriava o
-            campo do ZERO, apagando o valor que já tinha sido preenchido pelos botões
-            (o time "desmarcava"). Mantendo sempre o mesmo <input>, o React só atualiza o
-            atributo type/placeholder e o valor nunca se perde. */}
+        {/* Campo de texto livre, sempre — sem botão nem seletor de escudo (isso já causou
+            bugs de sincronização). A lista de sugestões (datalist) só ajuda a identificar
+            e digitar mais rápido; nunca trava nem exige nada além do texto. */}
         <input
-          type={timesDaLiga.length > 0 ? 'hidden' : 'text'}
+          type="text"
           id="eTimes"
+          list="jogosSugEntrada"
           placeholder="Ex: Botafogo-SP × Avaí"
-          defaultValue=""
-          onInput={() => window.atualizarResumoEntrada?.()}
+          onInput={(e) => { sincronizarSelsDeResultado(e.target.value); window.atualizarResumoEntrada?.(); }}
         />
+        <datalist id="jogosSugEntrada">
+          {jogosSugeridos.map((j) => <option key={j} value={j} />)}
+        </datalist>
       </div>
       <input type="hidden" id="eMandanteSel" defaultValue="" />
       <input type="hidden" id="eVisitanteSel" defaultValue="" />
-
-      {seletorTimeAberto === 'mandante' && (
-        <SeletorTimeSheet titulo="Escolha a Casa" times={timesDaLiga} valorAtual={mandante} onSelecionar={escolherMandante} onFechar={() => setSeletorTimeAberto(null)} />
-      )}
-      {seletorTimeAberto === 'visitante' && (
-        <SeletorTimeSheet titulo="Escolha o Visitante" times={timesDaLiga} valorAtual={visitante} onSelecionar={escolherVisitante} onFechar={() => setSeletorTimeAberto(null)} />
-      )}
 
       {/* Tipo de Aposta (chips) */}
       <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}><Dice5 size={13} /> Tipo de Aposta</label>

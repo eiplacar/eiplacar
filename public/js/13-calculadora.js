@@ -433,7 +433,6 @@ async function lancarEntrada(){
   const selM=document.getElementById('eMandanteSel'); if(selM) selM.value='';
   const selV=document.getElementById('eVisitanteSel'); if(selV) selV.value='';
   const wrapJogo=document.getElementById('blocoJogoEntrada'); if(wrapJogo) wrapJogo.style.display='none';
-  window.novaEntradaResetarSelecaoTimes?.(); // limpa o estado React do seletor de Mandante/Visitante (bottom-sheet com escudo)
   setOperacao('bet');
   setTipoEntrada('prelive');
   pernas = [];
