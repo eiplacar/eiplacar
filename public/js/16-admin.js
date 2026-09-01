@@ -152,6 +152,26 @@ async function cancelarAssinaturaTela(){
 }
 window.cancelarAssinaturaTela = cancelarAssinaturaTela;
 
+// Traduz o status_detail que o Mercado Pago devolve (motivo específico da recusa) pra
+// uma mensagem que ajuda a pessoa a agir, em vez do "não aprovado" genérico de antes.
+function mensagemRecusaCartao(statusDetail){
+  const mapa = {
+    cc_rejected_insufficient_amount: 'Cartão sem limite/saldo suficiente para esse valor.',
+    cc_rejected_bad_filled_card_number: 'Número do cartão digitado errado. Confira e tente de novo.',
+    cc_rejected_bad_filled_date: 'Data de validade do cartão digitada errada.',
+    cc_rejected_bad_filled_security_code: 'Código de segurança (CVV) digitado errado.',
+    cc_rejected_bad_filled_other: 'Algum dado do cartão foi digitado errado. Confira e tente de novo.',
+    cc_rejected_call_for_authorize: 'Seu banco pediu autorização manual para essa compra — ligue pro banco ou tente outro cartão.',
+    cc_rejected_card_disabled: 'Esse cartão está desabilitado para compras online. Ligue pro banco ou tente outro cartão.',
+    cc_rejected_duplicated_payment: 'Já existe um pagamento igual a esse recente — se não foi você tentando de novo, aguarde um pouco.',
+    cc_rejected_high_risk: 'O Mercado Pago recusou por segurança (análise de risco). Tente outro cartão ou meio de pagamento.',
+    cc_rejected_max_attempts: 'Muitas tentativas com esse cartão. Aguarde um pouco ou tente outro.',
+    cc_rejected_invalid_installments: 'Número de parcelas inválido para esse cartão.',
+    cc_rejected_other_reason: 'O banco recusou sem informar o motivo. Tente outro cartão.',
+  };
+  return mapa[statusDetail] || 'Pagamento não aprovado pelo Mercado Pago. Tente novamente ou use outro cartão.';
+}
+
 // ══ VOLTA DO CHECKOUT (Checkout Pro — cartão, Pix, boleto etc.) ══
 // O Mercado Pago devolve a pessoa pra APP_URL com ?payment_id=...&status=...
 // na URL depois de pagar (ver back_urls/auto_return em criar-assinatura.js).
@@ -160,7 +180,7 @@ window.cancelarAssinaturaTela = cancelarAssinaturaTela;
 async function verificarRetornoPagamentoCartao(){
   const params = new URLSearchParams(window.location.search);
   const paymentId = params.get('payment_id') || params.get('collection_id');
-  const status = params.get('status') || params.get('collection_status');
+  const statusUrl = params.get('status') || params.get('collection_status');
   if(!paymentId) return; // não voltou de um checkout — nada a fazer
 
   // Limpa a URL pra não tentar checar de novo se a pessoa recarregar a página.
@@ -170,18 +190,15 @@ async function verificarRetornoPagamentoCartao(){
     window.history.replaceState({}, '', url.toString());
   } catch {}
 
-  if(status === 'rejected'){
-    toast('Pagamento não aprovado pelo Mercado Pago. Tente novamente ou use outro cartão.', true);
-    return;
-  }
-  if(status === 'pending' || status === 'in_process'){
-    toast('Pagamento em análise. Assim que for aprovado, seu acesso é liberado automaticamente.');
-    return;
-  }
-
   try {
     const sessao = authGetSessao();
-    if(!sessao?.access_token) return; // sem sessão aqui não tem como validar — o webhook ainda libera sozinho
+    if(!sessao?.access_token){
+      // Sem sessão aqui não tem como confirmar direto — cai pra mensagem genérica
+      // baseada só no status da URL (o webhook ainda libera o acesso sozinho).
+      if(statusUrl === 'rejected') toast('Pagamento não aprovado pelo Mercado Pago. Tente novamente ou use outro cartão.', true);
+      else if(statusUrl === 'pending' || statusUrl === 'in_process') toast('Pagamento em análise. Assim que for aprovado, seu acesso é liberado automaticamente.');
+      return;
+    }
     const res = await fetch('/.netlify/functions/verificar-pagamento-pix', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sessao.access_token },
@@ -192,6 +209,10 @@ async function verificarRetornoPagamentoCartao(){
       await window.perfilAtualRecarregarAssinatura?.();
       toast('Pagamento confirmado! Seu acesso já está liberado.');
       goTo('geral');
+    } else if(data.status === 'rejected'){
+      toast(mensagemRecusaCartao(data.status_detail), true);
+    } else if(data.status === 'pending' || data.status === 'in_process'){
+      toast('Pagamento em análise. Assim que for aprovado, seu acesso é liberado automaticamente.');
     }
   } catch {} // erro passageiro — o webhook é o reforço pra liberar de qualquer forma
 }

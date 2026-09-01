@@ -125,6 +125,12 @@ export const handler = async function (event) {
     const dataMp = await resMp.json();
     if (!resMp.ok) return resposta(502, { erro: 'Mercado Pago recusou a consulta' });
 
+    // status_detail é o motivo específico da recusa (cc_rejected_high_risk,
+    // cc_rejected_insufficient_amount, cc_rejected_bad_filled_security_code etc.) — fica
+    // registrado aqui mesmo quando NÃO aprova, pra dar pra investigar cartão recusado
+    // sem precisar caçar no painel do Mercado Pago.
+    console.log('Pagamento consultado pela tela:', { id: dataMp.id, status: dataMp.status, status_detail: dataMp.status_detail, payment_method_id: dataMp.payment_method_id, external_reference: dataMp.external_reference });
+
     if (dataMp.status === 'approved' && dataMp.external_reference) {
       // dias/plano vêm do metadata gravado na hora de criar o pagamento
       // (Pix avulso ou cartão via Checkout Pro — ver comentário no topo).
@@ -142,7 +148,7 @@ export const handler = async function (event) {
       console.log('Pagamento único liberado via checagem da tela:', { userId: dataMp.external_reference, paymentId: dataMp.id, dias, plano, meio: dataMp.payment_method_id, ok });
     }
 
-    return resposta(200, { status: dataMp.status });
+    return resposta(200, { status: dataMp.status, status_detail: dataMp.status_detail });
   } catch (e) {
     return resposta(502, { erro: 'Erro ao falar com o Mercado Pago: ' + e.message });
   }

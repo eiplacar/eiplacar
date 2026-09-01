@@ -206,7 +206,11 @@ export const handler = async function (event) {
     if (tipo === 'payment') {
       const { ok, data } = await mpFetch(`/v1/payments/${id}`, mpToken);
       if (!ok) { console.log('Pagamento não encontrado na API do MP:', id); return resposta(200); }
-      console.log('Pagamento avulso consultado:', { id, status: data.status, payment_method_id: data.payment_method_id, external_reference: data.external_reference, metadata: data.metadata });
+      // status_detail é o motivo específico da recusa (cc_rejected_high_risk,
+      // cc_rejected_insufficient_amount, cc_rejected_bad_filled_security_code etc.) — o
+      // Mercado Pago recomenda checar esse campo pra entender de verdade por que um
+      // cartão foi recusado, em vez de só olhar o "Recusado" genérico da tela.
+      console.log('Pagamento avulso consultado:', { id, status: data.status, status_detail: data.status_detail, payment_method_id: data.payment_method_id, external_reference: data.external_reference, metadata: data.metadata });
 
       if (data.status === 'approved' && data.external_reference) {
         // dias/plano vêm do metadata gravado na hora de criar o pagamento
