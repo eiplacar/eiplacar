@@ -22,8 +22,10 @@
 // Variáveis de ambiente necessárias (painel da Netlify):
 //   MP_ACCESS_TOKEN       → Access Token do Mercado Pago (teste ou produção)
 //   SUPABASE_URL          → mesma URL do public/js/01-config-auth.js
-//   SUPABASE_ANON_KEY     → chave "anon" do Supabase (Settings → API) — só
-//                            usada aqui pra validar o token de quem chamou.
+//   SUPABASE_ANON_KEY     → chave "anon" do Supabase (Settings → API) — usada
+//                            aqui pra validar o token de quem chamou e buscar
+//                            nome/telefone do perfil (mandados pro Mercado Pago
+//                            junto com o pagamento, pra ajudar a aprovação).
 //   APP_URL                → URL pública do app (ex: https://eiplacar.netlify.app),
 //                            pra onde o Mercado Pago devolve a pessoa depois de pagar.
 //                            PRECISA ser https:// (Mercado Pago recusa back_url http/localhost
@@ -96,18 +98,46 @@ export const handler = async function (event) {
   } catch {}
   if (!preco || preco <= 0) return resposta(500, { erro: 'Preço do plano não configurado (Administração → Sistema).' });
 
+  // Nome e telefone do perfil — o Mercado Pago recomenda mandar o máximo de dados
+  // possível do comprador (documentação: "Como melhorar a aprovação dos pagamentos"),
+  // porque isso ajuda a análise antifraude a confiar mais na transação. Busca opcional:
+  // se falhar ou faltar telefone/nome, segue sem eles (só o e-mail já é obrigatório).
+  let nome = '', sobrenome = '', telefoneArea = '', telefoneNumero = '';
+  try {
+    const resPerfil = await fetch(`${supaUrl.replace(/\/$/, '')}/rest/v1/perfis?id=eq.${usuario.id}&select=nome,telefone`, {
+      headers: { apikey: supaAnonKey, Authorization: `Bearer ${token}` },
+    });
+    const dataPerfil = resPerfil.ok ? await resPerfil.json() : [];
+    const perfil = dataPerfil?.[0] || {};
+    if (perfil.nome) {
+      const partes = perfil.nome.trim().split(/\s+/);
+      nome = partes[0] || '';
+      sobrenome = partes.slice(1).join(' ') || '';
+    }
+    const digitos = (perfil.telefone || '').replace(/\D/g, '');
+    if (digitos.length >= 10) { telefoneArea = digitos.slice(0, 2); telefoneNumero = digitos.slice(2); }
+  } catch {}
+
   // Cria a preferência de PAGAMENTO ÚNICO (Checkout Pro) — a pessoa escolhe
   // cartão, Pix, boleto etc. na página segura do Mercado Pago e paga uma
   // vez só. Sem "auto_recurring", sem preapproval: nada fica agendado pra
   // cobrar de novo no futuro.
   const corpo = {
     items: [{
+      id: `plano-${planoId}`,
       title: `EI PLACAR — Plano ${plano.nome} (${plano.dias} dias, pagamento único)`,
+      description: `Acesso à plataforma EI PLACAR por ${plano.dias} dias — plano ${plano.nome}`,
+      category_id: 'services', // ajuda a análise de risco a entender o tipo de produto (ver "Como melhorar a aprovação dos pagamentos" na doc do Mercado Pago)
       quantity: 1,
       unit_price: Number(preco),
       currency_id: 'BRL',
     }],
-    payer: { email: usuario.email },
+    payer: {
+      email: usuario.email,
+      ...(nome ? { name: nome } : {}),
+      ...(sobrenome ? { surname: sobrenome } : {}),
+      ...(telefoneArea ? { phone: { area_code: telefoneArea, number: telefoneNumero } } : {}),
+    },
     external_reference: usuario.id, // usado no webhook/verificação pra saber de quem é o pagamento
     metadata: { plano_id: planoId, dias: plano.dias }, // usado no webhook/verificação pra saber quantos dias liberar
     back_urls: {
