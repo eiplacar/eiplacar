@@ -613,8 +613,16 @@ function authAplicarTela(){
   authVerificarBloqueio();
 }
 async function authVerificarBloqueio(){
+  const sessao = authGetSessao();
+  const uid = sessao?.user?.id;
+  if(!uid) return;
   try {
-    const res = await fetch(sbUrlPerfis('?select=bloqueado'), { headers: sbHeaders() });
+    // Filtro por id explícito — sem isso, dependia só da RLS devolver "a própria
+    // linha" e pegar data[0], que é frágil (a ordem de retorno sem "order=" não é
+    // garantida). Com a RLS mais restrita (auditoria de segurança, achado SEC-004),
+    // um organizador consultando sem filtro veria todo mundo — esse filtro deixa
+    // sempre explícito que é só a própria linha, não importa quem está logado.
+    const res = await fetch(sbUrlPerfis('?id=eq.'+uid+'&select=bloqueado'), { headers: sbHeaders() });
     if(!res.ok) return;
     const data = await res.json();
     if(data && data[0] && data[0].bloqueado){

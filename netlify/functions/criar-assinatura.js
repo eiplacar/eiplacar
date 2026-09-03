@@ -26,6 +26,11 @@
 //                            aqui pra validar o token de quem chamou e buscar
 //                            nome/telefone do perfil (mandados pro Mercado Pago
 //                            junto com o pagamento, pra ajudar a aprovação).
+//   SUPABASE_SERVICE_KEY  → chave "service_role" do Supabase — OPCIONAL, só
+//                            usada pro controle de rate limiting (achado
+//                            SEC-006 da auditoria de segurança). Sem essa
+//                            variável, a function funciona normalmente, só
+//                            sem esse limite de tentativas.
 //   APP_URL                → URL pública do app (ex: https://eiplacar.netlify.app),
 //                            pra onde o Mercado Pago devolve a pessoa depois de pagar.
 //                            PRECISA ser https:// (Mercado Pago recusa back_url http/localhost
@@ -43,6 +48,35 @@ const PLANOS = {
 
 function resposta(statusCode, corpo) {
   return { statusCode, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo) };
+}
+
+// Rate limiting simples via tabela no Supabase (ver supabase/14-rate-limiting.sql)
+// — auditoria de segurança, achado SEC-006. Conta quantas chamadas recentes
+// existem com essa chave (ex: "criar-assinatura:<uuid>"); se passar do
+// limite, devolve false. Se der qualquer erro de rede/banco, deixa passar
+// (não trava pagamento de ninguém por causa de instabilidade momentânea do
+// controle de limite — que é só uma camada extra, não a proteção principal).
+async function dentroDoLimite({ supaUrl, supaServiceKey, chave, maxChamadas, janelaSegundos }) {
+  try {
+    const base = supaUrl.replace(/\/$/, '');
+    const headers = { apikey: supaServiceKey, Authorization: `Bearer ${supaServiceKey}` };
+    const desde = new Date(Date.now() - janelaSegundos * 1000).toISOString();
+    const resContagem = await fetch(`${base}/rest/v1/rate_limit_chamadas?chave=eq.${encodeURIComponent(chave)}&criado_em=gte.${desde}&select=id`, {
+      headers: { ...headers, Prefer: 'count=exact' },
+    });
+    if (!resContagem.ok) return true; // tabela pode não existir ainda (14-rate-limiting.sql não rodado) — não trava por isso
+    const contentRange = resContagem.headers.get('content-range'); // formato "0-4/6"
+    const total = contentRange ? parseInt(contentRange.split('/')[1], 10) || 0 : 0;
+    if (total >= maxChamadas) return false;
+    await fetch(`${base}/rest/v1/rate_limit_chamadas`, {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chave }),
+    });
+    return true;
+  } catch {
+    return true;
+  }
 }
 
 export const handler = async function (event) {
@@ -84,6 +118,18 @@ export const handler = async function (event) {
     return resposta(401, { erro: 'Não foi possível validar a sessão: ' + e.message });
   }
   if (!usuario?.id || !usuario?.email) return resposta(401, { erro: 'Sessão inválida' });
+
+  // Rate limiting — auditoria de segurança, achado SEC-006. Limita quantas
+  // tentativas de pagamento a mesma pessoa pode iniciar em pouco tempo, pra
+  // evitar abuso/spam desse endpoint (cada chamada cria uma preferência de
+  // verdade na API do Mercado Pago). OPCIONAL: se SUPABASE_SERVICE_KEY não
+  // estiver configurado, essa checagem é pulada sem travar nada — configure
+  // a variável pra ativar essa proteção extra.
+  const supaServiceKey = process.env.SUPABASE_SERVICE_KEY;
+  if (supaServiceKey) {
+    const dentro = await dentroDoLimite({ supaUrl, supaServiceKey, chave: `criar-assinatura:${usuario.id}`, maxChamadas: 6, janelaSegundos: 60 });
+    if (!dentro) return resposta(429, { erro: 'Muitas tentativas seguidas. Aguarde um minuto e tente de novo.' });
+  }
 
   // Preço atual vem do config_app (o mesmo que o organizador edita em
   // Administração → Sistema) — assim não precisa mexer em código quando

@@ -16,7 +16,17 @@ function getEscudos(){
 }
 function getEscudo(nome){
   if(!nome) return null;
-  return getEscudos()[nome.trim().toLowerCase()] || null;
+  const url = getEscudos()[nome.trim().toLowerCase()] || null;
+  return escudoUrlValida(url) ? url : null;
+}
+// Auditoria de segurança, achado SEC-002 (defesa em profundidade): mesmo com a
+// escrita na tabela "escudos" agora restrita a organizador (RLS), essa função
+// garante que só um data URI de imagem de verdade vira <img src="...">. Sem
+// essa trava, um valor malicioso salvo ali (ex: `x" onerror="...`) quebraria
+// pra fora do atributo HTML na hora de montar escudoImgOuIcone/escudoMini e
+// executaria script no navegador de quem visse aquele escudo (stored XSS).
+function escudoUrlValida(url){
+  return typeof url === 'string' && /^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(url);
 }
 function salvarEscudo(nome, dataUrl){
   if(!nome) return;

@@ -32,6 +32,35 @@ function resposta(statusCode, corpo) {
   return { statusCode, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo) };
 }
 
+// Rate limiting simples via tabela no Supabase (ver supabase/14-rate-limiting.sql)
+// — auditoria de segurança, achado SEC-006. Mesma função de criar-assinatura.js
+// (duplicada de propósito — ver padrão do resto do projeto, cada function
+// serverless fica autocontida). Se der erro de rede/banco, deixa passar (não
+// trava confirmação de pagamento por causa de instabilidade momentânea do
+// controle de limite, que é só uma camada extra).
+async function dentroDoLimite({ supaUrl, supaServiceKey, chave, maxChamadas, janelaSegundos }) {
+  try {
+    const base = supaUrl.replace(/\/$/, '');
+    const headers = { apikey: supaServiceKey, Authorization: `Bearer ${supaServiceKey}` };
+    const desde = new Date(Date.now() - janelaSegundos * 1000).toISOString();
+    const resContagem = await fetch(`${base}/rest/v1/rate_limit_chamadas?chave=eq.${encodeURIComponent(chave)}&criado_em=gte.${desde}&select=id`, {
+      headers: { ...headers, Prefer: 'count=exact' },
+    });
+    if (!resContagem.ok) return true; // tabela pode não existir ainda (14-rate-limiting.sql não rodado) — não trava por isso
+    const contentRange = resContagem.headers.get('content-range');
+    const total = contentRange ? parseInt(contentRange.split('/')[1], 10) || 0 : 0;
+    if (total >= maxChamadas) return false;
+    await fetch(`${base}/rest/v1/rate_limit_chamadas`, {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chave }),
+    });
+    return true;
+  } catch {
+    return true;
+  }
+}
+
 function hojeSaoPaulo() {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date());
 }
@@ -117,6 +146,15 @@ export const handler = async function (event) {
     headers: { apikey: supaAnonKey, Authorization: `Bearer ${token}` },
   });
   if (!resUser.ok) return resposta(401, { erro: 'Sessão inválida' });
+  const usuario = await resUser.json();
+
+  // Rate limiting — auditoria de segurança, achado SEC-006. Sem isso, uma
+  // pessoa logada poderia usar esse endpoint pra tentar "adivinhar" ids de
+  // pagamento válidos de outras pessoas por força bruta (o endpoint aceita
+  // qualquer paymentId, de propósito — ver comentário acima). Limita quantas
+  // tentativas a mesma conta pode fazer em pouco tempo.
+  const dentro = await dentroDoLimite({ supaUrl, supaServiceKey, chave: `verificar-pagamento:${usuario.id}`, maxChamadas: 20, janelaSegundos: 60 });
+  if (!dentro) return resposta(429, { erro: 'Muitas tentativas seguidas. Aguarde um minuto e tente de novo.' });
 
   try {
     const resMp = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {

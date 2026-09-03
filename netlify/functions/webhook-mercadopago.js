@@ -24,15 +24,74 @@
 //
 // IMPORTANTE: nunca confia no corpo da notificação sozinho (qualquer um pode
 // chamar essa URL forjando um payload) — sempre busca o dado de verdade na
-// API do Mercado Pago usando o ID recebido, com o Access Token.
+// API do Mercado Pago usando o ID recebido, com o Access Token. Além disso,
+// valida a assinatura (x-signature) que o Mercado Pago manda em toda
+// notificação de verdade, conforme a documentação oficial deles (auditoria
+// de segurança, achado SEC-005) — reforço extra: mesmo que alguém descubra
+// um id de pagamento válido de outra pessoa e tente forjar uma notificação
+// pra esse endpoint, sem o segredo certo a assinatura não bate e a
+// notificação é rejeitada antes de processar qualquer coisa.
 //
 // Variáveis de ambiente necessárias (painel da Netlify):
 //   MP_ACCESS_TOKEN       → Access Token do Mercado Pago (teste ou produção)
+//   MP_WEBHOOK_SECRET     → "Assinatura secreta" (Signature Secret) — copiar em
+//                            Suas integrações → aplicação → Webhooks →
+//                            Configurar notificações (aparece do lado do campo
+//                            "URL de produção", campo "Assinatura secreta").
+//                            OPCIONAL por enquanto: se essa variável não estiver
+//                            configurada, o webhook segue funcionando normalmente
+//                            (só sem essa camada extra de validação) — assim,
+//                            configurar isso não corre risco de travar pagamento
+//                            nenhum por engano. Depois de configurar, TODA
+//                            notificação passa a exigir assinatura válida.
 //   SUPABASE_URL          → mesma URL do public/js/01-config-auth.js
 //   SUPABASE_SERVICE_KEY  → chave "service_role" do Supabase (Settings → API)
 //                            precisa dela pra poder escrever no perfil de
 //                            qualquer usuário, sem estar logado como ele.
 // ═══════════════════════════════════════════════════
+
+import { createHmac, timingSafeEqual } from 'node:crypto';
+
+// Confere se a notificação realmente veio do Mercado Pago, seguindo o
+// algoritmo oficial deles: https://www.mercadopago.com.br/developers/pt/docs/checkout-pro/additional-content/notifications/webhooks
+// Devolve true se a assinatura bate, false se não bate. Se MP_WEBHOOK_SECRET
+// não estiver configurado, não tem como validar — quem chama essa função
+// decide o que fazer nesse caso (ver handler abaixo, que deixa passar sem
+// bloquear até a variável ser configurada).
+function assinaturaValida(event, id, secret) {
+  const xSignature = event.headers['x-signature'] || event.headers['X-Signature'];
+  const xRequestId = event.headers['x-request-id'] || event.headers['X-Request-Id'];
+  if (!xSignature) return false;
+
+  let ts = '', v1 = '';
+  for (const parte of xSignature.split(',')) {
+    const [chave, valor] = parte.split('=').map((s) => s.trim());
+    if (chave === 'ts') ts = valor;
+    else if (chave === 'v1') v1 = valor;
+  }
+  if (!ts || !v1) return false;
+
+  // O id usado na assinatura é sempre o que vem na QUERY STRING da notificação
+  // (data.id ou id, conforme o formato) — não o do corpo — mesmo quando o
+  // corpo também tem o id. É assim que o Mercado Pago manda calcular.
+  const idQuery = event.queryStringParameters?.['data.id'] || event.queryStringParameters?.id || String(id || '');
+  const partesManifesto = [];
+  if (idQuery) partesManifesto.push(`id:${idQuery.toLowerCase()}`);
+  if (xRequestId) partesManifesto.push(`request-id:${xRequestId}`);
+  partesManifesto.push(`ts:${ts}`);
+  const manifesto = partesManifesto.join(';') + ';';
+
+  const esperado = createHmac('sha256', secret).update(manifesto).digest('hex');
+
+  // Comparação em tempo constante (timingSafeEqual) — evita que um atacante
+  // consiga adivinhar a assinatura certa aos poucos, medindo quanto tempo a
+  // comparação demora pra cada tentativa.
+  const bufEsperado = Buffer.from(esperado, 'hex');
+  const bufRecebido = Buffer.from(v1, 'hex');
+  if (bufEsperado.length !== bufRecebido.length) return false;
+  return timingSafeEqual(bufEsperado, bufRecebido);
+}
+
 
 // Mesmo mapeamento de dias por plano usado em criar-assinatura.js e na
 // aprovação manual (Administração → Usuários) — precisa ficar sempre igual
@@ -133,6 +192,7 @@ export const handler = async function (event) {
   if (event.httpMethod !== 'POST') return resposta(405);
 
   const mpToken = process.env.MP_ACCESS_TOKEN;
+  const webhookSecret = process.env.MP_WEBHOOK_SECRET;
   const supaUrl = process.env.SUPABASE_URL;
   const supaServiceKey = process.env.SUPABASE_SERVICE_KEY;
   if (!mpToken || !supaUrl || !supaServiceKey) {
@@ -154,6 +214,19 @@ export const handler = async function (event) {
   const id = payload.data?.id || payload['data.id'] || event.queryStringParameters?.id || event.queryStringParameters?.['data.id'];
   console.log('Webhook Mercado Pago recebido:', { tipo, id });
   if (!id) return resposta(200); // notificação sem id útil — confirma recebido e ignora
+
+  // Só valida de verdade quando MP_WEBHOOK_SECRET estiver configurado — sem
+  // isso, não tem como calcular a assinatura esperada, então deixa passar
+  // (mesma proteção de sempre continua ativa: sempre reconsulta o pagamento
+  // de verdade na API do Mercado Pago antes de creditar qualquer coisa).
+  if (webhookSecret) {
+    if (!assinaturaValida(event, id, webhookSecret)) {
+      console.log('Webhook rejeitado: assinatura x-signature inválida ou ausente.', { id });
+      return resposta(401, { erro: 'Assinatura inválida' });
+    }
+  } else {
+    console.log('Aviso: MP_WEBHOOK_SECRET não configurado — pulando validação de assinatura (configure pra ativar essa proteção extra).');
+  }
 
   try {
     // ── LEGADO: assinatura recorrente (preapproval) ──

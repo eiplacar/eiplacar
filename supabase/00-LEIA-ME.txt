@@ -24,6 +24,12 @@ ou todos colados juntos — a ordem numerada já garante que funciona):
                                  já vinha usando o sistema antes dessa mudança — quem for
                                  configurar do zero pode ignorar esse arquivo.
 
+14-rate-limiting.sql          → Recomendado, mas OPCIONAL. Cria a tabela que limita quantas
+                                 tentativas seguidas de pagamento a mesma pessoa pode fazer
+                                 (auditoria de segurança). Sem rodar esse arquivo, o sistema
+                                 funciona normal, só sem esse limite extra — pode rodar quando
+                                 quiser, não precisa ser antes de mais nada.
+
 IMPORTANTE: o arquivo 05 depende das tabelas dos arquivos 01 a 04 já
 existirem — por isso ele tem que rodar depois delas. O 06 pode rodar a
 qualquer momento depois do 04 (ele cuida da própria segurança sozinho).
@@ -46,3 +52,10 @@ isso. Se antes você tinha rodado um "15-pix-idempotencia.sql" ou
 "16-cadastro-dados-completos.sql" de uma versão anterior, pode ignorar:
 já foi tudo incorporado ao 04. Basta rodar o 04 de novo (por cima) que
 fica tudo igual.
+
+SEGURANÇA — depois de rodar tudo, revise o arquivo
+"auditoria-seguranca-ei-placar.md" (na raiz do projeto) e, no painel da
+Netlify, configure a variável de ambiente MP_WEBHOOK_SECRET (copiar em
+Suas integrações → aplicação → Webhooks → Configurar notificações →
+"Assinatura secreta", no painel do Mercado Pago) pra ativar a validação
+de assinatura do webhook de pagamentos.
