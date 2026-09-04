@@ -13,14 +13,14 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="EI PLACAR">
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="icon-192.png" type="image/png">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
 
 <!-- Sem SDK externo: usa fetch direto na API REST do Supabase -->
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="/styles.css">
 </head>
 <body>
 
@@ -28,7 +28,7 @@
 <div id="authScreen">
   <div class="auth-box">
     <div class="auth-logo">
-      <img src="logo-wordmark.png" alt="EI PLACAR" style="height:38px;width:auto;display:block;margin:0 auto 10px" />
+      <img src="/logo-wordmark.png" alt="EI PLACAR" style="height:38px;width:auto;display:block;margin:0 auto 10px" />
     </div>
     <div class="auth-tabs">
       <button class="auth-tab active" id="atab-login"    onclick="authGoTab('login')">Entrar</button>
@@ -545,7 +545,7 @@
 <header>
   <button class="btn-hamb" onclick="toggleSidebar()" aria-label="Abrir menu" style="justify-self:start"><span data-ic="menu" data-ic-size="18"></span></button>
   <div class="logo" style="justify-self:center">
-    <img src="logo-wordmark.png" alt="EI PLACAR" style="height:30px;width:auto;display:block" />
+    <img src="/logo-wordmark.png" alt="EI PLACAR" style="height:30px;width:auto;display:block" />
   </div>
   <div style="position:relative;justify-self:end">
     <button id="userAvatar" onclick="toggleMenuUsuario()" style="width:38px;height:38px;background:transparent;border:1px solid var(--c3);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--texto);flex-shrink:0" title="Usuários" aria-label="Menu de usuário">
@@ -562,7 +562,7 @@
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar(false)"></div>
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-head">
-    <img src="logo-wordmark.png" alt="EI PLACAR" style="height:24px;width:auto;display:block" />
+    <img src="/logo-wordmark.png" alt="EI PLACAR" style="height:24px;width:auto;display:block" />
   </div>
   <nav class="sidebar-nav">
     <button class="nav-tab active" onclick="goTo('geral')"      id="tab-geral"><span class="nav-ic" data-ic="home"></span><span>Dashboard</span></button>
@@ -735,24 +735,24 @@
 <div id="toast"></div>
 <footer>Ei Placar · Dados. Análises. Futebol.</footer>
 
-<script src="js/00-icons.js"></script>
-<script src="js/01-config-auth.js"></script>
-<script src="js/02-dados-crud.js"></script>
-<script src="js/03-nav.js"></script>
-<script src="js/04-utils.js"></script>
-<script src="js/05-escudos.js"></script>
-<script src="js/06-confrontos.js"></script>
-<script src="js/07-geral.js"></script>
-<script src="js/08-dados-render.js"></script>
-<script src="js/09-analise.js"></script>
-<script src="js/10-compartilhar.js"></script>
-<script src="js/11-jogosdodia.js"></script>
-<script src="js/12-banca-futebol.js"></script>
-<script src="js/13-calculadora.js"></script>
-<script src="js/14-banca-gestao.js"></script>
-<script src="js/17-indice.js"></script>
-<script src="js/16-admin.js"></script>
-<script src="js/15-init.js"></script>
+<script src="/js/00-icons.js"></script>
+<script src="/js/01-config-auth.js"></script>
+<script src="/js/02-dados-crud.js"></script>
+<script src="/js/03-nav.js"></script>
+<script src="/js/04-utils.js"></script>
+<script src="/js/05-escudos.js"></script>
+<script src="/js/06-confrontos.js"></script>
+<script src="/js/07-geral.js"></script>
+<script src="/js/08-dados-render.js"></script>
+<script src="/js/09-analise.js"></script>
+<script src="/js/10-compartilhar.js"></script>
+<script src="/js/11-jogosdodia.js"></script>
+<script src="/js/12-banca-futebol.js"></script>
+<script src="/js/13-calculadora.js"></script>
+<script src="/js/14-banca-gestao.js"></script>
+<script src="/js/17-indice.js"></script>
+<script src="/js/16-admin.js"></script>
+<script src="/js/15-init.js"></script>
 <!-- Componentes React (migração aos poucos, por módulo) -->
 <script type="module" src="/src/main.jsx"></script>
 <script>
