@@ -18,6 +18,29 @@ alter table banca   enable row level security;
 alter table escudos enable row level security;
 alter table perfis  enable row level security;
 
+-- ── FUNÇÃO AUXILIAR: "quem está logado é organizador?" ──
+-- IMPORTANTE: essa função existe pra evitar um bug clássico do Postgres —
+-- "infinite recursion detected in policy for relation perfis". Se a política
+-- de SELECT de "perfis" tentasse consultar a própria tabela "perfis" direto
+-- (`exists (select 1 from perfis where ...)`), isso dispararia a MESMA
+-- política de novo pra avaliar essa subconsulta, que dispara de novo, num
+-- loop infinito — e todo mundo (inclusive o login) parava de funcionar.
+-- Uma função "security definer" quebra esse loop: ela consulta a tabela
+-- ignorando a RLS (com a permissão de quem criou a função), então não
+-- reaciona a política. Use SEMPRE essa função em vez de escrever
+-- "exists (select ... from perfis ...)" direto dentro de uma policy.
+create or replace function public.is_organizador()
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1 from perfis where id = auth.uid() and papel = 'organizador'
+  );
+$$;
+
 -- Jogos (dados oficiais de partidas): qualquer pessoa logada pode VER, mas só
 -- organizador pode inserir/editar/apagar. Antes disso, qualquer membro comum
 -- conseguia alterar resultados, gols, cartões — dados que TODO MUNDO usa nas
@@ -28,15 +51,9 @@ drop policy if exists "jogos_insert_organizador" on jogos;
 drop policy if exists "jogos_update_organizador" on jogos;
 drop policy if exists "jogos_delete_organizador" on jogos;
 create policy "jogos_select" on jogos for select to authenticated using (true);
-create policy "jogos_insert_organizador" on jogos for insert to authenticated with check (
-  exists (select 1 from perfis where id = auth.uid() and papel = 'organizador')
-);
-create policy "jogos_update_organizador" on jogos for update to authenticated using (
-  exists (select 1 from perfis where id = auth.uid() and papel = 'organizador')
-);
-create policy "jogos_delete_organizador" on jogos for delete to authenticated using (
-  exists (select 1 from perfis where id = auth.uid() and papel = 'organizador')
-);
+create policy "jogos_insert_organizador" on jogos for insert to authenticated with check (is_organizador());
+create policy "jogos_update_organizador" on jogos for update to authenticated using (is_organizador());
+create policy "jogos_delete_organizador" on jogos for delete to authenticated using (is_organizador());
 
 -- A Banca é uma carteira INDIVIDUAL (ver 02-tabela-banca.sql) — cada pessoa
 -- só pode ler/escrever a PRÓPRIA linha (user_id = quem está logado), nunca a
@@ -59,12 +76,8 @@ drop policy if exists "escudos_select" on escudos;
 drop policy if exists "escudos_insert_organizador" on escudos;
 drop policy if exists "escudos_update_organizador" on escudos;
 create policy "escudos_select" on escudos for select to authenticated using (true);
-create policy "escudos_insert_organizador" on escudos for insert to authenticated with check (
-  exists (select 1 from perfis where id = auth.uid() and papel = 'organizador')
-);
-create policy "escudos_update_organizador" on escudos for update to authenticated using (
-  exists (select 1 from perfis where id = auth.uid() and papel = 'organizador')
-);
+create policy "escudos_insert_organizador" on escudos for insert to authenticated with check (is_organizador());
+create policy "escudos_update_organizador" on escudos for update to authenticated using (is_organizador());
 
 -- Cada pessoa vê o PRÓPRIO perfil completo; só organizador vê o perfil de
 -- todo mundo (precisa disso pra Administração → Usuários funcionar). Antes,
@@ -74,14 +87,12 @@ create policy "escudos_update_organizador" on escudos for update to authenticate
 drop policy if exists "logado ve todos os perfis" on perfis;
 drop policy if exists "perfis_select" on perfis;
 create policy "perfis_select" on perfis for select to authenticated using (
-  id = auth.uid() or exists (select 1 from perfis p where p.id = auth.uid() and p.papel = 'organizador')
+  id = auth.uid() or is_organizador()
 );
 
 -- Só organizador pode aprovar/editar o perfil de outra pessoa
 drop policy if exists "organizador edita perfis" on perfis;
-create policy "organizador edita perfis" on perfis for update to authenticated using (
-  exists (select 1 from perfis p where p.id = auth.uid() and p.papel = 'organizador')
-);
+create policy "organizador edita perfis" on perfis for update to authenticated using (is_organizador());
 
 -- Qualquer pessoa logada pode editar o PRÓPRIO perfil (nome, telefone, foto etc.)
 drop policy if exists "cada um edita o proprio perfil" on perfis;
@@ -98,7 +109,7 @@ create policy "cada um edita o proprio perfil" on perfis for update to authentic
 -- sem querer e ficar sem nenhum organizador no sistema).
 drop policy if exists "organizador exclui perfis" on perfis;
 create policy "organizador exclui perfis" on perfis for delete to authenticated using (
-  id <> auth.uid() and exists (select 1 from perfis p where p.id = auth.uid() and p.papel = 'organizador')
+  id <> auth.uid() and is_organizador()
 );
 
 -- ── PROTEÇÃO DE COLUNAS ADMINISTRATIVAS (auditoria de segurança, achado SEC-001) ──
@@ -110,11 +121,12 @@ create policy "organizador exclui perfis" on perfis for delete to authenticated 
 -- reverte esses campos pro valor antigo sempre que quem está editando NÃO é
 -- organizador — a pessoa continua podendo editar nome/telefone/data de
 -- nascimento/foto/e-mail normalmente, só os campos administrativos ficam
--- travados.
+-- travados. (Função em si já é "security definer", então a consulta interna
+-- não reaciona a RLS/policy de "perfis" — não tem risco de recursão aqui.)
 create or replace function public.protege_colunas_administrativas()
 returns trigger as $$
 begin
-  if not exists (select 1 from perfis where id = auth.uid() and papel = 'organizador') then
+  if not is_organizador() then
     new.papel := old.papel;
     new.status := old.status;
     new.bloqueado := old.bloqueado;
@@ -128,7 +140,7 @@ begin
   end if;
   return new;
 end;
-$$ language plpgsql security definer;
+$$ language plpgsql security definer set search_path = public;
 
 drop trigger if exists trg_protege_colunas_admin on perfis;
 create trigger trg_protege_colunas_admin

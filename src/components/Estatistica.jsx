@@ -1,5 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Trophy, Goal, Search, LineChart } from 'lucide-react';
+import { Trophy, Goal, Search, LineChart, ShieldQuestion } from 'lucide-react';
+
+// Escudo do time — mesmo padrão usado nas abas Classificação/Análise/Estratégias.
+function EscudoImg({ nome, size = 18 }) {
+  const url = window.getEscudo ? window.getEscudo(nome) : null;
+  if (url) return <img src={url} alt="" style={{ width: size, height: size, objectFit: 'contain', flexShrink: 0 }} />;
+  return <ShieldQuestion size={size * 0.8} color="var(--texto2)" style={{ flexShrink: 0 }} />;
+}
 
 // ══ Estatística (Ligas / Times) — oitavo módulo migrado para React ══
 //
@@ -186,7 +193,12 @@ export default function Estatistica() {
                   <tr><td colSpan={8} style={{ textAlign: 'center', color: 'var(--texto2)', padding: 16 }}>{times.temJogosCadastrados ? `Nenhum time com jogos ${fTimeFiltroLocal === 'casa' ? 'como mandante' : fTimeFiltroLocal === 'fora' ? 'como visitante' : 'cadastrados'} nesse filtro.` : 'Nenhum jogo cadastrado ainda.'}</td></tr>
                 ) : times.linhas.map((l) => (
                   <tr key={l.nome}>
-                    <td><strong>{l.nome}</strong></td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <EscudoImg nome={l.nome} />
+                        <strong style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.nome}</strong>
+                      </div>
+                    </td>
                     <td className="td-c" style={{ color: 'var(--texto2)' }}>{l.n}</td>
                     {valoresPor(mercadoTimes, l).map((p, i) => <td className="td-c" key={i} style={p == null ? { color: 'var(--texto2)' } : { color: corPct(p), fontWeight: 700 }}>{p == null ? '—' : p + '%'}</td>)}
                   </tr>
