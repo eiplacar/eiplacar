@@ -262,6 +262,25 @@
   </div>
 </div>
 
+<!-- ══ MODAL CONVIDE UM AMIGO (link + QR code) ══ -->
+<div class="modal-overlay" id="modalConvidar">
+  <div class="modal" style="max-width:360px;text-align:center">
+    <h2 style="justify-content:center"><span data-ic="userPlus" data-ic-size="15"></span> Convide um Amigo</h2>
+    <p style="font-size:12px;color:var(--texto2);margin-bottom:14px">Mostre a tela pra pessoa escanear, ou copie o link.</p>
+    <div style="background:#fff;border-radius:12px;padding:14px;display:inline-block;margin-bottom:14px">
+      <img id="qrConvidarImg" src="" alt="QR Code do Ei Placar" width="200" height="200" style="display:block">
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:6px">
+      <input type="text" id="linkConvidarInput" value="https://eiplacar.com.br" readonly style="flex:1;font-size:12px;text-align:center">
+      <button class="btn-salvar-cfg" style="padding:6px 10px" onclick="copiarLinkConvidar()"><span data-ic="copy" data-ic-size="14"></span></button>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-fechar-cfg" style="flex:1" onclick="document.getElementById('modalConvidar').classList.remove('open')">Fechar</button>
+      <button class="btn-salvar-cfg" style="flex:1" onclick="compartilharLinkConvidar()"><span data-ic="share2" data-ic-size="14"></span> Compartilhar</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ MODAL INFO TESOURARIA ══ -->
 <div class="modal-overlay" id="modalInfoTes">
   <div class="modal">
@@ -553,12 +572,12 @@
     <button class="nav-tab so-organizador" onclick="goTo('dados')"      id="tab-dados"><span class="nav-ic" data-ic="database"></span><span>Dados</span></button>
     <button class="nav-tab"        onclick="goTo('analise')"    id="tab-analise"><span class="nav-ic" data-ic="search"></span><span>Análise</span></button>
     <button class="nav-tab"        onclick="goTo('futebol')"    id="tab-futebol"><span class="nav-ic" data-ic="trendingUp"></span><span>Estatística</span></button>
+    <button class="nav-tab"        onclick="goTo('estrategias')" id="tab-estrategias"><span class="nav-ic" data-ic="lightbulb"></span><span>Estratégias</span></button>
     <button class="nav-tab"        onclick="goTo('classificacao')" id="tab-classificacao"><span class="nav-ic" data-ic="medal"></span><span>Classificação</span></button>
 
     <div class="nav-group-title"><span data-ic="dollarSign" data-ic-size="13"></span>Ferramentas</div>
     <button class="nav-tab" onclick="goTo('apostas')" id="tab-apostas"><span class="nav-ic" data-ic="target"></span><span>Operações</span></button>
     <button class="nav-tab"        onclick="goTo('banca')"     id="tab-banca"><span class="nav-ic" data-ic="wallet"></span><span>Banca</span></button>
-    <button class="nav-tab"        onclick="goTo('estrategias')" id="tab-estrategias"><span class="nav-ic" data-ic="lightbulb"></span><span>Estratégias</span></button>
 
     <div class="nav-group-title"><span data-ic="star" data-ic-size="13"></span>Descubra</div>
     <button class="nav-tab" onclick="goTo('assinar')" id="tab-assinar"><span class="nav-ic" data-ic="crown"></span><span>Seja Assinante</span></button>

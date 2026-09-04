@@ -126,17 +126,41 @@ function copiarTexto(txt){
 }
 
 // ══ CONVIDE UM AMIGO ══
-// Reaproveita o mesmo compartilhamento nativo usado em Análise/Jogos do Dia/Sinal de Entrada.
-function convidarAmigo(){
+// Modal com QR code (pra mostrar a tela e a pessoa escanear na hora) + o link
+// pra copiar, além do compartilhamento nativo de sempre (WhatsApp/Telegram/etc).
+const LINK_CONVIDAR = 'https://eiplacar.com.br';
+
+function abrirModalConvidar(){
+  // Gera o QR code via uma API pública, sem precisar de nenhuma biblioteca no
+  // projeto — o link em si é público (é a home do site), não tem nenhum dado
+  // sensível sendo mandado pra fora.
+  const img = document.getElementById('qrConvidarImg');
+  if(img) img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=8&data=' + encodeURIComponent(LINK_CONVIDAR);
+  document.getElementById('modalConvidar')?.classList.add('open');
+}
+window.abrirModalConvidar = abrirModalConvidar;
+
+function copiarLinkConvidar(){
+  copiarTexto(LINK_CONVIDAR);
+}
+window.copiarLinkConvidar = copiarLinkConvidar;
+
+function compartilharLinkConvidar(){
   const txt = [
     `⚽ *EI PLACAR*`,
     ``,
     `Tô usando o Ei Placar pra acompanhar estatísticas e análises de futebol — dados, probabilidades e histórico de confrontos, tudo num só lugar.`,
     ``,
     `Dá uma olhada:`,
-    `https://eiplacar.com.br`,
+    LINK_CONVIDAR,
   ].join('\n');
   abrirCompartilhamento(txt, 'Ei Placar');
+}
+window.compartilharLinkConvidar = compartilharLinkConvidar;
+
+// Reaproveita o mesmo compartilhamento nativo usado em Análise/Jogos do Dia/Sinal de Entrada.
+function convidarAmigo(){
+  abrirModalConvidar();
 }
 
 // ══ COMPARTILHAR ══
