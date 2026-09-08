@@ -159,10 +159,10 @@ function ophRenderLista(){
       ${souOrganizador?`<button onclick="event.stopPropagation();ophRemover(${j.id})" style="position:absolute;top:4px;right:4px;background:none;border:none;color:var(--texto2);font-size:13px;cursor:${sel?'pointer':'default'};padding:2px 4px;display:${sel?'flex':'none'}">✕</button>`:''}
       ${souOrganizador?`<button onclick="event.stopPropagation();abrirEditarOph(${j.id})" style="position:absolute;top:4px;right:22px;background:none;border:none;color:var(--texto2);padding:2px 4px;cursor:${sel?'pointer':'default'};display:${sel?'flex':'none'}"><span data-ic="pencil" data-ic-size="12"></span></button>`:''}
       <div style="width:30px;height:30px;margin:0 auto">${escudoImgOuIcone(j.casa)}</div>
-      <div style="font-size:10.5px;font-weight:700;line-height:1.2;margin-top:2px;color:${aoVivo?'var(--perigo)':'inherit'}">${j.casa||'—'}</div>
+      <div style="font-size:11.5px;font-weight:700;line-height:1.2;margin-top:6px;color:${aoVivo?"var(--perigo)":"inherit"}">${j.casa||'—'}</div>
       <div style="height:8px"></div>
       <div style="width:30px;height:30px;margin:0 auto">${escudoImgOuIcone(j.vis)}</div>
-      <div style="font-size:10.5px;font-weight:700;line-height:1.2;margin-top:2px;color:${aoVivo?'var(--perigo)':'inherit'}">${j.vis||'—'}</div>
+      <div style="font-size:11.5px;font-weight:700;line-height:1.2;margin-top:6px;color:${aoVivo?"var(--perigo)":"inherit"}">${j.vis||'—'}</div>
       <div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--c3);font-size:9px;color:var(--ouro);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;justify-content:center;gap:3px"><span data-ic="trophy" data-ic-size="10"></span> ${j.camp||'—'}</div>
       <div style="font-size:9px;color:var(--texto2);margin-top:2px">${[j.horario?(j.horario):null, j.rodada||null].filter(Boolean).join(' • ')||'—'}</div>
       ${temDados
