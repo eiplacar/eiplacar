@@ -110,10 +110,24 @@ function dataBrParaTexto(matchDate, matchTime) {
 // API-Football que mandava um texto tipo "Regular Season - 21". Se vier só
 // número, adiciona o "Rodada " na frente; se já vier outro texto (grupos,
 // fases eliminatórias etc.), deixa como está.
-function formatarRodada(matchRound) {
+//
+// EXCEÇÃO — Champions League: a Fase Liga (formato desde 2024/25, pontos
+// corridos únicos, sem grupos) precisa do número PURO na rodada, sem
+// "Rodada " na frente — é assim que window.computeClassificacao (em
+// public/js/12-banca-futebol.js) reconhece quais jogos são da Fase Liga de
+// verdade, separando de Qualificação/Playoffs (mata-mata, guardados como
+// "Qualificação - <etapa>" / "Playoffs - <etapa>"). Sem essa exceção, TODO
+// jogo da Fase Liga chegava como "Rodada 8" em vez de "8", não batia com o
+// filtro, e a Classificação da Fase Liga nunca carregava nenhum jogo —
+// mesmo bug que fazia o card do Dashboard (Top Marcadores) não saber a
+// partir de quando contar os gols.
+function formatarRodada(matchRound, camp) {
   const bruto = (matchRound || '').toString().trim();
   if (!bruto) return '';
-  return /^\d+$/.test(bruto) ? `Rodada ${bruto}` : bruto;
+  if (/^\d+$/.test(bruto)) {
+    return /champions league/i.test(camp || '') ? bruto : `Rodada ${bruto}`;
+  }
+  return bruto;
 }
 
 // Estatísticas da GOAL API vêm como uma lista achatada — cada item tem
@@ -379,7 +393,7 @@ export const handler = async function () {
       camp: NOMES_CAMP_POR_LIGA.get(f.leagueId),
       pais: PAIS_POR_LIGA.get(f.leagueId),
       data: dataBrParaTexto(f.matchDate, f.matchTime),
-      rodada: formatarRodada(f.matchRound),
+      rodada: formatarRodada(f.matchRound, NOMES_CAMP_POR_LIGA.get(f.leagueId)),
       local: f.matchStadium || '',
       casa: casaCorrigido,
       vis: visCorrigido,

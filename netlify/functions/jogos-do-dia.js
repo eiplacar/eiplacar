@@ -123,10 +123,18 @@ async function buscarTodosFixturesDoDia(apiKey, data) {
 // API-Football que mandava um texto tipo "Regular Season - 21". Se vier só
 // número, adiciona o "Rodada " na frente; se já vier outro texto (grupos,
 // fases eliminatórias etc.), deixa como está.
-function formatarRodada(matchRound) {
+//
+// EXCEÇÃO — Champions League: a Fase Liga precisa do número PURO na rodada,
+// sem "Rodada " na frente, pra bater com o filtro que window.computeClassificacao
+// usa (em public/js/12-banca-futebol.js) pra reconhecer jogos da Fase Liga —
+// ver o mesmo comentário completo em atualizar-jogos-finalizados.js.
+function formatarRodada(matchRound, camp) {
   const bruto = (matchRound || '').toString().trim();
   if (!bruto) return '';
-  return /^\d+$/.test(bruto) ? `Rodada ${bruto}` : bruto;
+  if (/^\d+$/.test(bruto)) {
+    return /champions league/i.test(camp || '') ? bruto : `Rodada ${bruto}`;
+  }
+  return bruto;
 }
 
 // A GOAL API não deixa explícito o fuso horário do "matchTime". Uma correção anterior
@@ -182,7 +190,7 @@ export const handler = async function (event) {
         id: f.id,
         campeonato: NOMES_CAMP_POR_LIGA.get(f.leagueId) || f.leagueName,
         pais: PAIS_POR_LIGA.get(f.leagueId) || '',
-        rodada: formatarRodada(f.matchRound),
+        rodada: formatarRodada(f.matchRound, NOMES_CAMP_POR_LIGA.get(f.leagueId)),
         casa: f.homeTeamName,
         vis: f.awayTeamName,
         escudoCasa: f.teamHomeBadge,

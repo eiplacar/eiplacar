@@ -98,9 +98,20 @@ function renderGeral(){
   // Jogos ordenados do mais recente pro mais antigo — usados só nos "Últimos Resultados" abaixo.
   const ordenados=[...jogos].sort((a,b)=>{ const da=a.data?new Date(a.data):new Date(0); const db=b.data?new Date(b.data):new Date(0); return db-da; });
 
-  // Top marcadores — soma os gols de quem jogou nesse campeonato
+  // Top marcadores — soma os gols de quem jogou nesse campeonato. Na Champions
+  // League, os gols contam A PARTIR da Fase Liga (jogos com "rodada" só número,
+  // ver formatarRodada em atualizar-jogos-finalizados.js/jogos-do-dia.js e o
+  // mesmo critério usado em window.computeClassificacao) — sem misturar com os
+  // gols da Fase Qualificação, que é uma etapa anterior e separada. Enquanto a
+  // Fase Liga ainda não começou (nenhum jogo com rodada numérica cadastrado
+  // ainda), cai pros gols da Fase Qualificação, pra não ficar vazio à toa.
+  let jogosParaTop = jogos;
+  if(/champions league/i.test(campSel)){
+    const jogosFaseLiga = jogos.filter(j=>/^\d+$/.test((j.rodada||'').trim()));
+    jogosParaTop = jogosFaseLiga.length ? jogosFaseLiga : jogos.filter(j=>/^qualifica/i.test((j.rodada||'').trim()));
+  }
   const golsTime={};
-  jogos.forEach(j=>{
+  jogosParaTop.forEach(j=>{
     golsTime[j.casa]=(golsTime[j.casa]||0)+(j.gC||0);
     golsTime[j.vis]=(golsTime[j.vis]||0)+(j.gV||0);
   });
