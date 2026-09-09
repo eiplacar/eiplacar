@@ -497,7 +497,7 @@ export default function AnaliseResultado() {
         </div>
 
         <div className="sec">
-          <div className="sec-title"><TrendingUp size={14} style={{ marginRight: 4 }} />Tendência (Ganhando ou Perdendo Força) {modoTempo === 'ht' ? '— 1º Tempo' : ''}</div>
+          <div className="sec-title"><TrendingUp size={14} style={{ marginRight: 4 }} />Tendência de Desempenho {modoTempo === 'ht' ? '— 1º Tempo' : ''}</div>
           <div style={{ fontSize: 10, color: 'var(--texto2)', marginBottom: 10 }}>Compara os últimos 5 com os últimos 10 para identificar ganho ou perda de força.</div>
           {[{ nome: casa, cor: 'var(--verde2)', tend: modoTempo === 'ht' ? tendCHT : tendC }, { nome: vis, cor: 'var(--perigo)', tend: modoTempo === 'ht' ? tendVHT : tendV }].map(({ nome, cor, tend }) => (
             <div key={nome} style={{ marginBottom: 12 }}>
