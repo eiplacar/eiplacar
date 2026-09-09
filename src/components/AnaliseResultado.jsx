@@ -278,9 +278,9 @@ export default function AnaliseResultado() {
   return (
     <>
       <div className="sub-nav">
-        <button className={`sub-tab ${tab === 'prob' ? 'active' : ''}`} onClick={() => { window.toastEsconder?.(); setTab('prob'); }}><Target size={14} style={{ verticalAlign: -2, marginRight: 4 }} />Probabilidade</button>
-        <button className={`sub-tab ${tab === 'estat' ? 'active' : ''}`} onClick={() => { window.toastEsconder?.(); setTab('estat'); }}><BarChart3 size={14} style={{ verticalAlign: -2, marginRight: 4 }} />Estatísticas</button>
-        <button className={`sub-tab ${tab === 'indice' ? 'active' : ''}`} onClick={() => { window.toastEsconder?.(); setTab('indice'); }}><Gauge size={14} style={{ verticalAlign: -2, marginRight: 4 }} />Índice</button>
+        <button className={`sub-tab ${tab === 'prob' ? 'active' : ''}`} style={{ flex: 1.3, whiteSpace: 'nowrap' }} onClick={() => { window.toastEsconder?.(); setTab('prob'); }}><Target size={14} style={{ verticalAlign: -2, marginRight: 4 }} />Probabilidade</button>
+        <button className={`sub-tab ${tab === 'estat' ? 'active' : ''}`} style={{ flex: 0.9 }} onClick={() => { window.toastEsconder?.(); setTab('estat'); }}><BarChart3 size={14} style={{ verticalAlign: -2, marginRight: 4 }} />Estatísticas</button>
+        <button className={`sub-tab ${tab === 'indice' ? 'active' : ''}`} style={{ flex: 0.8 }} onClick={() => { window.toastEsconder?.(); setTab('indice'); }}><Gauge size={14} style={{ verticalAlign: -2, marginRight: 4 }} />Índice</button>
       </div>
 
       <div className={`sub-page ${tab === 'prob' ? 'active' : ''}`}>
@@ -382,7 +382,7 @@ export default function AnaliseResultado() {
                 <div className="btts-box"><div className="bb-lbl">Sim</div><div className="bb-pct" style={{ color: 'var(--verde2)' }}>{modoTempo === 'ht' ? pBttsHT : pBtts}%</div></div>
                 <div className="btts-box"><div className="bb-lbl">Não</div><div className="bb-pct" style={{ color: 'var(--perigo)' }}>{100 - (modoTempo === 'ht' ? pBttsHT : pBtts)}%</div></div>
               </div>
-              <div className="lambda-note">{modoTempo === 'ht' ? <>λ HT {casa}: {sC.lambdaHT} · λ HT {vis}: {sV.lambdaHT}</> : <>λ {casa}: {lambdaC} · λ {vis}: {lambdaV}</>}</div>
+              <div className="lambda-note">{modoTempo === 'ht' ? <>{casa} (1ºT): {sC.lambdaHT} · {vis} (1ºT): {sV.lambdaHT}</> : <>{casa}: {lambdaC} · {vis}: {lambdaV}</>}</div>
             </>
           )}
         </div>
@@ -498,7 +498,7 @@ export default function AnaliseResultado() {
 
         <div className="sec">
           <div className="sec-title"><TrendingUp size={14} style={{ marginRight: 4 }} />Tendência de Desempenho {modoTempo === 'ht' ? '— 1º Tempo' : ''}</div>
-          <div style={{ fontSize: 10, color: 'var(--texto2)', marginBottom: 10 }}>Compara os últimos 5 com os últimos 10 para identificar ganho ou perda de força.</div>
+          <div style={{ fontSize: 10, color: 'var(--texto2)', marginBottom: 10 }}>Compara os últimos 5 e 10 jogos para identificar a tendência de força.</div>
           {[{ nome: casa, cor: 'var(--verde2)', tend: modoTempo === 'ht' ? tendCHT : tendC }, { nome: vis, cor: 'var(--perigo)', tend: modoTempo === 'ht' ? tendVHT : tendV }].map(({ nome, cor, tend }) => (
             <div key={nome} style={{ marginBottom: 12 }}>
               <div style={{ fontSize: 12, color: cor, fontWeight: 700, marginBottom: 6 }}>{nome}</div>
