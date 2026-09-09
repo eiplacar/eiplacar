@@ -250,7 +250,7 @@ export default function AnaliseResultado() {
     );
   }
 
-  const { casa, vis, filtro, sC, sV, lambdaC, lambdaV, pVit, pEmp, pDer, o15, o25, o35, o45, temHT, o05HT, o15HT, o25HT, o35HT, o45HT, resultadoHT, pBtts, pBttsHT, mcc, top10, maxPP, top10HT, maxPPHT, momStats, golsComb, picoIdx, baixoIdx, totalMom, momStatsHT, golsCombHT, picoIdxHT, baixoIdxHT, totalMomHT, faixaC, faixaV, tendC, tendV, tendCHT, tendVHT } = data;
+  const { casa, vis, filtro, sC, sV, lambdaC, lambdaV, pVit, pEmp, pDer, o15, o25, o35, o45, temHT, o05HT, o15HT, o25HT, o35HT, o45HT, resultadoHT, pBtts, pBttsHT, mcc, top10, maxPP, top10HT, maxPPHT, momStats, golsComb, picoIdx, baixoIdx, totalMom, momStatsHT, golsCombHT, picoIdxHT, baixoIdxHT, totalMomHT, tendC, tendV, tendCHT, tendVHT } = data;
   const modoTempo = data.modoTempo || 'ft';
   const calDot = window.calDot || (() => 'facil');
   const calLbl = window.calLbl || (() => '—');
@@ -481,7 +481,7 @@ export default function AnaliseResultado() {
 
       <div className={`sub-page ${tab === 'estat' ? 'active' : ''}`}>
         <div className="sec">
-          <div className="sec-title"><MapPin size={14} style={{ marginRight: 4 }} />Adversário Médio</div>
+          <div className="sec-title"><Award size={14} style={{ marginRight: 4 }} />Ranking Médio dos Adversários</div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <div style={{ flex: 1, background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 8, padding: 10, textAlign: 'center' }}>
               <div style={{ fontSize: 12, color: 'var(--verde2)', fontWeight: 700, marginBottom: 4 }}>{casa}</div>
@@ -493,26 +493,6 @@ export default function AnaliseResultado() {
               <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--ouro)' }}>#{sV.rankMedAdv ?? '—'}</div>
               <div style={{ fontSize: 10, color: 'var(--texto2)' }}>{sV.nt} jogo(s)</div>
             </div>
-          </div>
-        </div>
-
-        <div className="sec">
-          <div className="sec-title"><Scale size={14} style={{ marginRight: 4 }} />Desempenho Contra Adversários de Força Similar</div>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            {[{ nome: casa, cor: 'var(--verde2)', faixa: faixaC, rankRival: sV.rankMedProprio }, { nome: vis, cor: 'var(--perigo)', faixa: faixaV, rankRival: sC.rankMedProprio }].map(({ nome, cor, faixa, rankRival }) => (
-              <div key={nome} style={{ flex: 1, minWidth: 150, background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 8, padding: 10 }}>
-                <div style={{ fontSize: 12, color: cor, fontWeight: 700, marginBottom: 2 }}>{nome}</div>
-                {faixa ? (
-                  <>
-                    <div style={{ fontSize: 10, color: 'var(--texto2)', marginBottom: 6 }}>Contra adversários próximos do nível atual (rank #{rankRival ?? '—'} · {faixa.jogos} jogo(s))</div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: 11, color: 'var(--texto2)' }}>{faixa.v}V {faixa.e}E {faixa.d}D</span>
-                      <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--ouro)' }}>{faixa.aproveitamento}%</span>
-                    </div>
-                  </>
-                ) : <div style={{ fontSize: 11, color: 'var(--texto2)' }}>Sem jogos suficientes contra esse nível de adversário ainda.</div>}
-              </div>
-            ))}
           </div>
         </div>
 
