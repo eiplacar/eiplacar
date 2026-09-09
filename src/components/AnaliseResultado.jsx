@@ -278,14 +278,14 @@ export default function AnaliseResultado() {
   return (
     <>
       <div className="sub-nav">
-        <button className={`sub-tab ${tab === 'prob' ? 'active' : ''}`} style={{ flex: 1.3, whiteSpace: 'nowrap' }} onClick={() => { window.toastEsconder?.(); setTab('prob'); }}><Target size={14} style={{ verticalAlign: -2, marginRight: 4 }} />Probabilidade</button>
-        <button className={`sub-tab ${tab === 'estat' ? 'active' : ''}`} style={{ flex: 0.9 }} onClick={() => { window.toastEsconder?.(); setTab('estat'); }}><BarChart3 size={14} style={{ verticalAlign: -2, marginRight: 4 }} />Estatísticas</button>
-        <button className={`sub-tab ${tab === 'indice' ? 'active' : ''}`} style={{ flex: 0.8 }} onClick={() => { window.toastEsconder?.(); setTab('indice'); }}><Gauge size={14} style={{ verticalAlign: -2, marginRight: 4 }} />Índice</button>
+        <button className={`sub-tab ${tab === 'prob' ? 'active' : ''}`} style={{ flex: 1.15, whiteSpace: 'nowrap', padding: '9px 6px' }} onClick={() => { window.toastEsconder?.(); setTab('prob'); }}><Target size={14} style={{ verticalAlign: -2, marginRight: 4 }} />Probabilidade</button>
+        <button className={`sub-tab ${tab === 'estat' ? 'active' : ''}`} style={{ flex: 1.05, whiteSpace: 'nowrap', padding: '9px 6px' }} onClick={() => { window.toastEsconder?.(); setTab('estat'); }}><BarChart3 size={14} style={{ verticalAlign: -2, marginRight: 4 }} />Estatísticas</button>
+        <button className={`sub-tab ${tab === 'indice' ? 'active' : ''}`} style={{ flex: 0.8, whiteSpace: 'nowrap', padding: '9px 6px' }} onClick={() => { window.toastEsconder?.(); setTab('indice'); }}><Gauge size={14} style={{ verticalAlign: -2, marginRight: 4 }} />Índice</button>
       </div>
 
       <div className={`sub-page ${tab === 'prob' ? 'active' : ''}`}>
         <div className="sec">
-          <div className="sec-title"><MapPin size={14} style={{ marginRight: 4 }} />Base da análise</div>
+          <div className="sec-title"><MapPin size={14} style={{ marginRight: 4 }} />Média de Gols Ajustada</div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <div style={{ flex: 1, background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 8, padding: '8px 12px', fontSize: 12 }}>
               <span style={{ color: 'var(--verde2)', fontWeight: 800 }}>{casa}</span><br />
@@ -298,7 +298,7 @@ export default function AnaliseResultado() {
               <span style={{ color: 'var(--ouro)', fontWeight: 700, fontSize: 15 }}>λ {modoTempo === 'ht' ? (temHT ? sV.lambdaHT : '—') : sV.lambdaAjustado}</span>
             </div>
           </div>
-          <div style={{ fontSize: 10, color: 'var(--texto2)', marginTop: 6 }}>{modoTempo === 'ht' ? 'Gols do 1º tempo (HT) marcados/sofridos em média.' : 'Gols pela força do adversário em cada jogo (ranking).'}</div>
+          <div style={{ fontSize: 10, color: 'var(--texto2)', marginTop: 6 }}>{modoTempo === 'ht' ? 'Gols do 1º tempo (HT) marcados/sofridos em média.' : 'Gols ajustados pelo ranking dos adversários.'}</div>
         </div>
 
 
@@ -327,13 +327,13 @@ export default function AnaliseResultado() {
 
         {modoTempo === 'ft' ? (
           <div className="sec">
-            <div className="sec-title"><Scale size={14} style={{ marginRight: 4 }} />Índice de Força (Ofensivo)</div>
+            <div className="sec-title"><Scale size={14} style={{ marginRight: 4 }} />Índice de Força Ofensiva</div>
             <details style={{ marginBottom: 10 }}>
               <summary style={{ cursor: 'pointer', fontSize: 10, fontWeight: 700, color: 'var(--texto2)', listStyle: 'none', display: 'flex', alignItems: 'center', gap: 5 }}>
                 <AlertTriangle size={11} /> Como é calculado?
               </summary>
               <div style={{ fontSize: 10, color: 'var(--texto2)', lineHeight: 1.6, marginTop: 6 }}>
-                Combina Gols (50%), Chutes no Alvo (25%), Cantos (15%), Chutes Total (5%) e penalidade por Cartões Vermelhos (-10%), comparado à média do(s) campeonato(s). 1.00 = média da liga.
+                Combina Gols (50%), Chutes no Alvo (25%), Escanteios (15%) e Chutes Totais (5%), com ajuste por Cartões Vermelhos. O índice é comparado à média da liga, onde 1,00 = média da liga.
               </div>
             </details>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
@@ -351,7 +351,7 @@ export default function AnaliseResultado() {
           </div>
         ) : (
           <div className="sec">
-            <div className="sec-title"><Scale size={14} style={{ marginRight: 4 }} />Índice de Força (Ofensivo)</div>
+            <div className="sec-title"><Scale size={14} style={{ marginRight: 4 }} />Índice de Força Ofensiva</div>
             <div className="empty" style={{ padding: 14 }}><p style={{ fontSize: 12 }}>Esse índice usa chutes, cantos e cartões, que só temos fechados por partida inteira (sem minuto/tempo). Disponível só em Resultado Final.</p></div>
           </div>
         )}
