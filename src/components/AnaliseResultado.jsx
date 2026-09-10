@@ -298,7 +298,14 @@ export default function AnaliseResultado() {
               <span style={{ color: 'var(--ouro)', fontWeight: 700, fontSize: 15 }}>λ {modoTempo === 'ht' ? (temHT ? sV.lambdaHT : '—') : sV.lambdaAjustado}</span>
             </div>
           </div>
-          <div style={{ fontSize: 10, color: 'var(--texto2)', marginTop: 6 }}>{modoTempo === 'ht' ? 'Gols do 1º tempo (HT) marcados/sofridos em média.' : 'Gols ajustados pelo ranking dos adversários.'}</div>
+          <details style={{ marginTop: 6 }}>
+            <summary style={{ cursor: 'pointer', fontSize: 10, fontWeight: 700, color: 'var(--texto2)', listStyle: 'none', display: 'flex', alignItems: 'center', gap: 5 }}>
+              <AlertTriangle size={11} /> Como é calculado?
+            </summary>
+            <div style={{ fontSize: 10, color: 'var(--texto2)', lineHeight: 1.6, marginTop: 6 }}>
+              Média de gols marcados ajustada por um fator baseado na posição dos adversários no ranking. Adversários mais fortes geram fator acima de 1; adversários mais fracos, abaixo de 1.
+            </div>
+          </details>
         </div>
 
 

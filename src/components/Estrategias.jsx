@@ -65,11 +65,12 @@ function TabelaFaixa({ linhas }) {
   return (
     <div className="card">
       <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Layers size={14} /> Faixa de Confirmação</div>
+      <div style={{ fontSize: 10, color: 'var(--texto2)', marginTop: -6, marginBottom: 8 }}>Mesmos cenários de entrada, mas em cima de todos os jogos da liga (não só os 2 times).</div>
       <div className="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>Liga</th><th>Mercado</th><th>Cenário</th>
+              <th>Cenário</th>
               <th className="td-c">Jogos</th>
               <th className="td-c">Confirmou</th>
               <th className="td-c">%</th>
@@ -77,15 +78,13 @@ function TabelaFaixa({ linhas }) {
           </thead>
           <tbody>
             {linhas.length === 0 ? (
-              <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--texto2)', padding: 16 }}>Nenhum jogo com cronologia de gols completa bateu esse cenário ainda.</td></tr>
+              <tr><td colSpan={4} style={{ textAlign: 'center', color: 'var(--texto2)', padding: 16 }}>Nenhum jogo com cronologia de gols completa bateu esses cenários ainda.</td></tr>
             ) : linhas.map((l, i) => (
               <tr key={i}>
-                <td style={{ color: 'var(--verde2)', fontWeight: 600 }}>{l.liga}</td>
-                <td>{l.mercado}</td>
-                <td style={{ color: 'var(--texto2)' }}>{l.cenario}</td>
+                <td style={{ color: 'var(--texto2)' }}>{l.placar} aos {l.minuto}'</td>
                 <td className="td-c">{l.jogos}</td>
                 <td className="td-c">{l.confirmou}</td>
-                <td className="td-c" style={{ color: corPct(l.pct), fontWeight: 700 }}>{l.pct}%</td>
+                <td className="td-c" style={{ color: corPct(l.pct), fontWeight: 700 }}>{l.pct != null ? l.pct + '%' : '—'}</td>
               </tr>
             ))}
           </tbody>
@@ -262,10 +261,6 @@ export default function Estrategias() {
   const [limite, setLimite] = useState(0);
   const [camp, setCamp] = useState('');
   const [mercadoLinha, setMercadoLinha] = useState('');
-  const [campC, setCampC] = useState('');
-  const [limiteC, setLimiteC] = useState(0);
-  const [minutoC, setMinutoC] = useState(30);
-  const [placarC, setPlacarC] = useState('0x0');
   const [campE, setCampE] = useState('');
   const [linhaE, setLinhaE] = useState(1.5); // número (Over X.5) ou 'btts' (Ambas Marcam)
   const [mandanteE, setMandanteE] = useState('');
@@ -297,12 +292,6 @@ export default function Estrategias() {
     [camp, mercadoLinha, limite, jogosCache.length]
   );
 
-  const faixa = useMemo(
-    () => (window.computeFaixaConfirmacao ? window.computeFaixaConfirmacao({ camp: campC, limite: limiteC, minuto: minutoC, placar: placarC }) : []),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [campC, limiteC, minutoC, placarC, jogosCache.length]
-  );
-
   const times = useMemo(() => {
     const jogos = campE ? jogosCache.filter((j) => j.camp === campE) : jogosCache;
     return sortNatural([...new Set(jogos.flatMap((j) => [j.casa, j.vis]))]);
@@ -321,6 +310,18 @@ export default function Estrategias() {
 
   const mercadoLabel = linhaE === 'btts' ? 'Ambas Marcam' : `Over ${linhaE}`;
 
+  // Mesmos 2 cenários (placar+minuto) da aba Equipes, só que calculados em cima
+  // de TODOS os jogos da liga escolhida (campE) — não só mandante/visitante —
+  // pra comparar "como esse cenário se comporta na liga toda" vs "nesses 2 times".
+  const faixaLiga = useMemo(
+    () => cenariosE.map((c) => ({
+      ...c,
+      ...(window.cenarioLiga ? window.cenarioLiga(campE, limiteE, c.placar, c.minuto, linhaE) : { jogos: 0, confirmou: 0, pct: null }),
+    })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [campE, limiteE, linhaE, cenariosE, jogosCache.length]
+  );
+
   function atualizarCenario(id, campo, valor) {
     setCenariosE((lista) => lista.map((c) => c.id === id ? { ...c, [campo]: valor } : c));
   }
@@ -329,8 +330,7 @@ export default function Estrategias() {
     <>
       <div className="sub-nav" style={{ marginBottom: 14 }}>
         <button className={`sub-tab ${tab === 'elinha' ? 'active' : ''}`} onClick={() => { window.toastEsconder?.(); setTab('elinha'); }}><TrendingUp size={13} style={{ verticalAlign: -2, marginRight: 4 }} />Linha do Tempo</button>
-        <button className={`sub-tab ${tab === 'ecenarios' ? 'active' : ''}`} onClick={() => { window.toastEsconder?.(); setTab('ecenarios'); }}><Target size={13} style={{ verticalAlign: -2, marginRight: 4 }} />Cenários</button>
-        <button className={`sub-tab ${tab === 'eequipes' ? 'active' : ''}`} onClick={() => { window.toastEsconder?.(); setTab('eequipes'); }}><ShieldHalf size={13} style={{ verticalAlign: -2, marginRight: 4 }} />Equipes</button>
+        <button className={`sub-tab ${tab === 'eequipes' ? 'active' : ''}`} style={{ flex: 1 }} onClick={() => { window.toastEsconder?.(); setTab('eequipes'); }}><ShieldHalf size={13} style={{ verticalAlign: -2, marginRight: 4 }} />Equipes</button>
       </div>
 
       {/* ═══ SUBPASTA LINHA DO TEMPO ═══ */}
@@ -363,36 +363,6 @@ export default function Estrategias() {
 
         <TabelaJanela titulo="Janela de Entrada — 1º Tempo" icon={<Clock size={14} />} linhas={janela.t1} />
         <TabelaJanela titulo="Janela de Entrada — 2º Tempo" icon={<History size={14} />} linhas={janela.t2} />
-      </div>
-
-      {/* ═══ SUBPASTA CENÁRIOS ═══ */}
-      <div className={`sub-page ${tab === 'ecenarios' ? 'active' : ''}`}>
-        <div className="sel-card" style={{ padding: '12px 16px' }}>
-          <div className="sel-card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Trophy size={13} /> Liga</div>
-          <select value={campC} onChange={(e) => setCampC(e.target.value)} style={{ marginBottom: 8 }}>
-            <option value="">Todos os campeonatos</option>
-            <CampeonatoOptions camps={camps} />
-          </select>
-
-          <div className="sel-card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><CalendarRange size={13} /> Temporada</div>
-          <select value={limiteC} onChange={(e) => setLimiteC(Number(e.target.value))} style={{ marginBottom: 8 }}>
-            <option value={0}>Temporada (todos os jogos)</option>
-            <option value={10}>Últimos 10 jogos</option>
-            <option value={20}>Últimos 20 jogos</option>
-          </select>
-
-          <div className="sel-card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Timer size={13} /> Minuto</div>
-          <select value={minutoC} onChange={(e) => setMinutoC(Number(e.target.value))} style={{ marginBottom: 8 }}>
-            {MINUTOS_CENARIO.map((m) => <option key={m} value={m}>Até {m}'</option>)}
-          </select>
-
-          <div className="sel-card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Layers size={13} /> Placar</div>
-          <select value={placarC} onChange={(e) => setPlacarC(e.target.value)}>
-            {PLACARES_CENARIO.map((p) => <option key={p} value={p}>{p}</option>)}
-          </select>
-        </div>
-
-        <TabelaFaixa linhas={faixa} />
       </div>
 
       {/* ═══ SUBPASTA EQUIPES ═══ */}
@@ -454,6 +424,8 @@ export default function Estrategias() {
               <StatCard icon={<Clock size={15} color="var(--ouro)" />} valor={resultado.tendencia.mediaConfirmacao != null ? resultado.tendencia.mediaConfirmacao + "'" : '—'} label="Média Confirmação" caption="Minuto médio" />
               <StatCard icon={<LayoutGrid size={15} color="#5fa8f5" />} valor={resultado.tendencia.jogos} label="Jogos Analisados" caption="Jogos" />
             </div>
+
+            <TabelaFaixa linhas={faixaLiga} />
 
             {/* CENÁRIOS DE ENTRADA (2, definidos nos Filtros Avançados — sem botão de adicionar aqui) */}
             <div className="card">
