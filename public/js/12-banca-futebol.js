@@ -606,7 +606,7 @@ const CRITERIOS_LIGA = {
     // ainda tem sorteio. Se empatar até aqui, fica na ordem que já estava (igual às
     // outras ligas).
   ],
-  'Champions League': [ // UEFA Champions League — Fase Liga 2026/27 (tabela única, 36 times).
+  'UEFA Champions League': [ // Fase Liga 2026/27 (tabela única, 36 times).
     // Aqui NÃO tem confronto direto: no formato suíço cada clube enfrenta só 8 dos outros
     // 35, então "quem jogou contra quem" não é comparável do jeito que é nas ligas normais
     // (todo mundo joga com todo mundo). Por isso a UEFA usa os critérios 7/8/9 (pontos/saldo/
