@@ -290,6 +290,8 @@ function AbaAssinaturas() {
 function AbaSistema() {
   const [cfg, setCfg] = useState(() => window.cfgAppLoad ? window.cfgAppLoad() : {});
   const [salvando, setSalvando] = useState(false);
+  const [migrando, setMigrando] = useState(false);
+  const [progresso, setProgresso] = useState(null); // { total, migrados, erros }
 
   function salvar() {
     setSalvando(true);
@@ -297,6 +299,18 @@ function AbaSistema() {
       .then(() => window.toast?.('Configurações salvas'))
       .catch(() => window.toast?.('Não foi possível salvar — crie a tabela "config_app" no Supabase (veja Configurar)', true))
       .finally(() => setSalvando(false));
+  }
+
+  function migrarEscudos() {
+    setMigrando(true);
+    setProgresso({ total: 0, migrados: 0, erros: 0 });
+    Promise.resolve(window.migrarEscudosParaStorage?.((p) => setProgresso(p)))
+      .then((r) => {
+        if (!r || r.total === 0) window.toast?.('Nenhum escudo em base64 pra migrar — já está tudo no Storage.');
+        else window.toast?.(`Migração concluída: ${r.migrados}/${r.total} escudos movidos pro Storage${r.erros ? ` (${r.erros} com erro)` : ''}.`);
+      })
+      .catch(() => window.toast?.('Erro ao migrar escudos — confira se o bucket "escudos" existe no Supabase Storage.', true))
+      .finally(() => setMigrando(false));
   }
 
   return (
@@ -315,6 +329,17 @@ function AbaSistema() {
       </div>
 
       <button className="btn-primary" onClick={salvar} disabled={salvando}><Save size={14} style={{ verticalAlign: -2, marginRight: 4 }} />{salvando ? 'Salvando...' : 'Salvar'}</button>
+
+      <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid var(--c3)' }}>
+        <div style={{ fontSize: 11, color: 'var(--texto2)', textTransform: 'uppercase', fontWeight: 700, marginBottom: 6 }}>Escudos (Storage)</div>
+        <div style={{ fontSize: 11.5, color: 'var(--texto2)', marginBottom: 10, lineHeight: 1.5 }}>
+          Move os escudos ainda salvos em base64 (formato antigo, pesado) pro bucket "escudos" do Supabase Storage — reduz bastante o consumo de dados a cada vez que o app abre. Precisa do bucket público "escudos" já criado no Supabase.
+        </div>
+        <button className="btn-primary" onClick={migrarEscudos} disabled={migrando}>
+          <RefreshCw size={14} style={{ verticalAlign: -2, marginRight: 4 }} />
+          {migrando ? `Migrando... ${progresso ? `${progresso.migrados}/${progresso.total}` : ''}` : 'Migrar Escudos para o Storage'}
+        </button>
+      </div>
 
       <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid var(--c3)', display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--texto2)' }}>
         <span>Versão do aplicativo</span><strong style={{ color: 'var(--texto)' }}>Ei Placar v2.1</strong>

@@ -1,14 +1,36 @@
 // ═══════════════════════════════════════════════════
 // ESCUDOS DOS TIMES — upload, sincronização com a nuvem, exibição
 // ═══════════════════════════════════════════════════
-// ══ ESCUDOS DOS TIMES — sincronizados via Supabase (tabela "escudos"), com cache local de emergência ══
-// Antes ficava só no localStorage do navegador: como cada arquivo .html baixado de novo conta como
-// uma "origem" diferente pro navegador, os escudos sumiam toda vez que o app era atualizado.
-// Agora fica salvo na nuvem (mesma lógica da Banca), então sobrevive a atualizações do sistema.
+// ══ ESCUDOS DOS TIMES — arquivos no Supabase Storage (bucket "escudos"), com
+// só a URL (texto pequeno) sincronizada via tabela "escudos" + cache local. ══
+// Antes cada escudo ficava como imagem inteira em base64 dentro da tabela, e o
+// blob JSON com TODOS os escudos era baixado por completo toda vez que o app
+// abria (e reenviado por completo a cada escudo novo/trocado) — isso consumia
+// bandwidth do Supabase muito rápido. Agora só a URL do arquivo é sincronizada
+// (poucos bytes por time) e a imagem em si é servida pelo Storage/CDN, com
+// cache normal de navegador — só baixa de novo se o arquivo realmente mudar.
 let escudosCache = null;
+const ESCUDOS_BUCKET = 'escudos';
 function escudosUrl(filtros){
   const cfg = getConfig();
   return cfg.url.replace(/\/$/, '') + '/rest/v1/escudos' + (filtros || '');
+}
+// Nome do time → nome de arquivo seguro (sem acento/espaço/símbolo), pra usar como
+// path no bucket. Ex: "América-MG" → "america-mg".
+function escudoSlug(nome){
+  return (nome || '')
+    .trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove acentos
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'time';
+}
+function escudoStorageUploadUrl(path){
+  const cfg = getConfig();
+  return cfg.url.replace(/\/$/, '') + '/storage/v1/object/' + ESCUDOS_BUCKET + '/' + path;
+}
+function escudoStoragePublicUrl(path){
+  const cfg = getConfig();
+  return cfg.url.replace(/\/$/, '') + '/storage/v1/object/public/' + ESCUDOS_BUCKET + '/' + path;
 }
 function getEscudos(){
   if(escudosCache) return escudosCache;
@@ -21,21 +43,75 @@ function getEscudo(nome){
 }
 // Auditoria de segurança, achado SEC-002 (defesa em profundidade): mesmo com a
 // escrita na tabela "escudos" agora restrita a organizador (RLS), essa função
-// garante que só um data URI de imagem de verdade vira <img src="...">. Sem
-// essa trava, um valor malicioso salvo ali (ex: `x" onerror="...`) quebraria
-// pra fora do atributo HTML na hora de montar escudoImgOuIcone/escudoMini e
-// executaria script no navegador de quem visse aquele escudo (stored XSS).
+// garante que só um data URI de imagem de verdade OU uma URL do nosso próprio
+// bucket público de escudos vira <img src="...">. Sem essa trava, um valor
+// malicioso salvo ali (ex: `x" onerror="...`) quebraria pra fora do atributo
+// HTML na hora de montar escudoImgOuIcone/escudoMini e executaria script no
+// navegador de quem visse aquele escudo (stored XSS).
 function escudoUrlValida(url){
-  return typeof url === 'string' && /^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(url);
+  if(typeof url !== 'string') return false;
+  if(/^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(url)) return true; // legado, ainda não migrado
+  const prefixoStorage = getConfig().url.replace(/\/$/, '') + '/storage/v1/object/public/' + ESCUDOS_BUCKET + '/';
+  return url.startsWith(prefixoStorage);
 }
-function salvarEscudo(nome, dataUrl){
+function salvarEscudo(nome, url){
   if(!nome) return;
   const esc = { ...getEscudos() };
-  esc[nome.trim().toLowerCase()] = dataUrl;
+  esc[nome.trim().toLowerCase()] = url;
   escudosCache = esc;
   try { localStorage.setItem('mp_escudos', JSON.stringify(esc)); } catch(e){}
   escudosSyncNuvem();
 }
+// Sobe o arquivo (Blob/PNG) pro bucket "escudos" do Storage e devolve a URL pública.
+// 'upsert:true' permite trocar o escudo de um time sem precisar apagar o arquivo antigo antes.
+async function uploadEscudoStorage(nome, blob){
+  const path = escudoSlug(nome) + '.png';
+  const cfg = getConfig();
+  const sessao = authGetSessao();
+  const res = await fetch(escudoStorageUploadUrl(path), {
+    method: 'POST',
+    headers: {
+      'apikey': cfg.key,
+      'Authorization': 'Bearer ' + (sessao && sessao.access_token ? sessao.access_token : cfg.key),
+      'Content-Type': 'image/png',
+      'x-upsert': 'true',
+    },
+    body: blob,
+  });
+  if(!res.ok){
+    const t = await res.text();
+    if(t.includes('not found') || t.includes('Bucket not found')){
+      throw new Error('Crie o bucket público "escudos" no Supabase Storage antes de subir escudos (veja Configurar).');
+    }
+    throw new Error('Falha ao subir o escudo: ' + t);
+  }
+  return escudoStoragePublicUrl(path);
+}
+// Migração única: converte os escudos que ainda estão em base64 (formato antigo)
+// pra arquivos no Storage, e atualiza a referência pra URL (bem mais leve).
+// Chamada pelo botão "Migrar Escudos" em Administração → Sistema.
+async function migrarEscudosParaStorage(onProgresso){
+  await escudosCarregarNuvem();
+  const esc = { ...getEscudos() };
+  const nomes = Object.keys(esc).filter(n => typeof esc[n] === 'string' && esc[n].startsWith('data:image'));
+  let migrados = 0, erros = 0;
+  for(const nome of nomes){
+    try {
+      const blob = await (await fetch(esc[nome])).blob(); // converte o data URI já em memória, sem baixar nada externo
+      const urlPublica = await uploadEscudoStorage(nome, blob);
+      esc[nome] = urlPublica;
+      migrados++;
+    } catch(e){
+      erros++;
+    }
+    onProgresso?.({ total: nomes.length, migrados, erros });
+  }
+  escudosCache = esc;
+  try { localStorage.setItem('mp_escudos', JSON.stringify(esc)); } catch(e){}
+  await escudosSyncNuvem(); // reenvia o objeto (agora só com URLs, bem menor) uma última vez
+  return { total: nomes.length, migrados, erros };
+}
+window.migrarEscudosParaStorage = migrarEscudosParaStorage;
 // Mesma proteção contra corrida de sincronização usada na Banca: nunca deixa 2 envios em paralelo,
 // e sempre manda o estado mais atual do cache (nunca um instantâneo antigo que possa "vencer" por
 // último e apagar um escudo salvo depois).
@@ -105,20 +181,32 @@ function onEscudoFileChange(ev){
     const img = new Image();
     img.onload = () => {
       // Reduz pra no máximo 160x160 antes de salvar — mantém o escudo nítido o suficiente
-      // pros tamanhos usados no app e evita ficar pesado pra sincronizar na nuvem.
+      // pros tamanhos usados no app e evita ficar pesado pra subir/exibir.
       const max = 160;
       const escala = Math.min(1, max/Math.max(img.width, img.height));
       const w = Math.round(img.width*escala), h = Math.round(img.height*escala);
       const cv = document.createElement('canvas'); cv.width=w; cv.height=h;
       const ctx = cv.getContext('2d');
       ctx.drawImage(img, 0, 0, w, h);
-      const dataUrl = cv.toDataURL('image/png');
       const nome = document.getElementById(escudoCampoAtual).value.trim();
-      salvarEscudo(nome, dataUrl);
-      // Atualiza os círculos de escudo visíveis nos dois formulários (H2H e Editar Jogo)
-      if(document.getElementById('iCasa')) syncNomes();
-      if(document.getElementById('eCasa')) syncNomesEdicao();
-      toast('Escudo salvo — já vai aparecer em todo lugar desse time');
+      const aplicarEAvisar = (url) => {
+        salvarEscudo(nome, url);
+        if(document.getElementById('iCasa')) syncNomes();
+        if(document.getElementById('eCasa')) syncNomesEdicao();
+      };
+      cv.toBlob(async (blob) => {
+        try {
+          const urlPublica = await uploadEscudoStorage(nome, blob);
+          aplicarEAvisar(urlPublica);
+          toast('Escudo salvo — já vai aparecer em todo lugar desse time');
+        } catch(e){
+          // Sem bucket configurado ou sem internet: cai pro formato antigo (base64),
+          // pra não travar o cadastro — dá pra migrar depois pelo Storage quando resolver.
+          const dataUrl = cv.toDataURL('image/png');
+          aplicarEAvisar(dataUrl);
+          toast(e.message || 'Escudo salvo localmente (sem Storage configurado ainda)', true);
+        }
+      }, 'image/png');
     };
     img.src = reader.result;
   };
