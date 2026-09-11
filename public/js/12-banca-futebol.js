@@ -606,17 +606,53 @@ const CRITERIOS_LIGA = {
     // ainda tem sorteio. Se empatar até aqui, fica na ordem que já estava (igual às
     // outras ligas).
   ],
+  'Champions League': [ // UEFA Champions League — Fase Liga 2026/27 (tabela única, 36 times).
+    // Aqui NÃO tem confronto direto: no formato suíço cada clube enfrenta só 8 dos outros
+    // 35, então "quem jogou contra quem" não é comparável do jeito que é nas ligas normais
+    // (todo mundo joga com todo mundo). Por isso a UEFA usa os critérios 7/8/9 (pontos/saldo/
+    // gols dos ADVERSÁRIOS enfrentados) em vez de confronto direto — é o jeito dela de tentar
+    // nivelar quem pegou um grupo de adversários mais forte.
+    {tipo:'geral', campo:'pts'},
+    {tipo:'geral', campo:'sg'},          // 1. Saldo de gols
+    {tipo:'geral', campo:'gp'},          // 2. Gols marcados
+    {tipo:'geral', campo:'gpFora'},      // 3. Gols marcados fora de casa
+    {tipo:'geral', campo:'v'},           // 4. Número de vitórias
+    {tipo:'geral', campo:'vFora'},       // 5. Número de vitórias fora de casa
+    {tipo:'geral', campo:'advPts'},      // 6. Pontos conquistados pelos adversários
+    {tipo:'geral', campo:'advSg'},       // 7. Saldo de gols dos adversários
+    {tipo:'geral', campo:'advGp'},       // 8. Gols marcados pelos adversários
+    {tipo:'geral', campo:'fairPlay'},    // 9. Menor número de pontos disciplinares
+    // 10º e último critério oficial é o Coeficiente UEFA do clube (histórico de campanhas
+    // europeias) — o app não tem essa base de dados, não dá pra simular. Quem ainda empatar
+    // depois de tudo acima fica na ordem que já estava (mesma simplificação das outras ligas).
+  ],
 };
 CRITERIOS_LIGA['2. Bundesliga'] = CRITERIOS_LIGA['Bundesliga']; // mesmos critérios da Bundesliga
 
 function ordenarPorCriteriosOficiais(linhas, jogos, camp){
   const criterios = CRITERIOS_LIGA[camp];
   if(!criterios) return null;
-  // fairPlay: quanto MENOS cartão, melhor — inverte o sinal pra caber no "maior valor vence" da cadeia
-  const comFairPlay = linhas.map(l=>({ ...l, fairPlay: -(l.vermelhos*3 + l.amarelos) }));
-  // Agrupa tudo junto de início (sem pré-agrupar por pts como no Brasileirão) — a cadeia de
-  // critérios já cuida de separar por pontos no 1º passo e ir refinando os empates.
-  return aplicarCriterios(comFairPlay, criterios, jogos);
+  const porNome = {};
+  linhas.forEach(l=>{ porNome[l.nome] = l; });
+  const comExtras = linhas.map(l=>{
+    // fairPlay: quanto MENOS cartão, melhor — inverte o sinal pra caber no "maior valor
+    // vence" da cadeia genérica do aplicarCriterios().
+    const fairPlay = -(l.vermelhos*3 + l.amarelos);
+    // advPts/advSg/advGp: pontos, saldo de gols e gols marcados somados de cada adversário
+    // ENFRENTADO (um adversário só conta uma vez, mesmo se por acaso aparecer 2x nos jogos
+    // filtrados). Usado só pela Champions League (critérios 7/8/9 do regulamento 2026/27),
+    // mas calcular sempre é inofensivo pras outras ligas — elas simplesmente não referenciam
+    // esses campos na própria cadeia de critérios.
+    const opps = new Set();
+    jogos.forEach(j=>{
+      if(j.casa===l.nome) opps.add(j.vis);
+      else if(j.vis===l.nome) opps.add(j.casa);
+    });
+    let advPts=0, advSg=0, advGp=0;
+    opps.forEach(o=>{ const t=porNome[o]; if(t){ advPts+=t.pts; advSg+=t.sg; advGp+=t.gp; } });
+    return { ...l, fairPlay, advPts, advSg, advGp };
+  });
+  return aplicarCriterios(comExtras, criterios, jogos);
 }
 
 function computeClassificacao(camp, modo){
