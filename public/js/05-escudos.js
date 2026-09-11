@@ -62,13 +62,22 @@ function salvarEscudo(nome, url){
   try { localStorage.setItem('mp_escudos', JSON.stringify(esc)); } catch(e){}
   escudosSyncNuvem();
 }
+// Some navegadores/redes deixam uma requisição "pendurada" sem nunca resolver nem
+// rejeitar (nem sucesso, nem erro) — sem isso, um único item travado emperra a
+// migração inteira pra sempre em "0/342". Com o timeout, esse item vira erro e
+// o loop segue pros próximos.
+function fetchComTimeout(url, opts, timeoutMs){
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs || 15000);
+  return fetch(url, { ...opts, signal: ctrl.signal }).finally(() => clearTimeout(timer));
+}
 // Sobe o arquivo (Blob/PNG) pro bucket "escudos" do Storage e devolve a URL pública.
 // 'upsert:true' permite trocar o escudo de um time sem precisar apagar o arquivo antigo antes.
 async function uploadEscudoStorage(nome, blob){
   const path = escudoSlug(nome) + '.png';
   const cfg = getConfig();
   const sessao = authGetSessao();
-  const res = await fetch(escudoStorageUploadUrl(path), {
+  const res = await fetchComTimeout(escudoStorageUploadUrl(path), {
     method: 'POST',
     headers: {
       'apikey': cfg.key,
@@ -97,12 +106,13 @@ async function migrarEscudosParaStorage(onProgresso){
   let migrados = 0, erros = 0;
   for(const nome of nomes){
     try {
-      const blob = await (await fetch(esc[nome])).blob(); // converte o data URI já em memória, sem baixar nada externo
+      const blob = await (await fetchComTimeout(esc[nome], {}, 15000)).blob(); // converte o data URI já em memória, sem baixar nada externo
       const urlPublica = await uploadEscudoStorage(nome, blob);
       esc[nome] = urlPublica;
       migrados++;
     } catch(e){
       erros++;
+      console.warn('[migrarEscudosParaStorage] falhou em "' + nome + '":', e && e.message ? e.message : e);
     }
     onProgresso?.({ total: nomes.length, migrados, erros });
   }
@@ -123,18 +133,18 @@ async function escudosSyncNuvem(){
   escudosSyncEmAndamento = true;
   const esc = escudosCache;
   try {
-    const res = await fetch(escudosUrl('?id=eq.1'), {
+    const res = await fetchComTimeout(escudosUrl('?id=eq.1'), {
       method: 'POST',
       headers: { ...sbHeaders(), 'Prefer': 'resolution=merge-duplicates,return=representation' },
       body: JSON.stringify({ id:1, dados:esc, updated_at:new Date().toISOString() })
-    });
+    }, 15000);
     if(!res.ok){
       const t = await res.text();
       if(t.includes('does not exist') || t.includes('PGRST205') || t.includes('schema cache')){
         toast('Crie a tabela "escudos" no Supabase pra salvar escudos na nuvem (veja Configurar)', true);
       }
     }
-  } catch(e){ /* sem internet — fica só local mesmo, sem travar a UI */ }
+  } catch(e){ /* sem internet (ou travou/deu timeout) — fica só local mesmo, sem travar a UI */ }
   escudosSyncEmAndamento = false;
   if (escudosSyncPendente) { escudosSyncPendente = false; escudosSyncNuvem(); }
 }
@@ -142,7 +152,7 @@ async function escudosCarregarNuvem(){
   if (!temConfig()) { escudosCache = getEscudos(); return; }
   if (escudosSyncEmAndamento || escudosSyncPendente) return; // idem: não sobrescreve enquanto tem envio local pendente
   try {
-    const res = await fetch(escudosUrl('?id=eq.1&select=dados'), { headers: sbHeaders() });
+    const res = await fetchComTimeout(escudosUrl('?id=eq.1&select=dados'), { headers: sbHeaders() }, 15000);
     if(!res.ok) throw new Error();
     const data = await res.json();
     if(data && data[0] && data[0].dados){
