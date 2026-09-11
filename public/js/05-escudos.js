@@ -73,18 +73,21 @@ function fetchComTimeout(url, opts, timeoutMs){
 }
 // Sobe o arquivo (Blob/PNG) pro bucket "escudos" do Storage e devolve a URL pública.
 // 'upsert:true' permite trocar o escudo de um time sem precisar apagar o arquivo antigo antes.
+//
+// IMPORTANTE sobre a chave: o projeto usa a chave nova do Supabase ("sb_publishable_...",
+// não é um JWT). O serviço de Storage rejeita (400) se essa chave publishable também for
+// mandada no cabeçalho Authorization — ele tenta decodificar como JWT e falha. Por isso,
+// só mandamos Authorization quando existe de verdade um token de sessão (JWT do usuário
+// logado); sem sessão, vai só o apikey.
 async function uploadEscudoStorage(nome, blob){
   const path = escudoSlug(nome) + '.png';
   const cfg = getConfig();
   const sessao = authGetSessao();
+  const headers = { 'apikey': cfg.key, 'Content-Type': 'image/png', 'x-upsert': 'true' };
+  if(sessao && sessao.access_token) headers['Authorization'] = 'Bearer ' + sessao.access_token;
   const res = await fetchComTimeout(escudoStorageUploadUrl(path), {
     method: 'POST',
-    headers: {
-      'apikey': cfg.key,
-      'Authorization': 'Bearer ' + (sessao && sessao.access_token ? sessao.access_token : cfg.key),
-      'Content-Type': 'image/png',
-      'x-upsert': 'true',
-    },
+    headers,
     body: blob,
   });
   if(!res.ok){
@@ -92,7 +95,10 @@ async function uploadEscudoStorage(nome, blob){
     if(t.includes('not found') || t.includes('Bucket not found')){
       throw new Error('Crie o bucket público "escudos" no Supabase Storage antes de subir escudos (veja Configurar).');
     }
-    throw new Error('Falha ao subir o escudo: ' + t);
+    if(t.includes('row-level security') || t.includes('Unauthorized') || t.includes('policy')){
+      throw new Error('Sem permissão pra subir no bucket "escudos" — confira a política de RLS de INSERT/UPDATE pro role authenticated, e se sua sessão de login ainda está válida.');
+    }
+    throw new Error('Falha ao subir o escudo (' + res.status + '): ' + t);
   }
   return escudoStoragePublicUrl(path);
 }
