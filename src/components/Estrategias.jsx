@@ -61,35 +61,38 @@ function TabelaJanela({ titulo, icon, linhas }) {
   );
 }
 
+// Cada cenário vira o seu próprio bloco (nome do cenário em cima, Jogos/Confirmou/%
+// numa mini-tabela embaixo) em vez de uma coluna a mais numa tabela larga — antes
+// isso obrigava rolar o card pro lado no celular pra ver o nome do cenário.
 function TabelaFaixa({ linhas }) {
   return (
     <div className="card">
-      <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Layers size={14} /> Faixa de Confirmação</div>
-      <div style={{ fontSize: 10, color: 'var(--texto2)', marginTop: -6, marginBottom: 8 }}>Mesmos cenários de entrada, mas em cima de todos os jogos da liga (não só os 2 times).</div>
-      <div className="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Cenário</th>
-              <th className="td-c">Jogos</th>
-              <th className="td-c">Confirmou</th>
-              <th className="td-c">%</th>
-            </tr>
-          </thead>
-          <tbody>
-            {linhas.length === 0 ? (
-              <tr><td colSpan={4} style={{ textAlign: 'center', color: 'var(--texto2)', padding: 16 }}>Nenhum jogo com cronologia de gols completa bateu esses cenários ainda.</td></tr>
-            ) : linhas.map((l, i) => (
-              <tr key={i}>
-                <td style={{ color: 'var(--texto2)' }}>{l.placar} aos {l.minuto}'</td>
-                <td className="td-c">{l.jogos}</td>
-                <td className="td-c">{l.confirmou}</td>
-                <td className="td-c" style={{ color: corPct(l.pct), fontWeight: 700 }}>{l.pct != null ? l.pct + '%' : '—'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Layers size={14} /> Taxa de Confirmação por Faixa</div>
+      {linhas.length === 0 ? (
+        <div style={{ textAlign: 'center', color: 'var(--texto2)', padding: 16, fontSize: 12 }}>Nenhum jogo com cronologia de gols completa bateu esses cenários ainda.</div>
+      ) : linhas.map((l, i) => (
+        <div key={i} style={{ marginTop: i === 0 ? 0 : 12 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--texto2)', marginBottom: 4 }}>Cenário {l.placar} aos {l.minuto}'</div>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th className="td-c">Jogos</th>
+                  <th className="td-c">Confirmou</th>
+                  <th className="td-c">%</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="td-c">{l.jogos}</td>
+                  <td className="td-c">{l.confirmou}</td>
+                  <td className="td-c" style={{ color: corPct(l.pct), fontWeight: 700 }}>{l.pct != null ? l.pct + '%' : '—'}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -429,7 +432,7 @@ export default function Estrategias() {
 
             {/* CENÁRIOS DE ENTRADA (2, definidos nos Filtros Avançados — sem botão de adicionar aqui) */}
             <div className="card">
-              <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Timer size={14} /> Cenários de Entrada</div>
+              <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Timer size={14} /> Cenários de Entrada da Equipe</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 {cenariosE.map((c, i) => {
                   const dado = resultado.cenarios[i] || { pct: null, jogos: 0 };

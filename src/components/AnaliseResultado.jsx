@@ -335,14 +335,6 @@ export default function AnaliseResultado() {
         {modoTempo === 'ft' ? (
           <div className="sec">
             <div className="sec-title"><Scale size={14} style={{ marginRight: 4 }} />Índice de Força Ofensiva</div>
-            <details style={{ marginBottom: 10 }}>
-              <summary style={{ cursor: 'pointer', fontSize: 10, fontWeight: 700, color: 'var(--texto2)', listStyle: 'none', display: 'flex', alignItems: 'center', gap: 5 }}>
-                <AlertTriangle size={11} /> Como é calculado?
-              </summary>
-              <div style={{ fontSize: 10, color: 'var(--texto2)', lineHeight: 1.6, marginTop: 6 }}>
-                Combina Gols (50%), Chutes no Alvo (25%), Escanteios (15%) e Chutes Totais (5%), com ajuste por Cartões Vermelhos. O índice é comparado à média da liga, onde 1,00 = média da liga.
-              </div>
-            </details>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               <div className="stat-extra-box" style={{ flex: 1, minWidth: 140 }}>
                 <div className="seb-label">{casa}</div>
@@ -355,6 +347,14 @@ export default function AnaliseResultado() {
                 <div className="seb-sub">≈ {sV.lambdaIndice} gols esperados/jogo</div>
               </div>
             </div>
+            <details style={{ marginTop: 6 }}>
+              <summary style={{ cursor: 'pointer', fontSize: 10, fontWeight: 700, color: 'var(--texto2)', listStyle: 'none', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <AlertTriangle size={11} /> Como é calculado?
+              </summary>
+              <div style={{ fontSize: 10, color: 'var(--texto2)', lineHeight: 1.6, marginTop: 6 }}>
+                Combina Gols (50%), Chutes no Alvo (25%), Escanteios (15%) e Chutes Totais (5%), com ajuste por Cartões Vermelhos. O índice é comparado à média da liga, onde 1,00 = média da liga.
+              </div>
+            </details>
           </div>
         ) : (
           <div className="sec">

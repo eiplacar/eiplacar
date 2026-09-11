@@ -227,7 +227,7 @@ export default function SeletorAnalise() {
             <button className={`local-btn ${localUnicoAtivo === 'fora' ? 'active-fora' : ''}`} onClick={() => escolherLocal('fora')} style={{ ...btnStyleLocal, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}><Plane size={12} /> Fora</button>
           </div>
 
-          <input className="qty-input" type="number" min="1" placeholder="Últimos jogos (em branco = todos)" value={qtyUnicoDisplay} onChange={onQtyInputUnico} style={{ width: '100%', fontSize: 12, padding: '7px 8px' }} />
+          <input className="qty-input" type="number" min="1" placeholder="Digite a quantidade (vazio = todos)" value={qtyUnicoDisplay} onChange={onQtyInputUnico} style={{ width: '100%', fontSize: 12, padding: '7px 8px' }} />
         </div>
 
         {/* Estado atual de cada time */}
