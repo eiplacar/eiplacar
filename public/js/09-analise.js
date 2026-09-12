@@ -68,6 +68,13 @@ function statsTime(nome, local, camp, qty){
   const nc=como_casa.length, nv=como_vis.length;
   const vedCasa = como_casa.reduce((acc,j)=>{ if(j.gC>j.gV) acc.v++; else if(j.gC===j.gV) acc.e++; else acc.d++; return acc; }, {v:0,e:0,d:0});
   const vedFora = como_vis.reduce((acc,j)=>{ if(j.gV>j.gC) acc.v++; else if(j.gV===j.gC) acc.e++; else acc.d++; return acc; }, {v:0,e:0,d:0});
+  const vedGeral = { v: vedCasa.v+vedFora.v, e: vedCasa.e+vedFora.e, d: vedCasa.d+vedFora.d };
+  // "Sem marcar" = jogos em que o time ficou a zero no ataque; "sem sofrer" (clean sheet) =
+  // jogos em que a defesa não tomou gol nenhum. Contados separado por casa/fora e somados
+  // pro geral — usados no card "Desempenho" (aba Análise).
+  const semMarcarCasa = como_casa.filter(j=>j.gC===0).length, semMarcarFora = como_vis.filter(j=>j.gV===0).length;
+  const semSofrerCasa = como_casa.filter(j=>j.gV===0).length, semSofrerFora = como_vis.filter(j=>j.gC===0).length;
+  const semMarcarGeral = semMarcarCasa+semMarcarFora, semSofrerGeral = semSofrerCasa+semSofrerFora;
   const lambda=nt?r2(gmTot/nt):0; // ataque, sem ajuste (mantido para comparação)
   const lambdaDef=nt?r2(gsTot/nt):0; // defesa, sem ajuste (gols sofridos por jogo)
 
@@ -224,7 +231,8 @@ function statsTime(nome, local, camp, qty){
   // Reconverte o índice (relativo à média=1) para gols/jogo, com limites de sanidade.
   const lambdaIndice = Math.max(0.1, Math.min(6, r2(liga.gols * indiceForca)));
 
-  return { nome, nt, nc, nv, local, qty, mediaGM_casa:nc?r2(gmCasa/nc):0, mediaGS_casa:nc?r2(gsCasa/nc):0, mediaGM_vis:nv?r2(gmVis/nv):0, mediaGS_vis:nv?r2(gsVis/nv):0, vedCasa, vedFora,
+  return { nome, nt, nc, nv, local, qty, mediaGM_casa:nc?r2(gmCasa/nc):0, mediaGS_casa:nc?r2(gsCasa/nc):0, mediaGM_vis:nv?r2(gmVis/nv):0, mediaGS_vis:nv?r2(gsVis/nv):0, vedCasa, vedFora, vedGeral,
+    semMarcarCasa, semMarcarFora, semMarcarGeral, semSofrerCasa, semSofrerFora, semSofrerGeral,
     ncHT, nvHT, mediaGM_casaHT:ncHT?r2(gmCasaHT/ncHT):0, mediaGS_casaHT:ncHT?r2(gsCasaHT/ncHT):0, mediaGM_visHT:nvHT?r2(gmVisHT/nvHT):0, mediaGS_visHT:nvHT?r2(gsVisHT/nvHT):0, vedCasaHT, vedForaHT,
     lambda, lambdaDef, lambdaAjustado, lambdaDefAjustado, lambdaHT, lambdaDefHT, ntHT, lambdaIndice, indiceForca, mediaChutesGolMarc, mediaChutesTotMarc, mediaCantosMarc, mediaVermProprio, mediaAmarProprio, confCantos, confCartoes, confChutes, rankMedAdv, rankMedProprio, calendario, minStats, jogosComMin, minStatsHT, jogosComMinHT, todosGols, mediasGolJogo, mediasMarc, mediasSofr, mediaMinMarc, mediaMinSofr, jogosComGols:jogosComGols.length };
 }
@@ -242,22 +250,28 @@ function renderMinTabela(s, modoTempo){
   const minStats = ht ? s.minStatsHT : s.minStats;
   const jogosComMin = ht ? s.jogosComMinHT : s.jogosComMin;
   if(!jogosComMin) return `<div class="empty" style="padding:16px"><div class="icon" style="font-size:24px"><span data-ic="clock" data-ic-size="24"></span></div><p>Sem minutos de gols${ht?' no 1º tempo':''} registrados.</p></div>`;
-  const picoM=minStats.indexOf(minStats.reduce((a,b)=>b.marc>a.marc?b:a));
-  const picoS=minStats.indexOf(minStats.reduce((a,b)=>b.sofr>a.sofr?b:a));
   const totMarc=minStats.reduce((a,b)=>a+b.marc,0);
   const totSofr=minStats.reduce((a,b)=>a+b.sofr,0);
-  const cards=minStats.map((p,i)=>{
-    const isPicoM=(i===picoM), isPicoS=(i===picoS);
-    const cls=isPicoM?'pico-marc':isPicoS?'pico-sofr':'';
-    const tag=isPicoM?'<div class="pc-tag"><span data-ic="target" data-ic-size="11"></span> Pico Marc.</div>':isPicoS?'<div class="pc-tag"><span data-ic="goalNet" data-ic-size="11"></span> Pico Sofr.</div>':'';
-    return `<div class="periodo-card ${cls}">
-      <div class="pc-label">${p.l}</div>
-      <div class="pc-row"><span class="pc-ico" data-ic="target" data-ic-size="12"></span><span class="pc-val marc">${p.marc}</span></div>
-      <div class="pc-row"><span class="pc-ico" data-ic="goalNet" data-ic-size="12"></span><span class="pc-val sofr">${p.sofr}</span></div>
-      ${tag}
-    </div>`;
+  const picoM=minStats.indexOf(minStats.reduce((a,b)=>b.marc>a.marc?b:a));
+  const picoS=minStats.indexOf(minStats.reduce((a,b)=>b.sofr>a.sofr?b:a));
+  // "Faixa" (o período) fica no meio da tabela, com Marcados à esquerda e Sofridos à
+  // direita — cada célula mostra a contagem e o % que aquele período representa do total
+  // de gols marcados/sofridos do time (não % de jogos).
+  const linhas = minStats.map((p,i)=>{
+    const pctM = totMarc ? Math.round((p.marc/totMarc)*100) : 0;
+    const pctS = totSofr ? Math.round((p.sofr/totSofr)*100) : 0;
+    return `<tr>
+      <td class="td-c" style="font-weight:700;${i===picoM?'color:var(--verde2)':''}">${p.marc} · ${pctM}%</td>
+      <td class="td-c" style="color:var(--texto2)">${p.l}</td>
+      <td class="td-c" style="font-weight:700;${i===picoS?'color:var(--perigo)':''}">${p.sofr} · ${pctS}%</td>
+    </tr>`;
   }).join('');
-  return `<div class="periodo-cards">${cards}</div>
+  return `<div class="table-wrap">
+    <table>
+      <thead><tr><th class="td-c">Marcados</th><th class="td-c">Faixa</th><th class="td-c">Sofridos</th></tr></thead>
+      <tbody>${linhas}</tbody>
+    </table>
+  </div>
   <div class="min-insight" style="margin-top:10px">
     <span data-ic="target" data-ic-size="12"></span> Total marcados: <strong>${totMarc}</strong> &nbsp;·&nbsp; <span data-ic="goalNet" data-ic-size="12"></span> Total sofridos: <strong>${totSofr}</strong><br>
     Marca mais: <strong>${minStats[picoM].l}</strong> &nbsp;·&nbsp; Sofre mais: <strong>${minStats[picoS].l}</strong><br>
@@ -309,20 +323,24 @@ function computeAnalise(casa, vis, camp, filtroAtual){
   const sC=statsTime(casa,filtroAtual.casa.local,camp,filtroAtual.casa.qty);
   const sV=statsTime(vis, filtroAtual.vis.local, camp,filtroAtual.vis.qty);
   if(sC.nt===0||sV.nt===0) return { estado:'sem-jogos' };
-  // Tendência recente (ganhando/perdendo força) em 3 mercados-chave — ver tendenciaMercado() acima.
+  // Tendência recente (ganhando/perdendo força) em 5 mercados-chave — ver tendenciaMercado() acima.
   const testeVitoria = c => c.mandante ? c.gC>c.gV : c.gV>c.gC;
   const testeOver15  = c => (c.gC+c.gV) >= 2;
+  const testeOver25  = c => (c.gC+c.gV) >= 3;
+  const testeOver35  = c => (c.gC+c.gV) >= 4;
   const testeBtts    = c => c.gC>0 && c.gV>0;
-  const tendC = { vitoria: tendenciaMercado(sC.calendario, testeVitoria), over15: tendenciaMercado(sC.calendario, testeOver15), btts: tendenciaMercado(sC.calendario, testeBtts) };
-  const tendV = { vitoria: tendenciaMercado(sV.calendario, testeVitoria), over15: tendenciaMercado(sV.calendario, testeOver15), btts: tendenciaMercado(sV.calendario, testeBtts) };
+  const tendC = { vitoria: tendenciaMercado(sC.calendario, testeVitoria), over15: tendenciaMercado(sC.calendario, testeOver15), over25: tendenciaMercado(sC.calendario, testeOver25), over35: tendenciaMercado(sC.calendario, testeOver35), btts: tendenciaMercado(sC.calendario, testeBtts) };
+  const tendV = { vitoria: tendenciaMercado(sV.calendario, testeVitoria), over15: tendenciaMercado(sV.calendario, testeOver15), over25: tendenciaMercado(sV.calendario, testeOver25), over35: tendenciaMercado(sV.calendario, testeOver35), btts: tendenciaMercado(sV.calendario, testeBtts) };
   // Mesma tendência, só que calculada em cima do placar do 1º Tempo (golsHT_C/golsHT_V) —
   // pro seletor "1º Tempo". Nem todo jogo salvo tem esse dado, então o filtroValido exige ele.
   const filtroValidoHT = c => c.golsHT_C!=null && c.golsHT_V!=null;
   const testeVitoriaHT = c => c.mandante ? c.golsHT_C>c.golsHT_V : c.golsHT_V>c.golsHT_C;
   const testeOver15HT  = c => (c.golsHT_C+c.golsHT_V) >= 2;
+  const testeOver25HT  = c => (c.golsHT_C+c.golsHT_V) >= 3;
+  const testeOver35HT  = c => (c.golsHT_C+c.golsHT_V) >= 4;
   const testeBttsHT    = c => c.golsHT_C>0 && c.golsHT_V>0;
-  const tendCHT = { vitoria: tendenciaMercado(sC.calendario, testeVitoriaHT, 10, filtroValidoHT), over15: tendenciaMercado(sC.calendario, testeOver15HT, 10, filtroValidoHT), btts: tendenciaMercado(sC.calendario, testeBttsHT, 10, filtroValidoHT) };
-  const tendVHT = { vitoria: tendenciaMercado(sV.calendario, testeVitoriaHT, 10, filtroValidoHT), over15: tendenciaMercado(sV.calendario, testeOver15HT, 10, filtroValidoHT), btts: tendenciaMercado(sV.calendario, testeBttsHT, 10, filtroValidoHT) };
+  const tendCHT = { vitoria: tendenciaMercado(sC.calendario, testeVitoriaHT, 10, filtroValidoHT), over15: tendenciaMercado(sC.calendario, testeOver15HT, 10, filtroValidoHT), over25: tendenciaMercado(sC.calendario, testeOver25HT, 10, filtroValidoHT), over35: tendenciaMercado(sC.calendario, testeOver35HT, 10, filtroValidoHT), btts: tendenciaMercado(sC.calendario, testeBttsHT, 10, filtroValidoHT) };
+  const tendVHT = { vitoria: tendenciaMercado(sV.calendario, testeVitoriaHT, 10, filtroValidoHT), over15: tendenciaMercado(sV.calendario, testeOver15HT, 10, filtroValidoHT), over25: tendenciaMercado(sV.calendario, testeOver25HT, 10, filtroValidoHT), over35: tendenciaMercado(sV.calendario, testeOver35HT, 10, filtroValidoHT), btts: tendenciaMercado(sV.calendario, testeBttsHT, 10, filtroValidoHT) };
   const modoTempo = filtroAtual.modoTempo === 'ht' ? 'ht' : 'ft'; // 'ft' = Resultado Final, 'ht' = Resultado 1º Tempo
   const lambdaC=sC.lambdaIndice||sC.lambdaAjustado||sC.lambda||0.5, lambdaV=sV.lambdaIndice||sV.lambdaAjustado||sV.lambda||0.5;
   const MAX=10;

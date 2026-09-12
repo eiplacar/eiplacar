@@ -215,6 +215,7 @@ export default function AnaliseResultado() {
   const [, setTick] = useState(0);
   const [tab, setTab] = useState('prob');
   const [jogoSel, setJogoSel] = useState(null);
+  const [calExpandido, setCalExpandido] = useState({}); // { [nomeDoTime]: true } — Calendário começa só com os últimos 6 jogos; expande sob pedido, sem mudar o filtro em si.
   const [favorEnviando, setFavorEnviando] = useState(false);
 
   useEffect(() => {
@@ -502,6 +503,68 @@ export default function AnaliseResultado() {
             </div>
           </div>
         </div>
+        <div className="sec">
+          <div className="sec-title"><Trophy size={14} style={{ marginRight: 4 }} />Desempenho {modoTempo === 'ht' ? '— 1º Tempo' : ''}</div>
+          {times.map(({ s, nome, cor, Ico }) => {
+            // HT (1º tempo) não tem "sem marcar/sem sofrer" nem geral calculado — nesses casos
+            // caem só nas colunas Casa/Fora que já existem pro 1º tempo, sem a coluna Geral.
+            const vc = modoTempo === 'ht' ? s.vedCasaHT : s.vedCasa;
+            const vf = modoTempo === 'ht' ? s.vedForaHT : s.vedFora;
+            const vg = modoTempo === 'ht' ? null : s.vedGeral;
+            const gmCasa = modoTempo === 'ht' ? s.mediaGM_casaHT : s.mediaGM_casa;
+            const gsCasa = modoTempo === 'ht' ? s.mediaGS_casaHT : s.mediaGS_casa;
+            const gmVis  = modoTempo === 'ht' ? s.mediaGM_visHT  : s.mediaGM_vis;
+            const gsVis  = modoTempo === 'ht' ? s.mediaGS_visHT  : s.mediaGS_vis;
+            const gmGeral = modoTempo === 'ht' ? null : s.lambda;
+            const gsGeral = modoTempo === 'ht' ? null : s.lambdaDef;
+            const linhas = [
+              { label: 'Vitória',    casa: vc.v, geral: vg?.v,  fora: vf.v },
+              { label: 'Empate',     casa: vc.e, geral: vg?.e,  fora: vf.e },
+              { label: 'Derrota',    casa: vc.d, geral: vg?.d,  fora: vf.d },
+              { label: 'Gols Marcados por Partida', casa: gmCasa, geral: gmGeral, fora: gmVis },
+              { label: 'Gols Sofridos por Partida',  casa: gsCasa, geral: gsGeral, fora: gsVis },
+            ];
+            if (modoTempo !== 'ht') {
+              linhas.push({ label: 'Partidas sem Marcar', casa: s.semMarcarCasa, geral: s.semMarcarGeral, fora: s.semMarcarFora });
+              linhas.push({ label: 'Partidas sem Sofrer Gol', casa: s.semSofrerCasa, geral: s.semSofrerGeral, fora: s.semSofrerFora });
+            }
+            return (
+              <div key={`ved-${nome}`} style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: cor, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}><Ico size={14} /> {nome}</div>
+                <div className="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th></th>
+                        <th className="td-c">Casa ({s.nc}j)</th>
+                        <th className="td-c">Geral</th>
+                        <th className="td-c">Fora ({s.nv}j)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {linhas.map((l) => (
+                        <tr key={l.label}>
+                          <td style={{ color: 'var(--texto2)' }}>{l.label}</td>
+                          <td className="td-c" style={{ fontWeight: 700 }}>{l.casa}</td>
+                          <td className="td-c" style={{ color: 'var(--texto2)' }}>{l.geral ?? '—'}</td>
+                          <td className="td-c" style={{ fontWeight: 700 }}>{l.fora}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {times.map(({ s, nome, cor }) => (
+          <div className="sec" key={`min-${nome}`}>
+            <div className="sec-title"><Timer size={14} style={{ marginRight: 4 }} />Minutos dos Gols {modoTempo === 'ht' ? '— 1º Tempo — ' : '— '}<span style={{ color: cor }}>{nome}</span></div>
+            <HtmlChunk html={renderMinTabela(s, modoTempo)} />
+          </div>
+        ))}
+
 
         <div className="sec">
           <div className="sec-title"><TrendingUp size={14} style={{ marginRight: 4 }} />Tendência de Desempenho {modoTempo === 'ht' ? '— 1º Tempo' : ''}</div>
@@ -510,14 +573,14 @@ export default function AnaliseResultado() {
             <div key={nome} style={{ marginBottom: 12 }}>
               <div style={{ fontSize: 12, color: cor, fontWeight: 700, marginBottom: 6 }}>{nome}</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {[{ lbl: 'Vitória', t: tend.vitoria }, { lbl: 'Over 1.5 Gols', t: tend.over15 }, { lbl: 'Ambas Marcam', t: tend.btts }].map(({ lbl, t }) => (
+                {[{ lbl: 'Vitória', t: tend.vitoria }, { lbl: 'Over 1.5 Gols', t: tend.over15 }, { lbl: 'Over 2.5 Gols', t: tend.over25 }, { lbl: 'Over 3.5 Gols', t: tend.over35 }, { lbl: 'Ambas Marcam', t: tend.btts }].map(({ lbl, t }) => (
                   <div key={lbl} style={{ background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 8, padding: '8px 10px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: t ? 6 : 0 }}>
                       <span style={{ fontSize: 11, color: 'var(--texto)', fontWeight: 700 }}>{lbl}</span>
                       {t && (
                         <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 800, color: t.tendencia === 'subindo' ? 'var(--verde2)' : t.tendencia === 'descendo' ? 'var(--perigo)' : 'var(--texto2)' }}>
                           <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: t.tendencia === 'subindo' ? 'var(--verde2)' : t.tendencia === 'descendo' ? 'var(--perigo)' : 'var(--texto2)', flexShrink: 0 }} />
-                          {t.tendencia === 'subindo' ? 'Ganhando força' : t.tendencia === 'descendo' ? 'Perdendo força' : 'Estável'}
+                          {t.tendencia === 'subindo' ? 'Em alta' : t.tendencia === 'descendo' ? 'Em baixa' : 'Estável'}
                         </span>
                       )}
                     </div>
@@ -552,66 +615,15 @@ export default function AnaliseResultado() {
         </div>
 
 
-        <div className="sec">
-          <div className="sec-title"><Trophy size={14} style={{ marginRight: 4 }} />Desempenho {modoTempo === 'ht' ? '— 1º Tempo' : ''}</div>
-          {times.map(({ s, nome, cor, Ico }) => {
-            const nc = modoTempo === 'ht' ? s.ncHT : s.nc;
-            const nv = modoTempo === 'ht' ? s.nvHT : s.nv;
-            const vc = modoTempo === 'ht' ? s.vedCasaHT : s.vedCasa;
-            const vf = modoTempo === 'ht' ? s.vedForaHT : s.vedFora;
-            return (
-              <div key={`ved-${nome}`} style={{ marginBottom: 14 }}>
-                <div style={{ fontSize: 14, fontWeight: 800, color: cor, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}><Ico size={14} /> {nome}</div>
-                <div className="forca-grid">
-                  <div className="forca-box">
-                    <div className="fb-label">Em Casa ({nc} Jogos)</div>
-                    <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: 4 }}>
-                      <div style={{ textAlign: 'center' }}><div style={{ fontSize: 15, fontWeight: 800, color: 'var(--verde2)' }}>{vc.v}</div><div style={{ fontSize: 9, color: 'var(--texto2)' }}>Vitória</div></div>
-                      <div style={{ textAlign: 'center' }}><div style={{ fontSize: 15, fontWeight: 800, color: 'var(--ouro)' }}>{vc.e}</div><div style={{ fontSize: 9, color: 'var(--texto2)' }}>Empate</div></div>
-                      <div style={{ textAlign: 'center' }}><div style={{ fontSize: 15, fontWeight: 800, color: 'var(--perigo)' }}>{vc.d}</div><div style={{ fontSize: 9, color: 'var(--texto2)' }}>Derrota</div></div>
-                    </div>
-                  </div>
-                  <div className="forca-box">
-                    <div className="fb-label">Fora ({nv} Jogos)</div>
-                    <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: 4 }}>
-                      <div style={{ textAlign: 'center' }}><div style={{ fontSize: 15, fontWeight: 800, color: 'var(--verde2)' }}>{vf.v}</div><div style={{ fontSize: 9, color: 'var(--texto2)' }}>Vitória</div></div>
-                      <div style={{ textAlign: 'center' }}><div style={{ fontSize: 15, fontWeight: 800, color: 'var(--ouro)' }}>{vf.e}</div><div style={{ fontSize: 9, color: 'var(--texto2)' }}>Empate</div></div>
-                      <div style={{ textAlign: 'center' }}><div style={{ fontSize: 15, fontWeight: 800, color: 'var(--perigo)' }}>{vf.d}</div><div style={{ fontSize: 9, color: 'var(--texto2)' }}>Derrota</div></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="sec">
-          <div className="sec-title"><Scale size={14} style={{ marginRight: 4 }} />Força Casa / Fora {modoTempo === 'ht' ? '— 1º Tempo' : ''}</div>
-          {times.map(({ s, nome, cor, Ico }) => {
-            const nc = modoTempo === 'ht' ? s.ncHT : s.nc;
-            const nv = modoTempo === 'ht' ? s.nvHT : s.nv;
-            const gmCasa = modoTempo === 'ht' ? s.mediaGM_casaHT : s.mediaGM_casa;
-            const gsCasa = modoTempo === 'ht' ? s.mediaGS_casaHT : s.mediaGS_casa;
-            const gmVis = modoTempo === 'ht' ? s.mediaGM_visHT : s.mediaGM_vis;
-            const gsVis = modoTempo === 'ht' ? s.mediaGS_visHT : s.mediaGS_vis;
-            return (
-              <div key={nome} style={{ marginBottom: 14 }}>
-                <div style={{ fontSize: 14, fontWeight: 800, color: cor, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}><Ico size={14} /> {nome}</div>
-                <div className="forca-grid">
-                  <div className="forca-box"><div className="fb-label">Em Casa ({nc} Jogos)</div><div className="fb-stat"><span className="fb-val">{gmCasa}</span> <Goal size={11} style={{ verticalAlign: -2 }} /> marcado/j</div><div className="fb-stat"><span className="fb-val">{gsCasa}</span> <ShieldAlert size={11} style={{ verticalAlign: -2 }} /> sofrido/j</div></div>
-                  <div className="forca-box"><div className="fb-label">Fora ({nv} Jogos)</div><div className="fb-stat"><span className="fb-val">{gmVis}</span> <Goal size={11} style={{ verticalAlign: -2 }} /> marcado/j</div><div className="fb-stat"><span className="fb-val">{gsVis}</span> <ShieldAlert size={11} style={{ verticalAlign: -2 }} /> sofrido/j</div></div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
 
         {times.map(({ s, nome, cor }) => {
-          const calLista = modoTempo === 'ht' ? s.calendario.filter((c) => c.golsHT_C != null && c.golsHT_V != null) : s.calendario;
+          const calListaCompleta = modoTempo === 'ht' ? s.calendario.filter((c) => c.golsHT_C != null && c.golsHT_V != null) : s.calendario;
+          const expandido = !!calExpandido[nome];
+          const calLista = expandido ? calListaCompleta : calListaCompleta.slice(0, 6);
           return (
           <div className="sec" key={`cal-${nome}`}>
             <div className="sec-title"><Calendar size={14} style={{ marginRight: 4 }} />Calendário {modoTempo === 'ht' ? '— 1º Tempo — ' : '— '}<span style={{ color: cor }}>{nome}</span></div>
-            {calLista.length ? (
+            {calListaCompleta.length ? (
               <>
                 <div className="cal-list">
                   {calLista.map((c, i) => (
@@ -634,11 +646,20 @@ export default function AnaliseResultado() {
                     </div>
                   ))}
                 </div>
-                <div className="cal-resumo" style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-                  <span style={{ fontWeight: 700, color: 'var(--texto)' }}>{calLista.length} jogos</span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span className="cal-dot dificil" style={{ display: 'inline-block' }} /> {calLista.filter((c) => calDot(c.rank, c.tamCamp) === 'dificil').length} difícil</span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span className="cal-dot medio" style={{ display: 'inline-block' }} /> {calLista.filter((c) => calDot(c.rank, c.tamCamp) === 'medio').length} médio</span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span className="cal-dot facil" style={{ display: 'inline-block' }} /> {calLista.filter((c) => calDot(c.rank, c.tamCamp) === 'facil').length} fácil</span>
+                {calListaCompleta.length > 6 && (
+                  <button
+                    type="button"
+                    onClick={() => setCalExpandido((prev) => ({ ...prev, [nome]: !prev[nome] }))}
+                    style={{ width: '100%', marginTop: 8, padding: '8px', borderRadius: 8, border: '1px solid var(--c3)', background: 'var(--c1)', color: 'var(--verde2)', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    {expandido ? `Mostrar só os últimos 6` : `Ver todos os ${calListaCompleta.length} jogos`}
+                  </button>
+                )}
+                <div className="cal-resumo" style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', marginTop: 8 }}>
+                  <span style={{ fontWeight: 700, color: 'var(--texto)' }}>{calListaCompleta.length} jogos</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span className="cal-dot dificil" style={{ display: 'inline-block' }} /> {calListaCompleta.filter((c) => calDot(c.rank, c.tamCamp) === 'dificil').length} difícil</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span className="cal-dot medio" style={{ display: 'inline-block' }} /> {calListaCompleta.filter((c) => calDot(c.rank, c.tamCamp) === 'medio').length} médio</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span className="cal-dot facil" style={{ display: 'inline-block' }} /> {calListaCompleta.filter((c) => calDot(c.rank, c.tamCamp) === 'facil').length} fácil</span>
                 </div>
               </>
             ) : <div className="empty" style={{ padding: 16 }}><p>{modoTempo === 'ht' ? 'Sem jogos com placar de 1º tempo registrado.' : 'Sem jogos com ranking registrado.'}</p></div>}
@@ -646,12 +667,6 @@ export default function AnaliseResultado() {
           );
         })}
 
-        {times.map(({ s, nome, cor }) => (
-          <div className="sec" key={`min-${nome}`}>
-            <div className="sec-title"><Timer size={14} style={{ marginRight: 4 }} />Minutos dos Gols {modoTempo === 'ht' ? '— 1º Tempo — ' : '— '}<span style={{ color: cor }}>{nome}</span></div>
-            <HtmlChunk html={renderMinTabela(s, modoTempo)} />
-          </div>
-        ))}
       </div>
 
       <IndiceTab data={data} favorEnviando={favorEnviando} setFavorEnviando={setFavorEnviando} tab={tab} />
