@@ -266,12 +266,10 @@ function renderMinTabela(s, modoTempo){
       <td class="td-c" style="font-weight:700;${i===picoS?'color:var(--perigo)':''}">${p.sofr} · ${pctS}%</td>
     </tr>`;
   }).join('');
-  return `<div class="table-wrap">
-    <table>
+  return `<table style="width:100%;min-width:0;table-layout:fixed">
       <thead><tr><th class="td-c">Marcados</th><th class="td-c">Faixa</th><th class="td-c">Sofridos</th></tr></thead>
       <tbody>${linhas}</tbody>
     </table>
-  </div>
   <div class="min-insight" style="margin-top:10px">
     <span data-ic="target" data-ic-size="12"></span> Total marcados: <strong>${totMarc}</strong> &nbsp;·&nbsp; <span data-ic="goalNet" data-ic-size="12"></span> Total sofridos: <strong>${totSofr}</strong><br>
     Marca mais: <strong>${minStats[picoM].l}</strong> &nbsp;·&nbsp; Sofre mais: <strong>${minStats[picoS].l}</strong><br>
