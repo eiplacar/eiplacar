@@ -245,10 +245,10 @@ let ultimaAnalise = null;
 // Continua devolvendo um pedaço de HTML pronto (é só uma tabelinha visual, sem
 // lógica de negócio) — o componente React injeta isso com dangerouslySetInnerHTML,
 // igual já se fazia com escudos de time.
-function renderMinTabela(s, modoTempo){
-  const ht = modoTempo==='ht';
-  const minStats = ht ? s.minStatsHT : s.minStats;
-  const jogosComMin = ht ? s.jogosComMinHT : s.jogosComMin;
+// Núcleo do render da tabela "Minutos dos Gols" — recebe o array minStats já pronto (pode ser
+// de UM time só, ou a soma dos dois — ver renderMinTabela() e o seletor Palmeiras/Geral/São
+// Paulo no card, em AnaliseResultado.jsx) e o total de jogos usado no cálculo.
+function renderMinTabelaCore(minStats, jogosComMin, ht){
   if(!jogosComMin) return `<div class="empty" style="padding:16px"><div class="icon" style="font-size:24px"><span data-ic="clock" data-ic-size="24"></span></div><p>Sem minutos de gols${ht?' no 1º tempo':''} registrados.</p></div>`;
   const totMarc=minStats.reduce((a,b)=>a+b.marc,0);
   const totSofr=minStats.reduce((a,b)=>a+b.sofr,0);
@@ -256,7 +256,7 @@ function renderMinTabela(s, modoTempo){
   const picoS=minStats.indexOf(minStats.reduce((a,b)=>b.sofr>a.sofr?b:a));
   // "Faixa" (o período) fica no meio da tabela, com Marcados à esquerda e Sofridos à
   // direita — cada célula mostra a contagem e o % que aquele período representa do total
-  // de gols marcados/sofridos do time (não % de jogos).
+  // de gols marcados/sofridos (não % de jogos).
   const linhas = minStats.map((p,i)=>{
     const pctM = totMarc ? Math.round((p.marc/totMarc)*100) : 0;
     const pctS = totSofr ? Math.round((p.sofr/totSofr)*100) : 0;
@@ -275,6 +275,12 @@ function renderMinTabela(s, modoTempo){
     Marca mais: <strong>${minStats[picoM].l}</strong> &nbsp;·&nbsp; Sofre mais: <strong>${minStats[picoS].l}</strong><br>
     <span style="color:var(--texto2)">${jogosComMin} jogo(s) com minutos registrados${ht?' no 1º tempo':''}</span>
   </div>`;
+}
+function renderMinTabela(s, modoTempo){
+  const ht = modoTempo==='ht';
+  const minStats = ht ? s.minStatsHT : s.minStats;
+  const jogosComMin = ht ? s.jogosComMinHT : s.jogosComMin;
+  return renderMinTabelaCore(minStats, jogosComMin, ht);
 }
 function calNivel(r, tamCamp){
   if(!r) return null;
@@ -460,10 +466,34 @@ function computeAnalise(casa, vis, camp, filtroAtual){
     momStatsHT, golsCombHT, picoIdxHT, baixoIdxHT, totalMomHT,
   };
 }
+// Fatia de estatísticas (casa/fora/geral) usada no comparativo direto do card "Desempenho das
+// Equipes" — decide qual recorte mostrar pra cada time conforme o filtro escolhido pra ele no
+// seletor (Geral/Em casa/Fora). "Geral" SOMA os jogos de casa e fora, ponderado pelo nº de jogos
+// de cada lado (não é uma média simples das duas médias já calculadas).
+function statsPorContexto(s, modoTempo, local){
+  const ht = modoTempo==='ht';
+  const nc = ht ? s.ncHT : s.nc, nv = ht ? s.nvHT : s.nv;
+  const vedCasa = ht ? s.vedCasaHT : s.vedCasa, vedFora = ht ? s.vedForaHT : s.vedFora;
+  const gmCasa = ht ? s.mediaGM_casaHT : s.mediaGM_casa, gsCasa = ht ? s.mediaGS_casaHT : s.mediaGS_casa;
+  const gmFora = ht ? s.mediaGM_visHT : s.mediaGM_vis, gsFora = ht ? s.mediaGS_visHT : s.mediaGS_vis;
+  if(local==='casa') return { ved:vedCasa, gm:gmCasa, gs:gsCasa, semM: ht?null:s.semMarcarCasa, semS: ht?null:s.semSofrerCasa, n:nc, label:`Casa (${nc}j)` };
+  if(local==='fora') return { ved:vedFora, gm:gmFora, gs:gsFora, semM: ht?null:s.semMarcarFora, semS: ht?null:s.semSofrerFora, n:nv, label:`Visitante (${nv}j)` };
+  const n = nc+nv;
+  return {
+    ved: { v:vedCasa.v+vedFora.v, e:vedCasa.e+vedFora.e, d:vedCasa.d+vedFora.d },
+    gm: n?r2((gmCasa*nc+gmFora*nv)/n):0,
+    gs: n?r2((gsCasa*nc+gsFora*nv)/n):0,
+    semM: ht?null:(s.semMarcarCasa+s.semMarcarFora),
+    semS: ht?null:(s.semSofrerCasa+s.semSofrerFora),
+    n, label:`Geral (${n}j)`,
+  };
+}
+window.statsPorContexto = statsPorContexto;
 window.computeAnalise = computeAnalise;
 window.calDot = calDot;
 window.calLbl = calLbl;
 window.renderMinTabela = renderMinTabela;
+window.renderMinTabelaCore = renderMinTabelaCore;
 
 // Ponte de compatibilidade: SeletorAnalise.jsx continua chamando window.renderAnalise()
 // toda vez que a seleção (time/campeonato/filtro) muda. Antes essa função desenhava HTML

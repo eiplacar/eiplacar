@@ -216,6 +216,7 @@ export default function AnaliseResultado() {
   const [tab, setTab] = useState('prob');
   const [jogoSel, setJogoSel] = useState(null);
   const [calExpandido, setCalExpandido] = useState({}); // { [nomeDoTime]: true } — Calendário começa só com os últimos 6 jogos; expande sob pedido, sem mudar o filtro em si.
+  const [minSel, setMinSel] = useState('geral'); // 'casa' | 'geral' | 'fora' — seletor do card "Minutos dos Gols" (Palmeiras / Geral / São Paulo). "Geral" soma os dois times.
   const [favorEnviando, setFavorEnviando] = useState(false);
 
   useEffect(() => {
@@ -257,6 +258,7 @@ export default function AnaliseResultado() {
   const calLbl = window.calLbl || (() => '—');
   const renderMinTabela = window.renderMinTabela || (() => '');
   const barraConfianca = window.barraConfianca || (() => '');
+  const statsPorContexto = window.statsPorContexto || ((s) => ({ ved: { v: 0, e: 0, d: 0 }, gm: 0, gs: 0, semM: null, semS: null, n: 0, label: '—' }));
 
   const golsHT = temHT ? [
     { l: 'Mais de 0.5 gols no HT', p: o05HT, c: 'var(--verde2)' },
@@ -286,6 +288,30 @@ export default function AnaliseResultado() {
 
       <div className={`sub-page ${tab === 'prob' ? 'active' : ''}`}>
         <div className="sec">
+          <div className="sec-title"><Trophy size={14} style={{ marginRight: 4 }} />Resultado Provável {modoTempo === 'ht' ? '— 1º Tempo' : '— Final'}</div>
+          {modoTempo === 'ht' && !temHT ? (
+            <div className="empty" style={{ padding: 14 }}><p style={{ fontSize: 12 }}>Sem gols de 1º tempo registrados pra esses times ainda. Cadastre o placar do 1º tempo em Adicionar Partida pra liberar essa visão.</p></div>
+          ) : (
+            <>
+              <div className="prob-resultado">
+                <div className="prob-box"><div className="pb-label">{casa}</div><div className="pb-pct" style={{ color: 'var(--verde2)' }}>{modoTempo === 'ht' ? resultadoHT.pVit : pVit}%</div><div className="pb-sub">VITÓRIA</div></div>
+                <div className="prob-box"><div className="pb-label">Empate</div><div className="pb-pct" style={{ color: 'var(--ouro)' }}>{modoTempo === 'ht' ? resultadoHT.pEmp : pEmp}%</div><div className="pb-sub">EMPATE</div></div>
+                <div className="prob-box"><div className="pb-label">{vis}</div><div className="pb-pct" style={{ color: 'var(--perigo)' }}>{modoTempo === 'ht' ? resultadoHT.pDer : pDer}%</div><div className="pb-sub">VITÓRIA</div></div>
+              </div>
+              <div className="bar-wrap">
+                {(() => { const v = modoTempo === 'ht' ? resultadoHT.pVit : pVit, e = modoTempo === 'ht' ? resultadoHT.pEmp : pEmp, d = modoTempo === 'ht' ? resultadoHT.pDer : pDer; return (
+                  <>
+                    <div className="bar-labels"><span>{casa} {v}%</span><span>Empate {e}%</span><span>{vis} {d}%</span></div>
+                    <div className="bar-track"><div className="bs v" style={{ width: `${v}%` }} /><div className="bs e" style={{ width: `${e}%` }} /><div className="bs d" style={{ width: `${d}%` }} /></div>
+                  </>
+                ); })()}
+              </div>
+            </>
+          )}
+        </div>
+
+
+        <div className="sec">
           <div className="sec-title"><MapPin size={14} style={{ marginRight: 4 }} />Média de Gols Ajustada</div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <div style={{ flex: 1, background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 8, padding: '8px 12px', fontSize: 12 }}>
@@ -307,30 +333,6 @@ export default function AnaliseResultado() {
               Média de gols marcados ajustada por um fator baseado na posição dos adversários no ranking. Adversários mais fortes geram fator acima de 1; adversários mais fracos, abaixo de 1.
             </div>
           </details>
-        </div>
-
-
-        <div className="sec">
-          <div className="sec-title"><Trophy size={14} style={{ marginRight: 4 }} />Resultado Provável {modoTempo === 'ht' ? '— 1º Tempo' : '— Final'}</div>
-          {modoTempo === 'ht' && !temHT ? (
-            <div className="empty" style={{ padding: 14 }}><p style={{ fontSize: 12 }}>Sem gols de 1º tempo registrados pra esses times ainda. Cadastre o placar do 1º tempo em Adicionar Partida pra liberar essa visão.</p></div>
-          ) : (
-            <>
-              <div className="prob-resultado">
-                <div className="prob-box"><div className="pb-label">{casa}</div><div className="pb-pct" style={{ color: 'var(--verde2)' }}>{modoTempo === 'ht' ? resultadoHT.pVit : pVit}%</div><div className="pb-sub">VITÓRIA</div></div>
-                <div className="prob-box"><div className="pb-label">Empate</div><div className="pb-pct" style={{ color: 'var(--ouro)' }}>{modoTempo === 'ht' ? resultadoHT.pEmp : pEmp}%</div><div className="pb-sub">EMPATE</div></div>
-                <div className="prob-box"><div className="pb-label">{vis}</div><div className="pb-pct" style={{ color: 'var(--perigo)' }}>{modoTempo === 'ht' ? resultadoHT.pDer : pDer}%</div><div className="pb-sub">VITÓRIA</div></div>
-              </div>
-              <div className="bar-wrap">
-                {(() => { const v = modoTempo === 'ht' ? resultadoHT.pVit : pVit, e = modoTempo === 'ht' ? resultadoHT.pEmp : pEmp, d = modoTempo === 'ht' ? resultadoHT.pDer : pDer; return (
-                  <>
-                    <div className="bar-labels"><span>{casa} {v}%</span><span>Empate {e}%</span><span>{vis} {d}%</span></div>
-                    <div className="bar-track"><div className="bs v" style={{ width: `${v}%` }} /><div className="bs e" style={{ width: `${e}%` }} /><div className="bs d" style={{ width: `${d}%` }} /></div>
-                  </>
-                ); })()}
-              </div>
-            </>
-          )}
         </div>
 
         {modoTempo === 'ft' ? (
@@ -504,42 +506,34 @@ export default function AnaliseResultado() {
           </div>
         </div>
         <div className="sec">
-          <div className="sec-title"><Trophy size={14} style={{ marginRight: 4 }} />Desempenho {modoTempo === 'ht' ? '— 1º Tempo' : ''}</div>
-          {times.map(({ s, nome, cor, Ico }) => {
-            // HT (1º tempo) não tem "sem marcar/sem sofrer" nem geral calculado — nesses casos
-            // caem só nas colunas Casa/Fora que já existem pro 1º tempo, sem a coluna Geral.
-            const vc = modoTempo === 'ht' ? s.vedCasaHT : s.vedCasa;
-            const vf = modoTempo === 'ht' ? s.vedForaHT : s.vedFora;
-            const vg = modoTempo === 'ht' ? null : s.vedGeral;
-            const gmCasa = modoTempo === 'ht' ? s.mediaGM_casaHT : s.mediaGM_casa;
-            const gsCasa = modoTempo === 'ht' ? s.mediaGS_casaHT : s.mediaGS_casa;
-            const gmVis  = modoTempo === 'ht' ? s.mediaGM_visHT  : s.mediaGM_vis;
-            const gsVis  = modoTempo === 'ht' ? s.mediaGS_visHT  : s.mediaGS_vis;
-            const gmGeral = modoTempo === 'ht' ? null : s.lambda;
-            const gsGeral = modoTempo === 'ht' ? null : s.lambdaDef;
+          <div className="sec-title"><Trophy size={14} style={{ marginRight: 4 }} />Desempenho das Equipes {modoTempo === 'ht' ? '— 1º Tempo' : ''}</div>
+          {(() => {
+            const ctxC = statsPorContexto(sC, modoTempo, filtro.casa.local);
+            const ctxV = statsPorContexto(sV, modoTempo, filtro.vis.local);
             const linhas = [
-              { label: 'Vitória',    casa: vc.v, geral: vg?.v,  fora: vf.v },
-              { label: 'Empate',     casa: vc.e, geral: vg?.e,  fora: vf.e },
-              { label: 'Derrota',    casa: vc.d, geral: vg?.d,  fora: vf.d },
-              { label: 'Gols Marcados por Partida', casa: gmCasa, geral: gmGeral, fora: gmVis },
-              { label: 'Gols Sofridos por Partida',  casa: gsCasa, geral: gsGeral, fora: gsVis },
+              { label: 'Vitória', casa: ctxC.ved.v, vis: ctxV.ved.v },
+              { label: 'Empate', casa: ctxC.ved.e, vis: ctxV.ved.e },
+              { label: 'Derrota', casa: ctxC.ved.d, vis: ctxV.ved.d },
+              { label: 'Gols Marcados por Partida', casa: ctxC.gm, vis: ctxV.gm },
+              { label: 'Gols Sofridos por Partida', casa: ctxC.gs, vis: ctxV.gs },
             ];
             if (modoTempo !== 'ht') {
-              linhas.push({ label: 'Partidas sem Marcar', casa: s.semMarcarCasa, geral: s.semMarcarGeral, fora: s.semMarcarFora });
-              linhas.push({ label: 'Partidas sem Sofrer Gol', casa: s.semSofrerCasa, geral: s.semSofrerGeral, fora: s.semSofrerFora });
+              linhas.push({ label: 'Partidas sem Marcar', casa: ctxC.semM, vis: ctxV.semM });
+              linhas.push({ label: 'Partidas sem Sofrer Gol', casa: ctxC.semS, vis: ctxV.semS });
             }
             return (
-              <div key={`ved-${nome}`} style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 14, fontWeight: 800, color: cor, marginBottom: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                  <Ico size={14} /> {nome}
-                  {s.rankAtual != null && <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--ouro)' }}>#{s.rankAtual}</span>}
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 14, fontWeight: 800, color: 'var(--verde2)' }}><Home size={14} /> {casa} {sC.rankAtual != null && <span style={{ color: 'var(--ouro)', fontSize: 11 }}>#{sC.rankAtual}</span>}</span>
+                  <span style={{ fontSize: 11, color: 'var(--texto2)' }}>vs</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 14, fontWeight: 800, color: 'var(--perigo)' }}><Plane size={14} /> {vis} {sV.rankAtual != null && <span style={{ color: 'var(--ouro)', fontSize: 11 }}>#{sV.rankAtual}</span>}</span>
                 </div>
-                <table style={{ width: '100%', minWidth: 0, tableLayout: 'fixed' }}>
+                <table style={{ width: '100%', minWidth: 0, tableLayout: 'fixed', marginTop: 6 }}>
                   <thead>
                     <tr>
-                      <th className="td-c">Casa ({s.nc}j)</th>
+                      <th className="td-c">{ctxC.label}</th>
                       <th className="td-c"></th>
-                      <th className="td-c">Fora ({s.nv}j)</th>
+                      <th className="td-c">{ctxV.label}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -547,70 +541,38 @@ export default function AnaliseResultado() {
                       <tr key={l.label}>
                         <td className="td-c" style={{ fontWeight: 700 }}>{l.casa}</td>
                         <td className="td-c" style={{ color: 'var(--texto2)', fontSize: 11, fontWeight: 600 }}>{l.label}</td>
-                        <td className="td-c" style={{ fontWeight: 700 }}>{l.fora}</td>
+                        <td className="td-c" style={{ fontWeight: 700 }}>{l.vis}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </>
             );
-          })}
+          })()}
         </div>
 
         <div className="sec">
           <div className="sec-title"><Timer size={14} style={{ marginRight: 4 }} />Minutos dos Gols {modoTempo === 'ht' ? '— 1º Tempo' : ''}</div>
-          {times.map(({ s, nome, cor }) => (
-            <div key={`min-${nome}`} style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: cor, marginBottom: 6, textAlign: 'center' }}>{nome}</div>
-              <HtmlChunk html={renderMinTabela(s, modoTempo)} />
-            </div>
-          ))}
+          <div className="local-btns">
+            <button className={`local-btn ${minSel === 'casa' ? 'active-casa' : ''}`} onClick={() => setMinSel('casa')}>{casa}</button>
+            <button className={`local-btn ${minSel === 'geral' ? 'active-all' : ''}`} onClick={() => setMinSel('geral')}>Geral</button>
+            <button className={`local-btn ${minSel === 'fora' ? 'active-fora' : ''}`} onClick={() => setMinSel('fora')}>{vis}</button>
+          </div>
+          {(() => {
+            const ht = modoTempo === 'ht';
+            const msC = ht ? sC.minStatsHT : sC.minStats;
+            const msV = ht ? sV.minStatsHT : sV.minStats;
+            const jcC = ht ? sC.jogosComMinHT : sC.jogosComMin;
+            const jcV = ht ? sV.jogosComMinHT : sV.jogosComMin;
+            let minStats, jogosComMin;
+            if (minSel === 'casa') { minStats = msC; jogosComMin = jcC; }
+            else if (minSel === 'fora') { minStats = msV; jogosComMin = jcV; }
+            else { minStats = msC.map((p, i) => ({ l: p.l, ico: p.ico, marc: p.marc + msV[i].marc, sofr: p.sofr + msV[i].sofr })); jogosComMin = jcC + jcV; }
+            return <HtmlChunk html={window.renderMinTabelaCore ? window.renderMinTabelaCore(minStats, jogosComMin, ht) : ''} />;
+          })()}
         </div>
 
 
-        <div className="sec">
-          <div className="sec-title"><TrendingUp size={14} style={{ marginRight: 4 }} />Tendência de Desempenho {modoTempo === 'ht' ? '— 1º Tempo' : ''}</div>
-          <div style={{ fontSize: 10, color: 'var(--texto2)', marginBottom: 10 }}>Compara os últimos 5 e 10 jogos para identificar a tendência de força.</div>
-          {[{ nome: casa, cor: 'var(--verde2)', tend: modoTempo === 'ht' ? tendCHT : tendC }, { nome: vis, cor: 'var(--perigo)', tend: modoTempo === 'ht' ? tendVHT : tendV }].map(({ nome, cor, tend }) => (
-            <div key={nome} style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 12, color: cor, fontWeight: 700, marginBottom: 6 }}>{nome}</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {[{ lbl: 'Vitória', t: tend.vitoria }, { lbl: 'Over 1.5 Gols', t: tend.over15 }, { lbl: 'Over 2.5 Gols', t: tend.over25 }, { lbl: 'Over 3.5 Gols', t: tend.over35 }, { lbl: 'Ambas Marcam', t: tend.btts }].map(({ lbl, t }) => (
-                  <div key={lbl} style={{ background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 8, padding: '8px 10px' }}>
-                    <div style={{ fontSize: 11, color: 'var(--texto)', fontWeight: 700, marginBottom: t ? 8 : 0, textAlign: 'center' }}>{lbl}</div>
-                    {t ? (
-                      <>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', alignItems: 'center' }}>
-                          <span style={{ fontSize: 9, color: 'var(--texto2)', textAlign: 'left' }}>Últimos 5</span>
-                          <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, fontSize: 10, fontWeight: 800, color: t.tendencia === 'subindo' ? 'var(--verde2)' : t.tendencia === 'descendo' ? 'var(--perigo)' : 'var(--texto2)' }}>
-                            <span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: t.tendencia === 'subindo' ? 'var(--verde2)' : t.tendencia === 'descendo' ? 'var(--perigo)' : 'var(--texto2)', flexShrink: 0 }} />
-                            {t.tendencia === 'subindo' ? 'Em alta' : t.tendencia === 'descendo' ? 'Em baixa' : 'Estável'}
-                          </span>
-                          <span style={{ fontSize: 9, color: 'var(--texto2)', textAlign: 'right' }}>Últimos 10</span>
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', alignItems: 'center', marginTop: 2 }}>
-                          <span style={{ textAlign: 'left' }}>
-                            <span style={{ fontSize: 15, fontWeight: 800 }}>{t.hits5}/{t.total5}</span>{' '}
-                            <span style={{ fontSize: 10, color: 'var(--texto2)' }}>· {t.pct5}%</span>
-                          </span>
-                          <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                            {t.sequencia.map((h, i) => (
-                              <span key={i} style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: h ? 'var(--verde2)' : 'var(--perigo)' }} />
-                            ))}
-                          </span>
-                          <span style={{ textAlign: 'right' }}>
-                            <span style={{ fontSize: 15, fontWeight: 800 }}>{t.hits10}/{t.total10}</span>{' '}
-                            <span style={{ fontSize: 10, color: 'var(--texto2)' }}>· {t.pct10}%</span>
-                          </span>
-                        </div>
-                      </>
-                    ) : <span style={{ fontSize: 10, color: 'var(--texto2)' }}>Poucos jogos pra calcular ainda</span>}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
 
 
 
