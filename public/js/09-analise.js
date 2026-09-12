@@ -313,6 +313,16 @@ function tendenciaMercado(calendario, testeHit, n=10, filtroValido=(c=>c.gC!=nul
   return { total10:u10.length, hits10, pct10, total5:u5.length, hits5, pct5, sequencia, tendencia };
 }
 
+// Posição atual do time na tabela de classificação da liga (mesmo cálculo usado na aba
+// Classificação, incluindo os critérios de desempate oficiais já implementados lá) — não
+// confundir com rankMedProprio, que é a MÉDIA do rank que o time tinha jogo a jogo.
+function rankAtualDoTime(nome, camp){
+  if(!camp || !nome || !window.computeClassificacao) return null;
+  const cl = window.computeClassificacao(camp, 'geral');
+  const linha = cl?.linhas?.find(l=>l.nome===nome);
+  return linha ? linha.rank : null;
+}
+
 // ══ CALCULA ANÁLISE — motor puro, sem tocar em DOM nenhum ══
 // Recebe os times/campeonato/filtro escolhidos (vindos do SeletorAnalise.jsx) e devolve
 // um objeto com TUDO que a tela precisa. Quem desenha é o componente React:
@@ -323,6 +333,8 @@ function computeAnalise(casa, vis, camp, filtroAtual){
   const sC=statsTime(casa,filtroAtual.casa.local,camp,filtroAtual.casa.qty);
   const sV=statsTime(vis, filtroAtual.vis.local, camp,filtroAtual.vis.qty);
   if(sC.nt===0||sV.nt===0) return { estado:'sem-jogos' };
+  sC.rankAtual = rankAtualDoTime(casa, camp);
+  sV.rankAtual = rankAtualDoTime(vis, camp);
   // Tendência recente (ganhando/perdendo força) em 5 mercados-chave — ver tendenciaMercado() acima.
   const testeVitoria = c => c.mandante ? c.gC>c.gV : c.gV>c.gC;
   const testeOver15  = c => (c.gC+c.gV) >= 2;

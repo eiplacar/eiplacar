@@ -530,40 +530,42 @@ export default function AnaliseResultado() {
             }
             return (
               <div key={`ved-${nome}`} style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 14, fontWeight: 800, color: cor, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}><Ico size={14} /> {nome}</div>
-                <div className="table-wrap">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th></th>
-                        <th className="td-c">Casa ({s.nc}j)</th>
-                        <th className="td-c">Geral</th>
-                        <th className="td-c">Fora ({s.nv}j)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {linhas.map((l) => (
-                        <tr key={l.label}>
-                          <td style={{ color: 'var(--texto2)' }}>{l.label}</td>
-                          <td className="td-c" style={{ fontWeight: 700 }}>{l.casa}</td>
-                          <td className="td-c" style={{ color: 'var(--texto2)' }}>{l.geral ?? '—'}</td>
-                          <td className="td-c" style={{ fontWeight: 700 }}>{l.fora}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div style={{ fontSize: 14, fontWeight: 800, color: cor, marginBottom: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                  <Ico size={14} /> {nome}
+                  {s.rankAtual != null && <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--ouro)' }}>#{s.rankAtual}</span>}
                 </div>
+                <table style={{ width: '100%', minWidth: 0, tableLayout: 'fixed' }}>
+                  <thead>
+                    <tr>
+                      <th className="td-c">Casa ({s.nc}j)</th>
+                      <th className="td-c"></th>
+                      <th className="td-c">Fora ({s.nv}j)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {linhas.map((l) => (
+                      <tr key={l.label}>
+                        <td className="td-c" style={{ fontWeight: 700 }}>{l.casa}</td>
+                        <td className="td-c" style={{ color: 'var(--texto2)', fontSize: 11, fontWeight: 600 }}>{l.label}</td>
+                        <td className="td-c" style={{ fontWeight: 700 }}>{l.fora}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             );
           })}
         </div>
 
-        {times.map(({ s, nome, cor }) => (
-          <div className="sec" key={`min-${nome}`}>
-            <div className="sec-title"><Timer size={14} style={{ marginRight: 4 }} />Minutos dos Gols {modoTempo === 'ht' ? '— 1º Tempo — ' : '— '}<span style={{ color: cor }}>{nome}</span></div>
-            <HtmlChunk html={renderMinTabela(s, modoTempo)} />
-          </div>
-        ))}
+        <div className="sec">
+          <div className="sec-title"><Timer size={14} style={{ marginRight: 4 }} />Minutos dos Gols {modoTempo === 'ht' ? '— 1º Tempo' : ''}</div>
+          {times.map(({ s, nome, cor }) => (
+            <div key={`min-${nome}`} style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: cor, marginBottom: 6, textAlign: 'center' }}>{nome}</div>
+              <HtmlChunk html={renderMinTabela(s, modoTempo)} />
+            </div>
+          ))}
+        </div>
 
 
         <div className="sec">
@@ -575,37 +577,33 @@ export default function AnaliseResultado() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {[{ lbl: 'Vitória', t: tend.vitoria }, { lbl: 'Over 1.5 Gols', t: tend.over15 }, { lbl: 'Over 2.5 Gols', t: tend.over25 }, { lbl: 'Over 3.5 Gols', t: tend.over35 }, { lbl: 'Ambas Marcam', t: tend.btts }].map(({ lbl, t }) => (
                   <div key={lbl} style={{ background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 8, padding: '8px 10px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: t ? 6 : 0 }}>
-                      <span style={{ fontSize: 11, color: 'var(--texto)', fontWeight: 700 }}>{lbl}</span>
-                      {t && (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 800, color: t.tendencia === 'subindo' ? 'var(--verde2)' : t.tendencia === 'descendo' ? 'var(--perigo)' : 'var(--texto2)' }}>
-                          <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: t.tendencia === 'subindo' ? 'var(--verde2)' : t.tendencia === 'descendo' ? 'var(--perigo)' : 'var(--texto2)', flexShrink: 0 }} />
-                          {t.tendencia === 'subindo' ? 'Em alta' : t.tendencia === 'descendo' ? 'Em baixa' : 'Estável'}
-                        </span>
-                      )}
-                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--texto)', fontWeight: 700, marginBottom: t ? 8 : 0, textAlign: 'center' }}>{lbl}</div>
                     {t ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-                        <div>
-                          <div style={{ fontSize: 9, color: 'var(--texto2)' }}>Últimos 5</div>
-                          <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
-                            <span style={{ fontSize: 15, fontWeight: 800 }}>{t.hits5}/{t.total5}</span>
+                      <>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', alignItems: 'center' }}>
+                          <span style={{ fontSize: 9, color: 'var(--texto2)', textAlign: 'left' }}>Últimos 5</span>
+                          <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, fontSize: 10, fontWeight: 800, color: t.tendencia === 'subindo' ? 'var(--verde2)' : t.tendencia === 'descendo' ? 'var(--perigo)' : 'var(--texto2)' }}>
+                            <span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: t.tendencia === 'subindo' ? 'var(--verde2)' : t.tendencia === 'descendo' ? 'var(--perigo)' : 'var(--texto2)', flexShrink: 0 }} />
+                            {t.tendencia === 'subindo' ? 'Em alta' : t.tendencia === 'descendo' ? 'Em baixa' : 'Estável'}
+                          </span>
+                          <span style={{ fontSize: 9, color: 'var(--texto2)', textAlign: 'right' }}>Últimos 10</span>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', alignItems: 'center', marginTop: 2 }}>
+                          <span style={{ textAlign: 'left' }}>
+                            <span style={{ fontSize: 15, fontWeight: 800 }}>{t.hits5}/{t.total5}</span>{' '}
                             <span style={{ fontSize: 10, color: 'var(--texto2)' }}>· {t.pct5}%</span>
-                          </div>
-                        </div>
-                        <div>
-                          <div style={{ fontSize: 9, color: 'var(--texto2)' }}>Últimos 10</div>
-                          <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
-                            <span style={{ fontSize: 15, fontWeight: 800 }}>{t.hits10}/{t.total10}</span>
+                          </span>
+                          <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                            {t.sequencia.map((h, i) => (
+                              <span key={i} style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: h ? 'var(--verde2)' : 'var(--perigo)' }} />
+                            ))}
+                          </span>
+                          <span style={{ textAlign: 'right' }}>
+                            <span style={{ fontSize: 15, fontWeight: 800 }}>{t.hits10}/{t.total10}</span>{' '}
                             <span style={{ fontSize: 10, color: 'var(--texto2)' }}>· {t.pct10}%</span>
-                          </div>
+                          </span>
                         </div>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
-                          {t.sequencia.map((h, i) => (
-                            <span key={i} style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: h ? 'var(--verde2)' : 'var(--perigo)' }} />
-                          ))}
-                        </span>
-                      </div>
+                      </>
                     ) : <span style={{ fontSize: 10, color: 'var(--texto2)' }}>Poucos jogos pra calcular ainda</span>}
                   </div>
                 ))}
