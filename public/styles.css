@@ -20,6 +20,7 @@
   --verde2:  #22C55E; /* Verde — dados positivos */
   --branco:  #FFFFFF; /* Branco oficial */
   --perigo:  #EF4444; /* Vermelho — alertas/erros */
+  --menos:   #B0555A; /* Vermelho discreto — só pro lado "Menos" das barras de mercado (Gols/Escanteios/Cartões). Mais sóbrio que --perigo de propósito: "Menos" não é um alerta, é só o outro cenário estatístico. */
 
   /* ── Tipografia ── */
   --fonte-logo:  'Space Grotesk', sans-serif;
@@ -38,6 +39,7 @@
   --texto-titulo: #1F2937;
   --texto2:  #4B5563;
   --texto3:  #6B7280;
+  --menos:   #B5666B;
 }
 :root[data-theme="light"] body { color-scheme: light; }
 /* O menu lateral (.sidebar) usa var(--gramado) como fundo, que é sempre escuro
@@ -338,6 +340,45 @@ tr:hover td { background: rgba(255,255,255,.03); }
 .gr-bar   { flex: 1; height: 8px; background: var(--c2); border-radius: 4px; overflow: hidden; }
 .gr-fill  { height: 100%; border-radius: 4px; transition: width .5s; }
 .gr-pct   { min-width: 36px; text-align: right; font-size: 12px; font-weight: 700; color: var(--ouro); }
+
+/* Linha de mercado Mais/Menos (Gols, Escanteios, Cartões) — uma barra só por linha, dividida
+   entre o lado "Mais" (verde) e "Menos" (vermelho discreto, de propósito — ver --menos). */
+.ml-row { margin-bottom: 14px; }
+.ml-head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; margin-bottom: 5px; }
+.ml-tag { font-size: 10px; font-weight: 800; letter-spacing: .3px; }
+.ml-tag-mais { text-align: left; color: var(--verde2); }
+.ml-tag-menos { text-align: right; color: var(--menos); }
+.ml-linha { text-align: center; font-size: 12px; font-weight: 800; color: var(--texto); white-space: nowrap; }
+.ml-body { display: flex; align-items: center; gap: 8px; }
+.ml-pct { font-size: 14px; font-weight: 800; min-width: 34px; font-family: var(--fonte-stat); }
+.ml-bar { flex: 1; height: 10px; border-radius: 6px; overflow: hidden; display: flex; background: var(--c3); }
+.ml-fill-mais { height: 100%; background: var(--verde2); transition: width .5s; }
+.ml-fill-menos { height: 100%; background: var(--menos); transition: width .5s; }
+
+/* Tabela "Minutos dos Gols" — Marcados | Faixa | Sofridos, cada lado com sua PRÓPRIA
+   barrinha (não uma barra única atravessando a tela). */
+.min-grid { width: 100%; }
+.min-grid-head { display: grid; grid-template-columns: 1fr 0.9fr 1fr; gap: 6px; padding-bottom: 6px; border-bottom: 1px solid var(--c3); margin-bottom: 2px; }
+.min-grid-head > div { font-size: 10px; font-weight: 700; color: var(--texto2); text-align: center; text-transform: uppercase; letter-spacing: .3px; }
+.min-grid-row { display: grid; grid-template-columns: 1fr 0.9fr 1fr; gap: 6px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--c3); }
+.min-grid-row:last-child { border-bottom: none; }
+.min-cell { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.min-count { font-size: 13px; font-weight: 800; color: var(--texto); }
+.min-pctbar { display: flex; align-items: center; gap: 6px; }
+.min-pct-num { font-size: 10px; font-weight: 700; min-width: 26px; text-align: right; }
+.min-bar-track { width: 56px; height: 6px; background: var(--c3); border-radius: 4px; overflow: hidden; }
+.min-bar-fill { height: 100%; border-radius: 4px; transition: width .5s; }
+.min-bar-fill.marc { background: var(--verde2); }
+.min-bar-fill.sofr { background: var(--menos); }
+.min-cell-faixa { text-align: center; font-size: 11px; font-weight: 600; color: var(--texto2); }
+
+/* Badge que destaca quem "vence" cada linha no comparativo Casa x Visitante (card "Desempenho
+   das Equipes") — arredondado, verde suave no fundo, número em verde mais forte. De propósito
+   pequeno e discreto: é um destaque de dado, não um botão. */
+.dp-badge { display: inline-block; padding: 2px 9px; border-radius: 999px; background: rgba(34,197,94,.16); color: var(--verde2); font-weight: 800; }
+/* Gols Marcados/Sofridos por Partida são o dado mais importante da comparação — ganham um
+   toque a mais (contorno bem fino), ainda discreto, sem virar um "botão". */
+.dp-badge-gols { background: rgba(34,197,94,.22); box-shadow: 0 0 0 1px rgba(34,197,94,.4) inset; }
 .btts-row { display: flex; gap: 8px; }
 .btts-box { flex: 1; background: var(--c2); border: 1px solid var(--c3); border-radius: 8px; padding: 10px; text-align: center; }
 .bb-lbl { font-size: 10px; color: var(--texto2); margin-bottom: 4px; }

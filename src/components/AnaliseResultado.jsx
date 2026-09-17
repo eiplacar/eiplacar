@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Target, BarChart3, Flag, Square, Search, AlertTriangle, MapPin, Trophy, Scale, Goal, Handshake, Clock, Calendar, Timer, Home, Plane, ShieldAlert, Sunrise, Zap, Flame, X, Footprints, Award, TrendingUp, TrendingDown, Minus, Gauge, Star, Trash2 } from 'lucide-react';
+import { Target, BarChart3, Flag, Square, Search, AlertTriangle, MapPin, Trophy, Scale, Goal, Handshake, Clock, Calendar, Timer, Home, Plane, ShieldAlert, Sunrise, Zap, Flame, X, Footprints, Award, TrendingUp, TrendingDown, Minus, Gauge, Star, Trash2, ArrowRight } from 'lucide-react';
 
 const PERIODO_ICONE = { inicio: Sunrise, fimPrimeiro: Zap, inicioSegundo: Flame, final: Flag };
 
@@ -22,12 +22,53 @@ const PERIODO_ICONE = { inicio: Sunrise, fimPrimeiro: Zap, inicioSegundo: Flame,
 //   - window.renderMinTabela(s) / window.calDot(r,tam) / window.calLbl(r,tam)
 //   - window.barraConfianca(pct, casa, vis, confCasa, confVis)
 
+// Lado que "vence" a linha do comparativo Casa x Visitante (card "Desempenho das Equipes") —
+// dir:'maior' = quem tem o número maior se destaca (Vitória, Gols Marcados...); dir:'menor' =
+// quem tem o número menor se destaca (Derrota, Gols Sofridos, Partidas sem Marcar — menos é
+// melhor nesses); dir:null = sem lado "melhor" (Empate), não destaca ninguém.
+function ladoVencedor(casaVal, visVal, dir) {
+  if (!dir || casaVal == null || visVal == null || casaVal === visVal) return null;
+  if (dir === 'maior') return casaVal > visVal ? 'casa' : 'vis';
+  return casaVal < visVal ? 'casa' : 'vis';
+}
+// Badge arredondado (não quadrado, não parece botão) que destaca o valor do lado que "venceu"
+// aquela linha — verde suave no fundo, número em verde mais forte. Nas duas linhas de Gols
+// (a info mais importante do comparativo) ganha um destaque extra, mas discreto.
+function DestaqueValor({ valor, ativo, gols }) {
+  if (!ativo) return <>{valor}</>;
+  return <span className={`dp-badge${gols ? ' dp-badge-gols' : ''}`}>{valor}</span>;
+}
+
 function GolRow({ label, pct, cor }) {
   return (
     <div className="gol-row">
       <div className="gr-label">{label}</div>
       <div className="gr-bar"><div className="gr-fill" style={{ width: `${pct}%`, background: cor }} /></div>
       <div className="gr-pct">{pct}%</div>
+    </div>
+  );
+}
+
+// Linha de mercado Mais/Menos (Gols, Escanteios, Cartões) — uma barra só, dividida entre o
+// lado "Mais" (verde) e "Menos" (vermelho discreto — ver var(--menos) no CSS: de propósito
+// mais sóbrio que --perigo, porque "Menos" não é um alerta, é só o outro cenário estatístico).
+function MercadoLinha({ linha, unidade, pctMais }) {
+  const pctMenos = 100 - pctMais;
+  return (
+    <div className="ml-row">
+      <div className="ml-head">
+        <span className="ml-tag ml-tag-mais">MAIS</span>
+        <span className="ml-linha">{linha} {unidade}</span>
+        <span className="ml-tag ml-tag-menos">MENOS</span>
+      </div>
+      <div className="ml-body">
+        <span className="ml-pct" style={{ color: 'var(--verde2)' }}>{pctMais}%</span>
+        <div className="ml-bar">
+          <div className="ml-fill-mais" style={{ width: `${pctMais}%` }} />
+          <div className="ml-fill-menos" style={{ width: `${pctMenos}%` }} />
+        </div>
+        <span className="ml-pct" style={{ color: 'var(--menos)', textAlign: 'right' }}>{pctMenos}%</span>
+      </div>
     </div>
   );
 }
@@ -252,7 +293,7 @@ export default function AnaliseResultado() {
     );
   }
 
-  const { casa, vis, filtro, sC, sV, lambdaC, lambdaV, pVit, pEmp, pDer, o15, o25, o35, o45, temHT, o05HT, o15HT, o25HT, o35HT, o45HT, resultadoHT, pBtts, pBttsHT, mcc, top10, maxPP, top10HT, maxPPHT, momStats, golsComb, picoIdx, baixoIdx, totalMom, momStatsHT, golsCombHT, picoIdxHT, baixoIdxHT, totalMomHT, tendC, tendV, tendCHT, tendVHT } = data;
+  const { casa, vis, filtro, sC, sV, lambdaC, lambdaV, pVit, pEmp, pDer, o05, o15, o25, o35, o45, temHT, o05HT, o15HT, o25HT, o35HT, o45HT, resultadoHT, pBtts, pBttsHT, mcc, top10, maxPP, top10HT, maxPPHT, momStats, golsComb, picoIdx, baixoIdx, totalMom, momStatsHT, golsCombHT, picoIdxHT, baixoIdxHT, totalMomHT, tendC, tendV, tendCHT, tendVHT } = data;
   const modoTempo = data.modoTempo || 'ft';
   const calDot = window.calDot || (() => 'facil');
   const calLbl = window.calLbl || (() => '—');
@@ -271,10 +312,7 @@ export default function AnaliseResultado() {
     { l: 'Menos de 3.5 gols no HT', p: 100 - o35HT, c: 'var(--perigo)' },
   ] : [];
   const golsFT = [
-    { l: 'Mais de 1.5 gols', p: o15, c: 'var(--verde2)' }, { l: 'Menos de 1.5 gols', p: 100 - o15, c: 'var(--perigo)' },
-    { l: 'Mais de 2.5 gols', p: o25, c: 'var(--verde2)' }, { l: 'Menos de 2.5 gols', p: 100 - o25, c: 'var(--perigo)' },
-    { l: 'Mais de 3.5 gols', p: o35, c: 'var(--verde2)' }, { l: 'Menos de 3.5 gols', p: 100 - o35, c: 'var(--perigo)' },
-    { l: 'Mais de 4.5 gols', p: o45, c: 'var(--verde2)' }, { l: 'Menos de 4.5 gols', p: 100 - o45, c: 'var(--perigo)' },
+    { linha: 0.5, pct: o05 }, { linha: 1.5, pct: o15 }, { linha: 2.5, pct: o25 }, { linha: 3.5, pct: o35 }, { linha: 4.5, pct: o45 },
   ];
   const times = [{ s: sC, nome: casa, cor: 'var(--verde2)', Ico: Home }, { s: sV, nome: vis, cor: 'var(--perigo)', Ico: Plane }];
 
@@ -378,7 +416,7 @@ export default function AnaliseResultado() {
         {modoTempo === 'ft' && (
           <div className="sec">
             <div className="sec-title"><Goal size={14} style={{ marginRight: 4 }} />Mercado de Gols</div>
-            {golsFT.map((m) => <GolRow key={m.l} label={m.l} pct={m.p} cor={m.c} />)}
+            {golsFT.map((m) => <MercadoLinha key={m.linha} linha={m.linha} unidade="GOLS" pctMais={m.pct} />)}
           </div>
         )}
 
@@ -399,19 +437,14 @@ export default function AnaliseResultado() {
 
         {modoTempo === 'ft' && (
           <div className="sec">
-            <div className="sec-title"><Flag size={14} style={{ marginRight: 4 }} />Mercado de Cantos</div>
+            <div className="sec-title"><Flag size={14} style={{ marginRight: 4 }} />Mercado de Escanteios</div>
             {mcc.temCantos ? (
               <>
-                {mcc.cantos.map((c) => (
-                  <div key={c.linha}>
-                    <GolRow label={`Mais de ${c.linha} cantos`} pct={c.over} cor="var(--verde2)" />
-                    <GolRow label={`Menos de ${c.linha} cantos`} pct={100 - c.over} cor="var(--perigo)" />
-                  </div>
-                ))}
-                <div className="lambda-note">Total esperado: {mcc.lambdaCantos} cantos/jogo ({casa}+{vis})</div>
+                {mcc.cantos.map((c) => <MercadoLinha key={c.linha} linha={c.linha} unidade="ESCANTEIOS" pctMais={c.over} />)}
+                <div className="lambda-note">Total esperado: {mcc.lambdaCantos} escanteios/jogo ({casa}+{vis})</div>
                 <HtmlChunk html={barraConfianca(mcc.confCantos, casa, vis, sC.confCantos, sV.confCantos)} />
               </>
-            ) : <div className="empty" style={{ padding: 14 }}><p>Sem dados de cantos cadastrados para um ou ambos os times.</p></div>}
+            ) : <div className="empty" style={{ padding: 14 }}><p>Sem dados de escanteios cadastrados para um ou ambos os times.</p></div>}
           </div>
         )}
 
@@ -420,12 +453,7 @@ export default function AnaliseResultado() {
             <div className="sec-title"><Square size={14} style={{ marginRight: 4, color: 'var(--ouro)' }} />Mercado de Cartões</div>
             {mcc.temCartoes ? (
               <>
-                {mcc.cartoes.map((c) => (
-                  <div key={c.linha}>
-                    <GolRow label={`Mais de ${c.linha} cartões`} pct={c.over} cor="var(--verde2)" />
-                    <GolRow label={`Menos de ${c.linha} cartões`} pct={100 - c.over} cor="var(--perigo)" />
-                  </div>
-                ))}
+                {mcc.cartoes.map((c) => <MercadoLinha key={c.linha} linha={c.linha} unidade="CARTÕES" pctMais={c.over} />)}
                 <div className="lambda-note">Total esperado: {mcc.lambdaCartoes} cartões/jogo (amarelos + vermelhos, {casa}+{vis})</div>
                 <HtmlChunk html={barraConfianca(mcc.confCartoes, casa, vis, sC.confCartoes, sV.confCartoes)} />
               </>
@@ -511,15 +539,15 @@ export default function AnaliseResultado() {
             const ctxC = statsPorContexto(sC, modoTempo, filtro.casa.local);
             const ctxV = statsPorContexto(sV, modoTempo, filtro.vis.local);
             const linhas = [
-              { label: 'Vitória', casa: ctxC.ved.v, vis: ctxV.ved.v },
-              { label: 'Empate', casa: ctxC.ved.e, vis: ctxV.ved.e },
-              { label: 'Derrota', casa: ctxC.ved.d, vis: ctxV.ved.d },
-              { label: 'Gols Marcados por Partida', casa: ctxC.gm, vis: ctxV.gm },
-              { label: 'Gols Sofridos por Partida', casa: ctxC.gs, vis: ctxV.gs },
+              { label: 'Vitória', casa: ctxC.ved.v, vis: ctxV.ved.v, dir: 'maior' },
+              { label: 'Empate', casa: ctxC.ved.e, vis: ctxV.ved.e, dir: null },
+              { label: 'Derrota', casa: ctxC.ved.d, vis: ctxV.ved.d, dir: 'menor' },
+              { label: 'Gols Marcados por Partida', casa: ctxC.gm, vis: ctxV.gm, dir: 'maior', gols: true },
+              { label: 'Gols Sofridos por Partida', casa: ctxC.gs, vis: ctxV.gs, dir: 'menor', gols: true },
             ];
             if (modoTempo !== 'ht') {
-              linhas.push({ label: 'Partidas sem Marcar', casa: ctxC.semM, vis: ctxV.semM });
-              linhas.push({ label: 'Partidas sem Sofrer Gol', casa: ctxC.semS, vis: ctxV.semS });
+              linhas.push({ label: 'Partidas sem Marcar', casa: ctxC.semM, vis: ctxV.semM, dir: 'menor' });
+              linhas.push({ label: 'Partidas sem Sofrer Gol', casa: ctxC.semS, vis: ctxV.semS, dir: 'maior' });
             }
             return (
               <>
@@ -537,13 +565,16 @@ export default function AnaliseResultado() {
                     </tr>
                   </thead>
                   <tbody>
-                    {linhas.map((l) => (
-                      <tr key={l.label}>
-                        <td className="td-c" style={{ fontWeight: 700 }}>{l.casa}</td>
-                        <td className="td-c" style={{ color: 'var(--texto2)', fontSize: 11, fontWeight: 600 }}>{l.label}</td>
-                        <td className="td-c" style={{ fontWeight: 700 }}>{l.vis}</td>
-                      </tr>
-                    ))}
+                    {linhas.map((l) => {
+                      const vencedor = ladoVencedor(l.casa, l.vis, l.dir);
+                      return (
+                        <tr key={l.label}>
+                          <td className="td-c" style={{ fontWeight: 700 }}><DestaqueValor valor={l.casa} ativo={vencedor === 'casa'} gols={l.gols} /></td>
+                          <td className="td-c" style={{ color: 'var(--texto2)', fontSize: 11, fontWeight: 600 }}>{l.label}</td>
+                          <td className="td-c" style={{ fontWeight: 700 }}><DestaqueValor valor={l.vis} ativo={vencedor === 'vis'} gols={l.gols} /></td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </>
@@ -627,6 +658,14 @@ export default function AnaliseResultado() {
           );
         })}
 
+        <button
+          type="button"
+          onClick={() => window.goTo?.('favoritos')}
+          style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 10, padding: '12px', color: 'var(--texto)', fontSize: 12, fontWeight: 700, cursor: 'pointer', marginTop: 4 }}
+        >
+          Gostou desta análise? <span style={{ color: 'var(--verde2)', display: 'flex', alignItems: 'center', gap: 4 }}>Ir para Favoritos <ArrowRight size={14} /></span>
+        </button>
+
       </div>
 
       <IndiceTab data={data} favorEnviando={favorEnviando} setFavorEnviando={setFavorEnviando} tab={tab} />
@@ -684,3 +723,5 @@ export default function AnaliseResultado() {
     </>
   );
 }
+
+export { SecaoFavoritados };

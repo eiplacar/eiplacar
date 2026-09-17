@@ -13,7 +13,7 @@ function toggleSidebar(force){
 // Abas com conteúdo do produto (ficam travadas quando a assinatura vence).
 // Fora dessa lista: Conta, Administração, Assinar e as ações diretas de
 // Convidar Amigo/Suporte/Sugestões (que não são "page", não precisam de trava).
-const PAGINAS_GATED = ['geral','confrontos','dados','analise','futebol','classificacao','apostas','banca','estrategias'];
+const PAGINAS_GATED = ['geral','confrontos','dados','analise','favoritos','futebol','classificacao','apostas','banca','estrategias'];
 
 function goTo(p) {
   toastEsconder(); // troca de aba sempre limpa qualquer aviso preso na tela

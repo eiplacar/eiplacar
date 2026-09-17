@@ -254,22 +254,35 @@ function renderMinTabelaCore(minStats, jogosComMin, ht){
   const totSofr=minStats.reduce((a,b)=>a+b.sofr,0);
   const picoM=minStats.indexOf(minStats.reduce((a,b)=>b.marc>a.marc?b:a));
   const picoS=minStats.indexOf(minStats.reduce((a,b)=>b.sofr>a.sofr?b:a));
-  // "Faixa" (o período) fica no meio da tabela, com Marcados à esquerda e Sofridos à
-  // direita — cada célula mostra a contagem e o % que aquele período representa do total
-  // de gols marcados/sofridos (não % de jogos).
+  // "Faixa" (o período) fica no meio, com Marcados à esquerda e Sofridos à direita. Cada lado
+  // tem sua PRÓPRIA barrinha (não uma barra única atravessando a tela) — o comprimento da barra
+  // representa o % que aquele período tem dentro do total de gols marcados (ou sofridos), cada
+  // coluna somando 100% entre si, não os dois lados comparados um com o outro.
   const linhas = minStats.map((p,i)=>{
     const pctM = totMarc ? Math.round((p.marc/totMarc)*100) : 0;
     const pctS = totSofr ? Math.round((p.sofr/totSofr)*100) : 0;
-    return `<tr>
-      <td class="td-c" style="font-weight:700;${i===picoM?'color:var(--verde2)':''}">${p.marc} · ${pctM}%</td>
-      <td class="td-c" style="color:var(--texto2)">${p.l}</td>
-      <td class="td-c" style="font-weight:700;${i===picoS?'color:var(--perigo)':''}">${p.sofr} · ${pctS}%</td>
-    </tr>`;
+    return `<div class="min-grid-row">
+      <div class="min-cell">
+        <div class="min-count" style="${i===picoM?'color:var(--verde2)':''}">${p.marc} gols</div>
+        <div class="min-pctbar">
+          <span class="min-pct-num" style="color:var(--verde2)">${pctM}%</span>
+          <div class="min-bar-track"><div class="min-bar-fill marc" style="width:${pctM}%"></div></div>
+        </div>
+      </div>
+      <div class="min-cell-faixa">${p.l}</div>
+      <div class="min-cell">
+        <div class="min-count" style="${i===picoS?'color:var(--menos)':''}">${p.sofr} gols</div>
+        <div class="min-pctbar">
+          <span class="min-pct-num" style="color:var(--menos)">${pctS}%</span>
+          <div class="min-bar-track"><div class="min-bar-fill sofr" style="width:${pctS}%"></div></div>
+        </div>
+      </div>
+    </div>`;
   }).join('');
-  return `<table style="width:100%;min-width:0;table-layout:fixed">
-      <thead><tr><th class="td-c">Marcados</th><th class="td-c">Faixa</th><th class="td-c">Sofridos</th></tr></thead>
-      <tbody>${linhas}</tbody>
-    </table>
+  return `<div class="min-grid">
+      <div class="min-grid-head"><div>Marcados</div><div>Faixa</div><div>Sofridos</div></div>
+      ${linhas}
+    </div>
   <div class="min-insight" style="margin-top:10px">
     <span data-ic="target" data-ic-size="12"></span> Total marcados: <strong>${totMarc}</strong> &nbsp;·&nbsp; <span data-ic="goalNet" data-ic-size="12"></span> Total sofridos: <strong>${totSofr}</strong><br>
     Marca mais: <strong>${minStats[picoM].l}</strong> &nbsp;·&nbsp; Sofre mais: <strong>${minStats[picoS].l}</strong><br>
@@ -368,7 +381,7 @@ function computeAnalise(casa, vis, camp, filtroAtual){
   }
   const { pVit, pEmp, pDer } = probResultado(lambdaC, lambdaV);
   function probOver(lC,lV,n){ let u=0; for(let i=0;i<=MAX;i++) for(let j=0;j<=MAX;j++) if(i+j<=n) u+=poisson(lC,i)*poisson(lV,j); return Math.round((1-u)*100); }
-  const o15=probOver(lambdaC,lambdaV,1), o25=probOver(lambdaC,lambdaV,2), o35=probOver(lambdaC,lambdaV,3), o45=probOver(lambdaC,lambdaV,4);
+  const o05=probOver(lambdaC,lambdaV,0), o15=probOver(lambdaC,lambdaV,1), o25=probOver(lambdaC,lambdaV,2), o35=probOver(lambdaC,lambdaV,3), o45=probOver(lambdaC,lambdaV,4);
   // Gols HT (1º tempo) — só calcula se os dois times tiverem gols de 1º tempo registrados.
   // Mesmas 4 linhas do mercado de gols normal (0.5 a real. o padrão pedido foi até 4.5,
   // mesmo que na prática 3.5+/4.5 no intervalo seja raríssimo — o cálculo é o mesmo probOver).
@@ -459,7 +472,7 @@ function computeAnalise(casa, vis, camp, filtroAtual){
   return {
     estado:'ok', casa, vis, camp,
     filtro: { casa:{...filtroAtual.casa}, vis:{...filtroAtual.vis} }, modoTempo,
-    sC, sV, lambdaC, lambdaV, pVit, pEmp, pDer, o15, o25, o35, o45,
+    sC, sV, lambdaC, lambdaV, pVit, pEmp, pDer, o05, o15, o25, o35, o45,
     tendC, tendV, tendCHT, tendVHT,
     temHT, o05HT, o15HT, o25HT, o35HT, o45HT, resultadoHT, pBtts, pBttsHT, mcc, top10, maxPP, top10HT, maxPPHT,
     momStats, golsComb, picoIdx, baixoIdx, totalMom,

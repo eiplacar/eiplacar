@@ -571,6 +571,7 @@
     <button class="nav-tab so-organizador" onclick="goTo('confrontos')" id="tab-confrontos"><span class="nav-ic" data-ic="calendarPlus"></span><span>Partidas</span></button>
     <button class="nav-tab so-organizador" onclick="goTo('dados')"      id="tab-dados"><span class="nav-ic" data-ic="database"></span><span>Dados</span></button>
     <button class="nav-tab"        onclick="goTo('analise')"    id="tab-analise"><span class="nav-ic" data-ic="search"></span><span>Análise</span></button>
+    <button class="nav-tab"        onclick="goTo('favoritos')"  id="tab-favoritos"><span class="nav-ic" data-ic="star"></span><span>Favoritos</span></button>
     <button class="nav-tab"        onclick="goTo('futebol')"    id="tab-futebol"><span class="nav-ic" data-ic="trendingUp"></span><span>Estatística</span></button>
     <button class="nav-tab"        onclick="goTo('estrategias')" id="tab-estrategias"><span class="nav-ic" data-ic="lightbulb"></span><span>Estratégias</span></button>
     <button class="nav-tab"        onclick="goTo('classificacao')" id="tab-classificacao"><span class="nav-ic" data-ic="medal"></span><span>Classificação</span></button>
@@ -650,6 +651,13 @@
 
   <!-- Resultado da análise — componente React (src/components/AnaliseResultado.jsx) -->
   <div id="analise-resultado-root"></div>
+</div>
+
+<!-- ══ FAVORITOS ══ -->
+<div class="page" id="page-favoritos">
+  <!-- Confrontos favoritados — componente React (src/components/Favoritos.jsx), reaproveita
+       o mesmo <SecaoFavoritados> que já existia dentro da aba Análise (sub-aba Índice) -->
+  <div id="favoritos-root"></div>
 </div>
 
 <!-- ══ APOSTAS ══ -->

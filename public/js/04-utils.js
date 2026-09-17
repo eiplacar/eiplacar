@@ -151,14 +151,14 @@ window.nivelConfianca = nivelConfianca;
 function mercadosCantosCartoes(sC, sV){
   const temCantos  = sC.mediaCantosMarc!=null && sV.mediaCantosMarc!=null;
   const lambdaCantos = temCantos ? r2(sC.mediaCantosMarc + sV.mediaCantosMarc) : null;
-  const cantosLinhas = [8.5, 9.5, 10.5];
+  const cantosLinhas = [7.5, 8.5, 9.5, 10.5, 11.5];
   // Confiança = o "pior caso" entre os dois times (se um tem pouco dado, a confiança geral cai com ele)
   const confCantos = temCantos ? Math.min(sC.confCantos, sV.confCantos) : 0;
 
   const cartoesValidos = [sC.mediaAmarProprio, sV.mediaAmarProprio, sC.mediaVermProprio, sV.mediaVermProprio];
   const temCartoes = cartoesValidos.every(v=>v!=null);
   const lambdaCartoes = temCartoes ? r2(cartoesValidos.reduce((a,b)=>a+b,0)) : null;
-  const cartoesLinhas = [2.5, 3.5, 4.5];
+  const cartoesLinhas = [1.5, 2.5, 3.5, 4.5, 5.5];
   const confCartoes = temCartoes ? Math.min(sC.confCartoes, sV.confCartoes) : 0;
 
   return {
