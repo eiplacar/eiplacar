@@ -47,14 +47,14 @@ function labelLinhaGols(pontuacao) {
   if (pontuacao == null || !window.classificar) return '';
   return window.classificar(pontuacao);
 }
-// Badge de uma linha de Gols dentro do card dedicado — 2 linhas: valor em cima, classificação
-// (a palavra) embaixo, igual ao card "Análise do Confronto" mostra pra cada linha.
-function BadgeGolLinha({ linha, pontuacao }) {
-  const cor = corLinhaGols(pontuacao);
+// Badge padrão de todo mercado do favorito (Resultado, Ambas Marcam, cada linha de Gols) —
+// sempre 2 linhas: valor em cima, o NOME do nível (Forte/Favorável/Moderado/...) embaixo,
+// na cor da classificação. Mesmo formato pros 6, pra ficar tudo consistente.
+function BadgeFavoritoNivel({ valor, classificacao }) {
   return (
     <div style={{ background: 'var(--c1)', borderRadius: 8, padding: '7px 8px', textAlign: 'center' }}>
-      <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--texto)' }}>+{linha} · {pontuacao}/100</div>
-      <div style={{ fontSize: 10, fontWeight: 700, color: cor, marginTop: 2 }}>{labelLinhaGols(pontuacao)}</div>
+      <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--texto)' }}>{valor}</div>
+      <div style={{ fontSize: 10, fontWeight: 700, color: corClassificacao(classificacao), marginTop: 2 }}>{classificacao}</div>
     </div>
   );
 }
@@ -70,9 +70,9 @@ function CabecalhoFavorito({ f, onRemover }) {
   );
 }
 
-// Lista de confrontos favoritados — 2 cards por confronto: 1º com Resultado + Ambas Marcam,
-// 2º com as 4 linhas de Gols (+1.5/+2.5/+3.5/+4.5), cada uma com o valor em cima e a
-// classificação (a palavra) embaixo — em vez de 1 card só com 6 badges misturados.
+// Lista de confrontos favoritados — 1 card só por confronto, com os 6 mercados (Resultado,
+// Ambas Marcam, +1.5/+2.5/+3.5/+4.5), todos no mesmo formato de badge (valor em cima, nível
+// embaixo). Dois cards separados por confronto atrapalhava a leitura — voltou a ser 1 só.
 function SecaoFavoritados() {
   const favoritosAtivos = window.favIndiceAtivos ? window.favIndiceAtivos() : [];
   async function remover(id) { await window.removerFavoritoIndice?.(id); }
@@ -84,27 +84,16 @@ function SecaoFavoritados() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {favoritosAtivos.map((f) => (
-            <div key={f.id} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {/* Card 1: Resultado + Ambas Marcam */}
-              <div style={{ background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 10, padding: 10 }}>
-                <CabecalhoFavorito f={f} onRemover={() => remover(f.id)} />
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                  {f.resultado_favorito && <BadgeFavorito icon={<Trophy size={11} />} cor={corClassificacao(f.resultado_classificacao)}>{f.resultado_favorito} · {f.resultado_pontuacao}/100</BadgeFavorito>}
-                  {f.btts_classificacao && <BadgeFavorito icon={<Handshake size={11} />} cor={corClassificacao(f.btts_classificacao)}>Ambas {f.btts_pct}% · {f.btts_pontuacao}/100</BadgeFavorito>}
-                </div>
+            <div key={f.id} style={{ background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 10, padding: 10 }}>
+              <CabecalhoFavorito f={f} onRemover={() => remover(f.id)} />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                {f.resultado_favorito && <BadgeFavoritoNivel valor={`${f.resultado_favorito} · ${f.resultado_pontuacao}/100`} classificacao={f.resultado_classificacao} />}
+                {f.btts_classificacao && <BadgeFavoritoNivel valor={`Ambas ${f.btts_pct}% · ${f.btts_pontuacao}/100`} classificacao={f.btts_classificacao} />}
+                {f.gols_linha1 && <BadgeFavoritoNivel valor={`+${f.gols_linha1} · ${f.gols_prob1}/100`} classificacao={labelLinhaGols(f.gols_prob1)} />}
+                {f.gols_linha2 && <BadgeFavoritoNivel valor={`+${f.gols_linha2} · ${f.gols_prob2}/100`} classificacao={labelLinhaGols(f.gols_prob2)} />}
+                {f.gols_linha3 && <BadgeFavoritoNivel valor={`+${f.gols_linha3} · ${f.gols_prob3}/100`} classificacao={labelLinhaGols(f.gols_prob3)} />}
+                {f.gols_linha4 && <BadgeFavoritoNivel valor={`+${f.gols_linha4} · ${f.gols_prob4}/100`} classificacao={labelLinhaGols(f.gols_prob4)} />}
               </div>
-              {/* Card 2: as 4 linhas de Gols */}
-              {(f.gols_linha1 || f.gols_linha2 || f.gols_linha3 || f.gols_linha4) && (
-                <div style={{ background: 'var(--c2)', border: '1px solid var(--c3)', borderRadius: 10, padding: 10 }}>
-                  <CabecalhoFavorito f={f} />
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                    {f.gols_linha1 && <BadgeGolLinha linha={f.gols_linha1} pontuacao={f.gols_prob1} />}
-                    {f.gols_linha2 && <BadgeGolLinha linha={f.gols_linha2} pontuacao={f.gols_prob2} />}
-                    {f.gols_linha3 && <BadgeGolLinha linha={f.gols_linha3} pontuacao={f.gols_prob3} />}
-                    {f.gols_linha4 && <BadgeGolLinha linha={f.gols_linha4} pontuacao={f.gols_prob4} />}
-                  </div>
-                </div>
-              )}
             </div>
           ))}
         </div>
@@ -141,7 +130,7 @@ function AnaliseDoConfronto() {
     const r = await window.favoritarIndice?.(data, idx, jogo);
     setFavorEnviando(false);
     if (!r || r.erro) window.toast?.(r?.erro ? `Erro ao favoritar: ${r.erro}` : 'Erro ao favoritar', true);
-    else window.toast?.(horarioJogo ? 'Favoritado! Some sozinho 4h depois do início do jogo.' : 'Favoritado! Some sozinho em 4h.');
+    else window.toast?.(horarioJogo ? 'Favoritado! Some sozinho 2h depois do início do jogo.' : 'Favoritado! Some sozinho em 2h.');
   }
 
   const { resultado, gols, btts } = idx;
@@ -168,7 +157,7 @@ function AnaliseDoConfronto() {
           <Star size={13} /> Favoritar
         </button>
       </div>
-      {!horarioJogo && <div style={{ fontSize: 9.5, color: 'var(--texto2)', marginTop: -6, marginBottom: 10 }}>Sem horário, o favorito some 4h depois de favoritado. Preenchendo, some 4h depois do início do jogo.</div>}
+      {!horarioJogo && <div style={{ fontSize: 9.5, color: 'var(--texto2)', marginTop: -6, marginBottom: 10 }}>Sem horário, o favorito some 2h depois de favoritado. Preenchendo, some 2h depois do início do jogo.</div>}
 
       {/* 🏆 RESULTADO */}
       {resultado ? (

@@ -234,7 +234,7 @@ function computeIndice(data){
 window.computeIndice = computeIndice;
 window.classificar = classificar; // exposto pra Favoritos.jsx colorir os badges de gols (gols_prob1..4 são só o número; a cor vem daqui)
 
-// ══ Favoritar (salva na nuvem, PRIVADO por conta, some 4h depois — igual expiração dos Jogos Agendados) ══
+// ══ Favoritar (salva na nuvem, PRIVADO por conta, some 2h depois) ══
 function sbUrlFavoritos(filtros){
   const cfg = getConfig();
   return cfg.url.replace(/\/$/, '') + '/rest/v1/favoritos_indice' + (filtros || '');
@@ -249,9 +249,9 @@ async function favIndiceCarregarNuvem(){
   } catch { /* falha silenciosa, tenta de novo depois */ }
 }
 // Mesma lógica de ophExpirado() (11-jogosdodia.js): se você informou horário do jogo ao
-// favoritar, some 4h DEPOIS do início do jogo (não 4h depois de favoritado) — assim, analisar
-// um jogo que só começa daqui a 5h não faz o favorito sumir antes mesmo da bola rolar. Se não
-// informou horário (campo opcional), cai no comportamento antigo: 4h depois de favoritado.
+// favoritar, some 2h DEPOIS do início do jogo (não 2h depois de favoritado) — assim, analisar
+// um jogo que só começa daqui a 3h não faz o favorito sumir antes mesmo da bola rolar. Se não
+// informou horário (campo opcional), cai no comportamento antigo: 2h depois de favoritado.
 function favIndiceExpirado(f){
   if(f.horario_jogo){
     const [h,m] = f.horario_jogo.split(':').map(Number);
@@ -264,12 +264,12 @@ function favIndiceExpirado(f){
         const criado = f.criado_em ? new Date(f.criado_em) : new Date();
         base = new Date(criado.getFullYear(), criado.getMonth(), criado.getDate(), h, m, 0, 0);
       }
-      const limite = new Date(base.getTime() + 4*60*60*1000); // 4h depois do início do jogo
+      const limite = new Date(base.getTime() + 2*60*60*1000); // 2h depois do início do jogo
       return new Date() > limite;
     }
   }
   if(!f.criado_em) return false;
-  return (new Date() - new Date(f.criado_em)) > 4*60*60*1000; // fallback: 4h depois de favoritado
+  return (new Date() - new Date(f.criado_em)) > 2*60*60*1000; // fallback: 2h depois de favoritado
 }
 function favIndiceAtivos(){ return favIndiceCache.filter(f=>!favIndiceExpirado(f)); }
 

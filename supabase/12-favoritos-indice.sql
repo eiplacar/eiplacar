@@ -4,8 +4,8 @@
 -- Diferente dos "Jogos Agendados" (que são compartilhados), aqui é PRIVADO —
 -- cada conta só vê e favorita os SEUS próprios confrontos analisados. Some
 -- da lista sozinho (feito na TELA, igual o de lá — não precisa apagar linha
--- nenhuma aqui pra "sumir da lista"): 4h depois do HORÁRIO DO JOGO, se você
--- informou data/horário ao favoritar; senão, 4h depois de favoritado.
+-- nenhuma aqui pra "sumir da lista"): 2h depois do HORÁRIO DO JOGO, se você
+-- informou data/horário ao favoritar; senão, 2h depois de favoritado.
 --
 -- Regras:
 --   • Cada pessoa só vê e favorita os PRÓPRIOS confrontos (não é compartilhado).
@@ -35,8 +35,8 @@ create table if not exists favoritos_indice (
   btts_classificacao text,
   btts_pct int,                   -- % de Ambas Marcam (Sim)
 
-  data_jogo date,                 -- data do jogo (opcional) — usada pra expirar 4h DEPOIS
-                                   -- do início do jogo, em vez de 4h depois de favoritado
+  data_jogo date,                 -- data do jogo (opcional) — usada pra expirar 2h DEPOIS
+                                   -- do início do jogo, em vez de 2h depois de favoritado
   horario_jogo text,              -- horário do jogo "HH:MM" (opcional)
 
   criado_por uuid references auth.users(id),
