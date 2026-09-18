@@ -181,15 +181,18 @@ function computeIndiceGols(data){
   const pesoTotal = comps.reduce((s,c)=>s+c.peso,0); // 18
   const pontuacao = clip100(comps.reduce((s,c)=>s+c.peso*c.score,0)/pesoTotal);
 
-  // ── Cada uma das 4 linhas (1.5/2.5/3.5/4.5) leva peso próprio (1.5=3 / 2.5=3 / 3.5=2 / 4.5=1)
-  // combinado com os mesmos 5 fatores de contexto acima (ataque, média, tendência, momentos,
-  // placar) — todas as 4 aparecem sempre (não é mais só as "2 mais pontuadas").
-  const pesosLinha = { '1.5':3, '2.5':3, '3.5':2, '4.5':1 };
+  // ── Cada uma das 4 linhas (1.5/2.5/3.5/4.5) — a pontuação é 70% a probabilidade da PRÓPRIA
+  // linha + 30% o contexto (ataque, média, tendência, momentos, placar), igual pras 4. Antes
+  // o contexto entrava com peso 9 contra um peso de linha de só 1 (no +4.5) até 3 (no +1.5),
+  // então o contexto praticamente sozinho decidia a nota — dava pra 81% e 19% caírem na
+  // MESMA classificação ("Favorável"), o que não faz sentido: quanto menor a probabilidade
+  // real da linha, pior a classificação tem que ficar, sempre. Com prob pesando 70%, isso
+  // fica garantido — o contexto só ajusta um pouco pra cima ou pra baixo, nunca inverte.
+  const contextoMedia = pesoContexto ? somaContexto/pesoContexto : 50;
   const linhas = [
     { linha:'1.5', prob:o15 }, { linha:'2.5', prob:o25 }, { linha:'3.5', prob:o35 }, { linha:'4.5', prob:o45 },
   ].map(l=>{
-    const pesoLinha = pesosLinha[l.linha];
-    const pontuacaoLinha = clip100((pesoLinha*l.prob + somaContexto)/(pesoLinha+pesoContexto));
+    const pontuacaoLinha = clip100(l.prob*0.7 + contextoMedia*0.3);
     return { linha:l.linha, prob:l.prob, pontuacao:pontuacaoLinha, classificacao: classificar(pontuacaoLinha) };
   });
 
@@ -313,6 +316,8 @@ async function favoritarIndice(data, idx, jogo){
     }
     const inserido = (await res.json())[0];
     favIndiceCache.unshift(inserido);
+    window.favIndiceRefresh?.(); // avisa a tela na hora — sem isso o favorito só aparecia quando o
+    // polling de 60s (lá embaixo) batia de novo, e parecia "travado" tentando favoritar
     return inserido;
   } catch(e){ console.error(e); return { erro: e.message || 'Falha de rede' }; }
 }

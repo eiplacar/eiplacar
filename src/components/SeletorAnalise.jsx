@@ -222,8 +222,8 @@ export default function SeletorAnalise() {
           </div>
 
           <div style={{ display: 'flex', gap: 4, marginBottom: 10 }}>
-            <button className={`local-btn ${localUnicoAtivo === 'all' ? 'active-all' : ''}`} onClick={() => escolherLocal('all')} style={{ ...btnStyleLocal, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}><RotateCcw size={12} /> Geral</button>
             <button className={`local-btn ${localUnicoAtivo === 'casa' ? 'active-casa' : ''}`} onClick={() => escolherLocal('casa')} style={{ ...btnStyleLocal, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}><Home size={12} /> Em casa</button>
+            <button className={`local-btn ${localUnicoAtivo === 'all' ? 'active-all' : ''}`} onClick={() => escolherLocal('all')} style={{ ...btnStyleLocal, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}><RotateCcw size={12} /> Geral</button>
             <button className={`local-btn ${localUnicoAtivo === 'fora' ? 'active-fora' : ''}`} onClick={() => escolherLocal('fora')} style={{ ...btnStyleLocal, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}><Plane size={12} /> Fora</button>
           </div>
 

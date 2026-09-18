@@ -166,18 +166,24 @@ export default function AnaliseResultado() {
 
         <div className="sec">
           <div className="sec-title"><MapPin size={14} style={{ marginRight: 4 }} />Média de Gols Ajustada</div>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <div className="stat-extra-box" style={{ flex: 1, minWidth: 140 }}>
-              <div className="seb-label">{casa}</div>
-              <div className="seb-val" style={{ color: 'var(--verde2)' }}>{modoTempo === 'ht' ? (temHT ? sC.lambdaHT : '—') : sC.lambdaAjustado}</div>
-              <div className="seb-sub">{localLbl(filtro.casa.local)} · {sC.nt} jogo(s){modoTempo === 'ht' ? ` · ${sC.ntHT} com HT` : ''}</div>
-            </div>
-            <div className="stat-extra-box" style={{ flex: 1, minWidth: 140 }}>
-              <div className="seb-label">{vis}</div>
-              <div className="seb-val" style={{ color: 'var(--perigo)' }}>{modoTempo === 'ht' ? (temHT ? sV.lambdaHT : '—') : sV.lambdaAjustado}</div>
-              <div className="seb-sub">{localLbl(filtro.vis.local)} · {sV.nt} jogo(s){modoTempo === 'ht' ? ` · ${sV.ntHT} com HT` : ''}</div>
-            </div>
-          </div>
+          {(() => {
+            const valC = modoTempo === 'ht' ? (temHT ? sC.lambdaHT : null) : sC.lambdaAjustado;
+            const valV = modoTempo === 'ht' ? (temHT ? sV.lambdaHT : null) : sV.lambdaAjustado;
+            return (
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <div className="stat-extra-box" style={{ flex: 1, minWidth: 140 }}>
+                  <div className="seb-label">{casa}</div>
+                  <div className="seb-val" style={{ color: valC == null ? 'var(--texto2)' : valC >= 1 ? 'var(--verde2)' : 'var(--perigo)' }}>{valC ?? '—'}</div>
+                  <div className="seb-sub">{localLbl(filtro.casa.local)} · {sC.nt} jogo(s){modoTempo === 'ht' ? ` · ${sC.ntHT} com HT` : ''}</div>
+                </div>
+                <div className="stat-extra-box" style={{ flex: 1, minWidth: 140 }}>
+                  <div className="seb-label">{vis}</div>
+                  <div className="seb-val" style={{ color: valV == null ? 'var(--texto2)' : valV >= 1 ? 'var(--verde2)' : 'var(--perigo)' }}>{valV ?? '—'}</div>
+                  <div className="seb-sub">{localLbl(filtro.vis.local)} · {sV.nt} jogo(s){modoTempo === 'ht' ? ` · ${sV.ntHT} com HT` : ''}</div>
+                </div>
+              </div>
+            );
+          })()}
           <details style={{ marginTop: 6 }}>
             <summary style={{ cursor: 'pointer', fontSize: 10, fontWeight: 700, color: 'var(--texto2)', listStyle: 'none', display: 'flex', alignItems: 'center', gap: 5 }}>
               <AlertTriangle size={11} /> Como é calculado?
@@ -434,7 +440,7 @@ export default function AnaliseResultado() {
                 <div className="cal-list">
                   {calLista.map((c, i) => (
                     <div className="cal-item cal-item-click" key={i} onClick={() => setJogoSel({ ...c, timeRef: nome, corRef: cor })}>
-                      <div className="cal-rodada-badge">J{c.rodada && /^\d+$/.test(c.rodada.trim()) ? c.rodada : i + 1}</div>
+                      <div className={`cal-rodada-badge cal-rodada-${calDot(c.rank, c.tamCamp)}`}>J{c.rodada && /^\d+$/.test(c.rodada.trim()) ? c.rodada : i + 1}</div>
                       <div className="cal-placar-row">
                         <div className="cal-time cal-time-casa">
                           <span style={{ color: 'var(--texto2)', fontWeight: 700 }}>#{c.rankCasa ?? '—'}</span>{' '}

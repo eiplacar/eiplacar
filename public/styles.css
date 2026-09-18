@@ -383,7 +383,10 @@ tr:hover td { background: rgba(255,255,255,.03); }
 /* "J1" do card Calendário — mesmo estilo do badge do Desempenho das Equipes (verde suave +
    número forte), só que circular em vez de pílula, porque aqui é um número de jogo/rodada,
    não uma comparação de dois lados. */
-.cal-rodada-badge { flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; background: rgba(34,197,94,.16); color: var(--verde2); font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+.cal-rodada-badge { flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+.cal-rodada-dificil { background: rgba(239,68,68,.16); color: var(--perigo); }
+.cal-rodada-medio   { background: rgba(34,197,94,.16); color: var(--verde2); }
+.cal-rodada-facil   { background: rgba(209,213,219,.16); color: var(--texto2); }
 .btts-row { display: flex; gap: 8px; }
 .btts-box { flex: 1; background: var(--c2); border: 1px solid var(--c3); border-radius: 8px; padding: 10px; text-align: center; }
 .bb-lbl { font-size: 10px; color: var(--texto2); margin-bottom: 4px; }
