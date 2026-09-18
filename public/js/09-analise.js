@@ -122,7 +122,7 @@ function statsTime(nome, local, camp, qty){
   const calendario=jogos.map(j=>({
     adv:j.casa===nome?j.vis:j.casa, rank:j.casa===nome?j.rankV:j.rankC, data:j.data, camp:j.camp,
     tamCamp:tamanhoCampeonato(j.camp), casaNome:j.casa, visNome:j.vis, gC:j.gC, gV:j.gV,
-    rankCasa:j.rankC, rankVis:j.rankV, mandante:j.casa===nome,
+    rankCasa:j.rankC, rankVis:j.rankV, mandante:j.casa===nome, rodada:j.rodada||null,
     golsHT_C:j.golsHT_C ?? null, golsHT_V:j.golsHT_V ?? null,
     chutesC:j.chutesC ?? null, chutesV:j.chutesV ?? null,
     chutesGolC:j.chutesGolC ?? null, chutesGolV:j.chutesGolV ?? null,
@@ -131,6 +131,18 @@ function statsTime(nome, local, camp, qty){
     vermelhosC:j.vermelhosC ?? null, vermelhosV:j.vermelhosV ?? null,
     gols:j.gols || [],
   })).filter(x=>x.rank);
+  // Card "Calendário": ordena pela RODADA de verdade (maior pra menor), não só pela data —
+  // pega o número certo do jogo dentro da rodada mesmo se duas partidas da mesma rodada
+  // tiverem datas diferentes (adiamento, etc). Só funciona quando a rodada é um número puro
+  // (fase de pontos corridos); mata-mata ("Playoffs - Oitavas", texto livre) ou jogos sem
+  // rodada cadastrada mantêm a ordem por data (mais recente primeiro), que é como `jogos` já
+  // veio ordenado lá em cima — o sort é estável, então não embaralha esses.
+  calendario.sort((a,b)=>{
+    const ra = a.rodada && /^\d+$/.test(a.rodada.trim()) ? parseInt(a.rodada,10) : null;
+    const rb = b.rodada && /^\d+$/.test(b.rodada.trim()) ? parseInt(b.rodada,10) : null;
+    if(ra!=null && rb!=null) return rb-ra;
+    return 0;
+  });
   const todosGols=jogos.flatMap(j=>(j.gols||[]).map(g=>({ min:g.min, marcado:(j.casa===nome&&g.time==='casa')||(j.vis===nome&&g.time==='vis') })));
   const jogosComMin=jogos.filter(j=>(j.gols||[]).length>0).length;
   const minStats=periodos4.map(p=>({ l:p.l, ico:p.ico, marc:todosGols.filter(g=>g.marcado&&g.min>=p.s&&g.min<=p.e).length, sofr:todosGols.filter(g=>!g.marcado&&g.min>=p.s&&g.min<=p.e).length }));

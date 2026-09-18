@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════════
--- TABELA: favoritos_indice ("⭐ Favoritar" na aba Análise → Índice)
+-- TABELA: favoritos_indice ("⭐ Favoritar" na aba Favoritos)
 -- Guarda o resultado da Favorita Ponto (Resultado/Gols/BTTS) de um confronto.
 -- Diferente dos "Jogos Agendados" (que são compartilhados), aqui é PRIVADO —
 -- cada conta só vê e favorita os SEUS próprios confrontos analisados. Some

@@ -379,6 +379,11 @@ tr:hover td { background: rgba(255,255,255,.03); }
 /* Gols Marcados/Sofridos por Partida são o dado mais importante da comparação — ganham um
    toque a mais (contorno bem fino), ainda discreto, sem virar um "botão". */
 .dp-badge-gols { background: rgba(34,197,94,.22); box-shadow: 0 0 0 1px rgba(34,197,94,.4) inset; }
+
+/* "J1" do card Calendário — mesmo estilo do badge do Desempenho das Equipes (verde suave +
+   número forte), só que circular em vez de pílula, porque aqui é um número de jogo/rodada,
+   não uma comparação de dois lados. */
+.cal-rodada-badge { flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; background: rgba(34,197,94,.16); color: var(--verde2); font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
 .btts-row { display: flex; gap: 8px; }
 .btts-box { flex: 1; background: var(--c2); border: 1px solid var(--c3); border-radius: 8px; padding: 10px; text-align: center; }
 .bb-lbl { font-size: 10px; color: var(--texto2); margin-bottom: 4px; }
