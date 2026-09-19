@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Trophy, Shield, Share2, CheckCircle2, Home, Plane, RotateCcw, X, Check, ShieldQuestion } from 'lucide-react';
+import { Trophy, Shield, Share2, CheckCircle2, X, Check, ShieldQuestion } from 'lucide-react';
 
 // ══ Seletor da Análise (Campeonato + Confronto) — terceiro módulo migrado para React ══
 //
@@ -72,8 +72,7 @@ export default function SeletorAnalise() {
   const [campeonato, setCampeonato] = useState('');
   const [timeCasa, setTimeCasa] = useState('');
   const [timeVis, setTimeVis] = useState('');
-  const [escopo, setEscopo] = useState('ambos'); // 'casa' | 'vis' | 'ambos'
-  const [localUnicoAtivo, setLocalUnicoAtivo] = useState('all');
+  const [escopo, setEscopo] = useState('ambos'); // 'casa' | 'vis' | 'ambos' — pra quem a quantidade de jogos abaixo vale
   const [qtyUnicoDisplay, setQtyUnicoDisplay] = useState('');
   const [filtroCasa, setFiltroCasa] = useState({ local: 'all', qty: 0 });
   const [filtroVis, setFiltroVis] = useState({ local: 'all', qty: 0 });
@@ -122,13 +121,6 @@ export default function SeletorAnalise() {
   function escolherTimeCasa(nome) { setTimeCasa(nome); setFiltroCasa((f) => ({ ...f, qty: 0 })); setQtyUnicoDisplay(''); }
   function escolherTimeVis(nome) { setTimeVis(nome); setFiltroVis((f) => ({ ...f, qty: 0 })); setQtyUnicoDisplay(''); }
 
-  function escolherLocal(local) {
-    setLocalUnicoAtivo(local);
-    if (escopo === 'casa' || escopo === 'ambos') setFiltroCasa((f) => ({ ...f, local, qty: 0 }));
-    if (escopo === 'vis' || escopo === 'ambos') setFiltroVis((f) => ({ ...f, local, qty: 0 }));
-    setQtyUnicoDisplay('');
-  }
-
   function onQtyInputUnico(e) {
     const raw = e.target.value;
     setQtyUnicoDisplay(raw);
@@ -140,9 +132,8 @@ export default function SeletorAnalise() {
 
   function ctxTag(nome, filtro) {
     if (!nome) return null;
-    const locLabel = filtro.local === 'all' ? 'Geral' : filtro.local === 'casa' ? 'Em casa' : 'Fora';
     const qtyLabel = filtro.qty > 0 ? `Últ. ${filtro.qty} jogo(s)` : 'Todos os jogos';
-    return <div className="ctx-tag" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><CheckCircle2 size={11} /> {nome} · {locLabel} · {qtyLabel}</div>;
+    return <div className="ctx-tag" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><CheckCircle2 size={11} /> {nome} · {qtyLabel}</div>;
   }
 
   const escudoCasaHtml = window.escudoImgOuIcone ? window.escudoImgOuIcone(timeCasa) : null;
@@ -217,14 +208,8 @@ export default function SeletorAnalise() {
           <div style={{ fontSize: 10, color: 'var(--texto2)', marginBottom: 6, fontWeight: 700, letterSpacing: '.3px' }}>APLICAR FILTRO PARA</div>
           <div style={{ display: 'flex', gap: 4, marginBottom: 10 }}>
             <button className={`local-btn ${escopo === 'casa' ? 'active-all' : ''}`} onClick={() => setEscopo('casa')} style={btnStyle}>Casa</button>
-            <button className={`local-btn ${escopo === 'ambos' ? 'active-all' : ''}`} onClick={() => setEscopo('ambos')} style={btnStyle}>Ambos</button>
+            <button className={`local-btn ${escopo === 'ambos' ? 'active-all' : ''}`} onClick={() => setEscopo('ambos')} style={btnStyle}>Geral</button>
             <button className={`local-btn ${escopo === 'vis' ? 'active-all' : ''}`} onClick={() => setEscopo('vis')} style={btnStyle}>Visitante</button>
-          </div>
-
-          <div style={{ display: 'flex', gap: 4, marginBottom: 10 }}>
-            <button className={`local-btn ${localUnicoAtivo === 'casa' ? 'active-casa' : ''}`} onClick={() => escolherLocal('casa')} style={{ ...btnStyleLocal, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}><Home size={12} /> Em casa</button>
-            <button className={`local-btn ${localUnicoAtivo === 'all' ? 'active-all' : ''}`} onClick={() => escolherLocal('all')} style={{ ...btnStyleLocal, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}><RotateCcw size={12} /> Geral</button>
-            <button className={`local-btn ${localUnicoAtivo === 'fora' ? 'active-fora' : ''}`} onClick={() => escolherLocal('fora')} style={{ ...btnStyleLocal, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}><Plane size={12} /> Fora</button>
           </div>
 
           <input className="qty-input" type="number" min="1" placeholder="Digite a quantidade (vazio = todos)" value={qtyUnicoDisplay} onChange={onQtyInputUnico} style={{ width: '100%', fontSize: 12, padding: '7px 8px' }} />
