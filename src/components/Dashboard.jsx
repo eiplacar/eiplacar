@@ -1,4 +1,4 @@
-import { CalendarDays, Send, Trophy, Gamepad2, Handshake, BarChart3, Zap, Goal } from 'lucide-react';
+import { CalendarDays, Send, Trophy, Gamepad2, Handshake, BarChart3, Zap, Goal, CheckCircle2, Clock3 } from 'lucide-react';
 
 // ══ Dashboard (aba inicial) — sexto módulo migrado para React ══
 //
@@ -38,25 +38,33 @@ export default function Dashboard() {
         <div id="ophListaDash" style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }} />
       </div>
 
-      {/* Resumo: Campeonatos / Partidas na Temporada (só das ligas com jogo hoje) / Jogos de hoje.
-          Preenchido por renderGeral() em public/js/07-geral.js */}
-      <div className="card" id="cardResumo" style={{ marginBottom: 14 }}>
-        <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><BarChart3 size={20} /> Resumo</div>
+      {/* Jogos da Semana: domingo a sábado da semana atual.
+          Realizados vem do banco de partidas (jogosCache — histórico de verdade);
+          Hoje/Próximos vêm da lista de Jogos Agendados (ophCache), que é limpa
+          toda noite e por isso não serve pra contar jogo já passado.
+          No Dashboard geral mostra todos os campeonatos; dentro de um campeonato
+          selecionado, mostra só os jogos daquele campeonato.
+          Preenchido por renderJogosSemana() em public/js/07-geral.js */}
+      <div className="card" id="cardJogosSemana" style={{ marginBottom: 14 }}>
+        <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <CalendarDays size={20} /> Jogos da Semana<span id="semanaCampLabel" style={{ fontWeight: 400, color: 'var(--texto2)', fontSize: 12 }} />
+        </div>
+        <div id="semanaRange" style={{ fontSize: 12, color: 'var(--texto2)', fontWeight: 700, marginTop: -6, marginBottom: 12 }}>—</div>
         <div className="resumo-grid">
           <div className="resumo-box">
-            <div className="resumo-ic"><Trophy size={17} color="var(--verde2)" /></div>
-            <div className="resumo-num" id="resumoCampeonatos">0</div>
-            <div className="resumo-lbl">Campeonatos</div>
-          </div>
-          <div className="resumo-box">
-            <div className="resumo-ic"><Goal size={17} color="var(--texto2)" /></div>
-            <div className="resumo-num" id="resumoPartidasTemporada">0</div>
-            <div className="resumo-lbl">Partidas na temporada</div>
+            <div className="resumo-ic"><CheckCircle2 size={17} color="var(--verde2)" /></div>
+            <div className="resumo-num" id="semanaRealizados">0</div>
+            <div className="resumo-lbl">Realizados</div>
           </div>
           <div className="resumo-box">
             <div className="resumo-ic"><CalendarDays size={17} color="var(--ouro)" /></div>
-            <div className="resumo-num" id="resumoJogosHoje">0</div>
-            <div className="resumo-lbl">Jogos de hoje</div>
+            <div className="resumo-num" id="semanaHoje">0</div>
+            <div className="resumo-lbl">Hoje</div>
+          </div>
+          <div className="resumo-box">
+            <div className="resumo-ic"><Clock3 size={17} color="var(--texto2)" /></div>
+            <div className="resumo-num" id="semanaProximos">0</div>
+            <div className="resumo-lbl">Próximos</div>
           </div>
         </div>
       </div>

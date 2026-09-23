@@ -191,6 +191,7 @@ function ophRenderLista(){
   if(cardDash && document.getElementById('geralCampSelecionado')?.style.display!=='block'){
     cardDash.style.display = lista.length ? 'block' : 'none';
   }
+  window.renderJogosSemana?.(window.campGeral || ''); // Hoje/Próximos do card "Jogos da Semana" dependem da agenda
 }
 
 // ══ Editar jogo agendado (lápis, só organizador) — corrige nome de time/data

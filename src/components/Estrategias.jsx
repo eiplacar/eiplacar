@@ -429,7 +429,7 @@ export default function Estrategias() {
 
             {/* CENÁRIOS DE ENTRADA (2, definidos nos Filtros Avançados — sem botão de adicionar aqui) */}
             <div className="card">
-              <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Timer size={14} /> Cenários de Entrada da Equipe</div>
+              <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Timer size={14} /> Cenários das Equipes</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 {cenariosE.map((c, i) => {
                   const dado = resultado.cenarios[i] || { pct: null, jogos: 0 };

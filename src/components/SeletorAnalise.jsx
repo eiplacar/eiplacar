@@ -121,6 +121,27 @@ export default function SeletorAnalise() {
   function escolherTimeCasa(nome) { setTimeCasa(nome); setFiltroCasa((f) => ({ ...f, qty: 0 })); setQtyUnicoDisplay(''); }
   function escolherTimeVis(nome) { setTimeVis(nome); setFiltroVis((f) => ({ ...f, qty: 0 })); setQtyUnicoDisplay(''); }
 
+  // "APLICAR FILTRO PARA" — Casa / Geral / Visitante decide, além de pra quem vale a
+  // quantidade abaixo, também o campo `local` de cada lado (lido em statsPorContexto):
+  //   Casa      → só jogos do mandante jogando em casa      (filtroCasa.local = 'casa')
+  //   Visitante → só jogos do visitante jogando fora         (filtroVis.local  = 'fora')
+  //   Geral     → jogos em casa e fora dos dois times        (local = 'all' pros dois)
+  // A quantidade digitada NÃO é apagada ao trocar de escopo — ela é reaplicada
+  // pro lado recém-selecionado, pra não precisar apagar e redigitar toda hora.
+  function selecionarEscopo(novo) {
+    setEscopo(novo);
+    const n = parseInt(qtyUnicoDisplay, 10);
+    const qty = isNaN(n) || n < 1 ? 0 : n;
+    if (novo === 'casa') {
+      setFiltroCasa((f) => ({ ...f, local: 'casa', qty }));
+    } else if (novo === 'vis') {
+      setFiltroVis((f) => ({ ...f, local: 'fora', qty }));
+    } else {
+      setFiltroCasa((f) => ({ ...f, local: 'all', qty }));
+      setFiltroVis((f) => ({ ...f, local: 'all', qty }));
+    }
+  }
+
   function onQtyInputUnico(e) {
     const raw = e.target.value;
     setQtyUnicoDisplay(raw);
@@ -207,9 +228,9 @@ export default function SeletorAnalise() {
         <div style={{ background: 'var(--c1)', border: '1px solid var(--c3)', borderRadius: 10, padding: 10 }}>
           <div style={{ fontSize: 10, color: 'var(--texto2)', marginBottom: 6, fontWeight: 700, letterSpacing: '.3px' }}>APLICAR FILTRO PARA</div>
           <div style={{ display: 'flex', gap: 4, marginBottom: 10 }}>
-            <button className={`local-btn ${escopo === 'casa' ? 'active-all' : ''}`} onClick={() => setEscopo('casa')} style={btnStyle}>Casa</button>
-            <button className={`local-btn ${escopo === 'ambos' ? 'active-all' : ''}`} onClick={() => setEscopo('ambos')} style={btnStyle}>Geral</button>
-            <button className={`local-btn ${escopo === 'vis' ? 'active-all' : ''}`} onClick={() => setEscopo('vis')} style={btnStyle}>Visitante</button>
+            <button className={`local-btn ${escopo === 'casa' ? 'active-all' : ''}`} onClick={() => selecionarEscopo('casa')} style={btnStyle}>Casa</button>
+            <button className={`local-btn ${escopo === 'ambos' ? 'active-all' : ''}`} onClick={() => selecionarEscopo('ambos')} style={btnStyle}>Geral</button>
+            <button className={`local-btn ${escopo === 'vis' ? 'active-all' : ''}`} onClick={() => selecionarEscopo('vis')} style={btnStyle}>Visitante</button>
           </div>
 
           <input className="qty-input" type="number" min="1" placeholder="Digite a quantidade (vazio = todos)" value={qtyUnicoDisplay} onChange={onQtyInputUnico} style={{ width: '100%', fontSize: 12, padding: '7px 8px' }} />
