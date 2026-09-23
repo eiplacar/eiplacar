@@ -1,6 +1,55 @@
 // ═══════════════════════════════════════════════════
 // ABA GERAL — dashboard, cards de campeonato, últimos resultados, modal de detalhe
 // ═══════════════════════════════════════════════════
+
+const MESES_ABREV = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+
+// Domingo a sábado da semana que contém `hojeStr` (YYYY-MM-DD) — devolve as duas
+// pontas também em YYYY-MM-DD, pra comparar direto com o campo `data` dos jogos.
+function semanaAtual(hojeStr){
+  const [y,m,d] = hojeStr.split('-').map(Number);
+  const base = new Date(y, m-1, d);
+  const dom = new Date(base); dom.setDate(base.getDate() - base.getDay());
+  const sab = new Date(dom); sab.setDate(dom.getDate() + 6);
+  const toStr = dt => `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+  const toLbl = dt => `${dt.getDate()} ${MESES_ABREV[dt.getMonth()]}`;
+  return { inicio: toStr(dom), fim: toStr(sab), label: `${toLbl(dom)} — ${toLbl(sab)}` };
+}
+
+// Card "Jogos da Semana" do Dashboard — domingo a sábado da semana atual.
+// As três contagens vêm da lista de Jogos Agendados (ophCache, public/js/11-jogosdodia.js):
+// Realizados = dias já passados da semana; Hoje = data de hoje; Próximos = dias que ainda vêm.
+// `campSel`: quando tem um campeonato selecionado (dentro dele, não no Dashboard geral),
+// as contagens ficam só dos jogos agendados daquele campeonato.
+function renderJogosSemana(campSel){
+  const hoje = window.hojeBR ? window.hojeBR() : null;
+  if(!hoje) return;
+  const { inicio, fim, label } = semanaAtual(hoje);
+
+  let agenda = window.ophLoad ? window.ophLoad() : [];
+  if(campSel) agenda = agenda.filter(j=>j.camp===campSel);
+
+  const agendaSemana = agenda.filter(j=>{
+    const data = j.data || hoje; // sem data cadastrada conta como "hoje"
+    return data>=inicio && data<=fim;
+  });
+  const realizados = agendaSemana.filter(j=>(j.data||hoje)<hoje).length;
+  const jogosHoje = agendaSemana.filter(j=>(j.data||hoje)===hoje).length;
+  const proximos = agendaSemana.filter(j=>(j.data||hoje)>hoje).length;
+
+  const elRange = document.getElementById('semanaRange');
+  const elRealizados = document.getElementById('semanaRealizados');
+  const elHoje = document.getElementById('semanaHoje');
+  const elProximos = document.getElementById('semanaProximos');
+  const elCampLabel = document.getElementById('semanaCampLabel');
+  if(elRange) elRange.textContent = label;
+  if(elRealizados) elRealizados.textContent = realizados;
+  if(elHoje) elHoje.textContent = jogosHoje;
+  if(elProximos) elProximos.textContent = proximos;
+  if(elCampLabel) elCampLabel.textContent = campSel ? ` · ${campSel}` : '';
+}
+window.renderJogosSemana = renderJogosSemana;
+
 // ══ RENDER GERAL ══
 function renderGeral(){
   const campSel = window.campGeral || '';
@@ -8,6 +57,7 @@ function renderGeral(){
 
   // ── Grade de campeonatos: sempre atualizada, é o ponto de entrada da página ──
   // O nome do campeonato (`camp`) continua sendo a chave única usada em todo o app
+
   // (filtros, estatísticas, etc.) — o que mudou é que o país exibido no card agora
   // vem do dado real de cada jogo (`pais`), não mais adivinhado pelo nome. Por isso
   // é importante nunca reaproveitar o mesmo nome de campeonato pra países diferentes.
@@ -20,8 +70,8 @@ function renderGeral(){
   const ent = ordemCamps.map(n=>[n,cMap[n]]);
 
   // Jogos de hoje e jogos agendados pra depois (lista da Aba Oportunidades) —
-  // usados no Resumo e no selo de cada liga. Itens sem `data` (salvos antes desse
-  // campo existir) contam como "hoje", pra não sumir nada de quem já usava a lista.
+  // usados no selo de cada liga na grade de campeonatos. Itens sem `data` (salvos
+  // antes desse campo existir) contam como "hoje", pra não sumir nada de quem já usava a lista.
   const hoje = window.hojeBR ? window.hojeBR() : null;
   const listaAtiva = (window.ophLoad ? window.ophLoad() : []).filter(j=> window.ophExpirado ? !window.ophExpirado(j) : true);
   const hojeLista = listaAtiva.filter(j=>!j.data || j.data===hoje);
@@ -36,17 +86,7 @@ function renderGeral(){
     if(!proximoPorCamp[j.camp] || j.data<proximoPorCamp[j.camp]) proximoPorCamp[j.camp]=j.data;
   });
 
-  // Resumo: Campeonatos / Partidas na Temporada (só das ligas com jogo hoje, se houver) / Jogos de hoje
-  const ligasComJogoHoje = new Set(hojeLista.map(j=>j.camp).filter(Boolean));
-  const partidasTemporada = ligasComJogoHoje.size
-    ? jogosCache.filter(j=>ligasComJogoHoje.has(j.camp)).length
-    : jogosCache.length; // sem nenhum jogo de hoje cadastrado ainda: mostra o total geral
-  const elResCamps = document.getElementById('resumoCampeonatos');
-  const elResPartidas = document.getElementById('resumoPartidasTemporada');
-  const elResHoje = document.getElementById('resumoJogosHoje');
-  if(elResCamps) elResCamps.textContent = ent.length;
-  if(elResPartidas) elResPartidas.textContent = partidasTemporada;
-  if(elResHoje) elResHoje.textContent = hojeLista.length;
+  renderJogosSemana(campSel);
 
   document.getElementById('campList').innerHTML = ent.length
     ? `<div class="camp-list">${ent.map(([n,c])=>{
@@ -138,10 +178,19 @@ function renderGeral(){
   `;
   window.renderIcons?.(document.getElementById('statsExtras'));
 
-  // Últimos resultados: só os 5 mais recentes. Cada linha abre o detalhe do jogo ao tocar.
-  const rec = ordenados.slice(0, 5);
+  // Últimos resultados: mostra 10 no total, mas só 5 de cara — o resto fica
+  // escondido atrás do link "Ver todos" (clique revela os outros 5 e o link some).
+  // Cada linha abre o detalhe do jogo ao tocar.
+  const linhaResultado = j => `<div class="match-row" style="cursor:pointer" onclick="abrirDetalheJogo(${j.id})"><div class="match-camp"><span class="mc-texto">${j.camp}${j.data?' · '+fd(j.data):''}${j.rodada?' · '+j.rodada:''}</span>${res(j.gC,j.gV)}</div><div class="match-teams">${escudoMini(j.casa)}<span class="nome nome-casa">${j.casa}</span><span class="placar">${j.gC} × ${j.gV}</span><span class="nome nome-vis">${j.vis}</span>${escudoMini(j.vis)}</div></div>`;
+  const rec = ordenados.slice(0, 10);
+  const primeiros = rec.slice(0, 5);
+  const restantes = rec.slice(5, 10);
   document.getElementById('recentList').innerHTML = rec.length
-    ? rec.map(j=>`<div class="match-row" style="cursor:pointer" onclick="abrirDetalheJogo(${j.id})"><div class="match-camp"><span class="mc-texto">${j.camp}${j.data?' · '+fd(j.data):''}${j.rodada?' · '+j.rodada:''}</span>${res(j.gC,j.gV)}</div><div class="match-teams">${escudoMini(j.casa)}<span class="nome nome-casa">${j.casa}</span><span class="placar">${j.gC} × ${j.gV}</span><span class="nome nome-vis">${j.vis}</span>${escudoMini(j.vis)}</div></div>`).join('')
+    ? primeiros.map(linhaResultado).join('')
+      + (restantes.length
+          ? `<div id="recentListMais" style="display:none">${restantes.map(linhaResultado).join('')}</div>
+             <div id="recentListVerTodos" onclick="document.getElementById('recentListMais').style.display='block';this.style.display='none'" style="text-align:center;padding:10px 0 2px;font-size:12.5px;font-weight:700;color:var(--ouro);cursor:pointer">Ver todos</div>`
+          : '')
     : `<div class="empty"><div class="icon"><span data-ic="clipboard" data-ic-size="38"></span></div><p>Nenhum jogo ainda.</p></div>`;
   window.renderIcons?.(document.getElementById('recentList'));
 }
