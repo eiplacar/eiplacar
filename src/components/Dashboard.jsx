@@ -39,11 +39,17 @@ export default function Dashboard() {
       </div>
 
       {/* Jogos da Semana: domingo a sábado da semana atual.
+<<<<<<< HEAD
           Realizados vem do banco de partidas (jogosCache — histórico de verdade);
           Hoje/Próximos vêm da lista de Jogos Agendados (ophCache), que é limpa
           toda noite e por isso não serve pra contar jogo já passado.
           No Dashboard geral mostra todos os campeonatos; dentro de um campeonato
           selecionado, mostra só os jogos daquele campeonato.
+=======
+          As três contagens vêm da lista de Jogos Agendados (ophCache).
+          No Dashboard geral mostra todos os campeonatos; dentro de um campeonato
+          selecionado, mostra só os jogos agendados daquele campeonato.
+>>>>>>> b34dfc0cb4f8bfb1a539ec3cc178e06c83ca9c28
           Preenchido por renderJogosSemana() em public/js/07-geral.js */}
       <div className="card" id="cardJogosSemana" style={{ marginBottom: 14 }}>
         <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

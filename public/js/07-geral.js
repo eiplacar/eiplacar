@@ -17,6 +17,7 @@ function semanaAtual(hojeStr){
 }
 
 // Card "Jogos da Semana" do Dashboard — domingo a sábado da semana atual.
+<<<<<<< HEAD
 // Realizados vem do banco de partidas (jogosCache, tem histórico de verdade e
 // nunca é apagado). Hoje/Próximos vêm da lista de Jogos Agendados (ophCache,
 // public/js/11-jogosdodia.js) — IMPORTANTE: essa lista é limpa todo dia às
@@ -25,21 +26,37 @@ function semanaAtual(hojeStr){
 // pode vir dali, senão fica sempre zerado.
 // `campSel`: quando tem um campeonato selecionado (dentro dele, não no Dashboard
 // geral), as contagens ficam só daquele campeonato.
+=======
+// As três contagens vêm da lista de Jogos Agendados (ophCache, public/js/11-jogosdodia.js):
+// Realizados = dias já passados da semana; Hoje = data de hoje; Próximos = dias que ainda vêm.
+// `campSel`: quando tem um campeonato selecionado (dentro dele, não no Dashboard geral),
+// as contagens ficam só dos jogos agendados daquele campeonato.
+>>>>>>> b34dfc0cb4f8bfb1a539ec3cc178e06c83ca9c28
 function renderJogosSemana(campSel){
   const hoje = window.hojeBR ? window.hojeBR() : null;
   if(!hoje) return;
   const { inicio, fim, label } = semanaAtual(hoje);
 
+<<<<<<< HEAD
   let base = typeof jogosCache !== 'undefined' ? jogosCache : [];
   if(campSel) base = base.filter(j=>j.camp===campSel);
   const realizados = base.filter(j=>j.data && j.data>=inicio && j.data<hoje && j.data<=fim).length;
 
   let agenda = window.ophLoad ? window.ophLoad() : [];
   if(campSel) agenda = agenda.filter(j=>j.camp===campSel);
+=======
+  let agenda = window.ophLoad ? window.ophLoad() : [];
+  if(campSel) agenda = agenda.filter(j=>j.camp===campSel);
+
+>>>>>>> b34dfc0cb4f8bfb1a539ec3cc178e06c83ca9c28
   const agendaSemana = agenda.filter(j=>{
     const data = j.data || hoje; // sem data cadastrada conta como "hoje"
     return data>=inicio && data<=fim;
   });
+<<<<<<< HEAD
+=======
+  const realizados = agendaSemana.filter(j=>(j.data||hoje)<hoje).length;
+>>>>>>> b34dfc0cb4f8bfb1a539ec3cc178e06c83ca9c28
   const jogosHoje = agendaSemana.filter(j=>(j.data||hoje)===hoje).length;
   const proximos = agendaSemana.filter(j=>(j.data||hoje)>hoje).length;
 
