@@ -85,33 +85,76 @@ const PAIS_POR_LIGA = new Map([
 //
 // Em lotes de 3 ao mesmo tempo (ver buscarComLimite acima) — nem tudo em série (estourava
 // o tempo limite da função) nem tudo de uma vez (batia rate limit 429 da GOAL API).
-async function buscarTodosFixturesDoDia(apiKey, data) {
-  const LIMITE_POR_LIGA = 100; // cobre folgado a "rodada" de qualquer liga em torno da data buscada
 
+// ───────────────────────────────────────────────────────────────────────────
+// CORREÇÃO (jogos que não apareciam / não eram salvos):
+// A GOAL API devolve os fixtures da liga em ordem DECRESCENTE de data ("do mais
+// novo pro mais antigo" — ver comentário histórico) e SEM filtro de status isso
+// inclui o calendário FUTURO inteiro. Com um único pedido de limit=100, as ligas
+// europeias (380 jogos/temporada) devolviam só os 100 jogos mais distantes
+// (fim da temporada) e os jogos de agora ficavam de fora. Só as ligas com poucos
+// jogos restantes (Brasileirão A/B, Liga MX) "cabiam" nos 100 e funcionavam.
+// Solução: paginar com offset e PARAR assim que a página já chegou em datas
+// anteriores à janela que interessa (tudo depois é mais antigo ainda).
+// ───────────────────────────────────────────────────────────────────────────
+const LIMITE_POR_PAGINA = 100;
+const MAX_PAGINAS = 6; // trava de segurança: até 600 jogos por liga (uma temporada tem no máx. ~380)
+
+function somarDias(dataStr, dias) {
+  const d = new Date(`${dataStr}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + dias);
+  return d.toISOString().slice(0, 10);
+}
+
+// Data (AAAA-MM-DD) no fuso de São Paulo, a partir de matchDate+matchTime (UTC).
+function dataBR(matchDate, matchTime) {
+  if (!matchDate) return matchDate;
+  if (!matchTime) return matchDate;
+  const dt = new Date(`${matchDate}T${matchTime}:00Z`);
+  if (Number.isNaN(dt.getTime())) return matchDate;
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(dt);
+}
+
+// Busca os fixtures de UMA liga paginando até passar de `dataMinima` (matchDate em UTC).
+async function buscarFixturesDaLiga(apiKey, ligaId, dataMinima) {
+  const todos = [];
+  for (let pagina = 0; pagina < MAX_PAGINAS; pagina++) {
+    const offset = pagina * LIMITE_POR_PAGINA;
+    const resp = await fetchComRetry429(`${GOAL_API_URL}/fixtures?leagueId=${ligaId}&limit=${LIMITE_POR_PAGINA}&offset=${offset}`, {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    if (!resp.ok) {
+      console.log(`GOAL API respondeu com erro ${resp.status} pra liga ${ligaId} (offset=${offset})`);
+      break;
+    }
+    const json = await resp.json();
+    if (!json.success) {
+      console.log(`GOAL API recusou a chamada pra liga ${ligaId} (offset=${offset}):`, json.message);
+      break;
+    }
+    const dados = json.data || [];
+    todos.push(...dados);
+    const datas = dados.map((f) => f.matchDate).filter(Boolean).sort();
+    console.log(`Liga ${ligaId} offset=${offset}: ${dados.length} fixture(s), de ${datas[0] || '-'} até ${datas[datas.length - 1] || '-'}`);
+    if (dados.length < LIMITE_POR_PAGINA) break;          // acabou o calendário da liga
+    if (datas.length && datas[0] < dataMinima) break;     // já passou da janela (o resto é mais antigo)
+  }
+  return todos;
+}
+
+async function buscarTodosFixturesDoDia(apiKey, data) {
+  // Janela em UTC: 1 dia antes cobre jogos que, em UTC, caem na madrugada seguinte (Liga MX etc.)
+  const dataMinima = somarDias(data, -1);
   const resultados = await buscarComLimite([...LIGAS_PERMITIDAS], 3, async (ligaId) => {
     try {
-      const resp = await fetchComRetry429(`${GOAL_API_URL}/fixtures?leagueId=${ligaId}&limit=${LIMITE_POR_LIGA}`, {
-        headers: { Authorization: `Bearer ${apiKey}` },
-      });
-      if (!resp.ok) {
-        console.log(`GOAL API respondeu com erro ${resp.status} pra liga ${ligaId}`);
-        return [];
-      }
-      const json = await resp.json();
-      if (!json.success) {
-        console.log(`GOAL API recusou a chamada pra liga ${ligaId}:`, json.message);
-        return [];
-      }
-      console.log(`Liga ${ligaId}: ${(json.data || []).length} fixture(s) recebido(s), datas:`, [...new Set((json.data || []).map((f) => f.matchDate))]);
-      return json.data || [];
+      return await buscarFixturesDaLiga(apiKey, ligaId, dataMinima);
     } catch (e) {
       console.log(`ERRO ao buscar fixtures da liga ${ligaId}:`, e.message);
       return [];
     }
   });
-
-  const todos = resultados.flat();
-  return todos.filter((f) => f.matchDate === data);
+  // Filtra pela data de SÃO PAULO (a mesma que o usuário vê), não pela data UTC crua.
+  return resultados.flat().filter((f) => dataBR(f.matchDate, f.matchTime) === data);
 }
 
 // A GOAL API não deixa explícito o fuso horário do "matchTime" — assumindo

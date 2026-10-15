@@ -76,6 +76,63 @@ const PAIS_POR_LIGA = new Map([
   ['cmr77dvsv008srx06mier6t7r', 'México'],
 ]);
 
+
+// ───────────────────────────────────────────────────────────────────────────
+// CORREÇÃO (jogos que não apareciam / não eram salvos):
+// A GOAL API devolve os fixtures da liga em ordem DECRESCENTE de data ("do mais
+// novo pro mais antigo" — ver comentário histórico) e SEM filtro de status isso
+// inclui o calendário FUTURO inteiro. Com um único pedido de limit=100, as ligas
+// europeias (380 jogos/temporada) devolviam só os 100 jogos mais distantes
+// (fim da temporada) e os jogos de agora ficavam de fora. Só as ligas com poucos
+// jogos restantes (Brasileirão A/B, Liga MX) "cabiam" nos 100 e funcionavam.
+// Solução: paginar com offset e PARAR assim que a página já chegou em datas
+// anteriores à janela que interessa (tudo depois é mais antigo ainda).
+// ───────────────────────────────────────────────────────────────────────────
+const LIMITE_POR_PAGINA = 100;
+const MAX_PAGINAS = 6; // trava de segurança: até 600 jogos por liga (uma temporada tem no máx. ~380)
+
+function somarDias(dataStr, dias) {
+  const d = new Date(`${dataStr}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + dias);
+  return d.toISOString().slice(0, 10);
+}
+
+// Data (AAAA-MM-DD) no fuso de São Paulo, a partir de matchDate+matchTime (UTC).
+function dataBR(matchDate, matchTime) {
+  if (!matchDate) return matchDate;
+  if (!matchTime) return matchDate;
+  const dt = new Date(`${matchDate}T${matchTime}:00Z`);
+  if (Number.isNaN(dt.getTime())) return matchDate;
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(dt);
+}
+
+// Busca os fixtures de UMA liga paginando até passar de `dataMinima` (matchDate em UTC).
+async function buscarFixturesDaLiga(apiKey, ligaId, dataMinima) {
+  const todos = [];
+  for (let pagina = 0; pagina < MAX_PAGINAS; pagina++) {
+    const offset = pagina * LIMITE_POR_PAGINA;
+    const resp = await fetchComRetry429(`${GOAL_API_URL}/fixtures?leagueId=${ligaId}&limit=${LIMITE_POR_PAGINA}&offset=${offset}`, {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    if (!resp.ok) {
+      console.log(`GOAL API respondeu com erro ${resp.status} pra liga ${ligaId} (offset=${offset})`);
+      break;
+    }
+    const json = await resp.json();
+    if (!json.success) {
+      console.log(`GOAL API recusou a chamada pra liga ${ligaId} (offset=${offset}):`, json.message);
+      break;
+    }
+    const dados = json.data || [];
+    todos.push(...dados);
+    const datas = dados.map((f) => f.matchDate).filter(Boolean).sort();
+    console.log(`Liga ${ligaId} offset=${offset}: ${dados.length} fixture(s), de ${datas[0] || '-'} até ${datas[datas.length - 1] || '-'}`);
+    if (dados.length < LIMITE_POR_PAGINA) break;          // acabou o calendário da liga
+    if (datas.length && datas[0] < dataMinima) break;     // já passou da janela (o resto é mais antigo)
+  }
+  return todos;
+}
+
 function dataHojeSaoPaulo() {
   const agora = new Date();
   const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' });
@@ -252,7 +309,12 @@ export const handler = async function () {
   // e rodar manualmente pelo "Run Now" da Netlify a qualquer hora do dia também funciona.
   // Custa só 1 chamada extra de "fixtures" (lista), bem mais barata que a chamada de
   // detalhe (que já traz estatística + gols juntos).
-  const datasValidas = new Set([hoje, dataOntemSaoPaulo()]);
+  // Janela de DIAS_RETROATIVOS dias (hoje + os anteriores). Como só gasta chamada de detalhe
+  // com jogo que AINDA NÃO está no banco, olhar vários dias pra trás é barato e faz a função
+  // se "autocurar": jogo que ficou de fora numa execução é recuperado nas seguintes.
+  const DIAS_RETROATIVOS = 7;
+  const datasValidas = new Set();
+  for (let i = 0; i < DIAS_RETROATIVOS; i++) datasValidas.add(somarDias(hoje, -i));
   console.log('Buscando jogos finalizados para as datas:', [...datasValidas]);
 
   // IMPORTANTE: a GOAL API ignora o filtro "date" quando combinado com "leagueId"
@@ -270,13 +332,11 @@ export const handler = async function () {
   // demais pra ela), e em SÉRIE (uma de cada vez) passava de 60s e a função era morta no
   // meio do loop, deixando de fora as ligas de trás. Solução: lotes de 3 ao mesmo tempo
   // (ver buscarComLimite acima), com nova tentativa automática se ainda bater 429.
+  const dataMinima = somarDias(hoje, -DIAS_RETROATIVOS);
   const respostasPorLiga = await buscarComLimite([...NOMES_CAMP_POR_LIGA.keys()], 3, async (ligaId) => {
     try {
-      const resp = await fetchComRetry429(`${GOAL_API_URL}/fixtures?leagueId=${ligaId}&limit=100`, {
-        headers: { Authorization: `Bearer ${apiKey}` },
-      });
-      const json = await resp.json();
-      return { ligaId, httpStatus: resp.status, json };
+      const dados = await buscarFixturesDaLiga(apiKey, ligaId, dataMinima);
+      return { ligaId, httpStatus: 200, json: { success: true, data: dados } };
     } catch (e) {
       console.log(`ERRO ao buscar fixtures da liga=${ligaId}:`, e.message);
       return { ligaId, httpStatus: 0, json: { success: false, data: [] } };
@@ -289,7 +349,7 @@ export const handler = async function () {
     console.log(`Resposta GOAL API (fixtures liga=${ligaId}):`, { httpStatus, success: json.success, totalRecebido: dados.length });
     // DIAGNÓSTICO — mostra só os jogos com matchDate de hoje/ontem, com o status
     // e horário exatos que a API está reportando pra eles agora.
-    const doDia = dados.filter((f) => datasValidas.has(f.matchDate));
+    const doDia = dados.filter((f) => datasValidas.has(dataBR(f.matchDate, f.matchTime)));
     if (doDia.length) {
       console.log(`  ↳ Jogos de hoje/ontem nessa liga (${doDia.length}):`, doDia.map((f) => ({ jogo: `${f.homeTeamName} x ${f.awayTeamName}`, matchDate: f.matchDate, matchTime: f.matchTime, matchStatus: f.matchStatus, matchLive: f.matchLive, placar: `${f.homeTeamScore}-${f.awayTeamScore}` })));
     }
@@ -302,7 +362,7 @@ export const handler = async function () {
   // AFTER_PEN — sem essas variantes aqui, esses jogos nunca eram salvos mesmo
   // já tendo placar final (foi o caso de LASK x Celtic e Sabah Baku x H. Beer Sheva).
   const STATUS_ENCERRADOS = new Set(['FINISHED', 'AFTER_ET', 'AFTER_PEN']);
-  const fixtures = todosFixtures.filter((f) => NOMES_CAMP_POR_LIGA.has(f.leagueId) && datasValidas.has(f.matchDate) && STATUS_ENCERRADOS.has(f.matchStatus));
+  const fixtures = todosFixtures.filter((f) => NOMES_CAMP_POR_LIGA.has(f.leagueId) && datasValidas.has(dataBR(f.matchDate, f.matchTime)) && STATUS_ENCERRADOS.has(f.matchStatus));
   console.log('Jogos após filtro de ligas permitidas + finalizados:', fixtures.length, fixtures.map((f) => `${NOMES_CAMP_POR_LIGA.get(f.leagueId)} - ${f.homeTeamName} x ${f.awayTeamName}`));
 
   if (fixtures.length === 0) {
@@ -336,7 +396,14 @@ export const handler = async function () {
     if (r.chutesC === null || rankFaltando) existentesIncompletos.add(r.fixture_id);
     else existentesCompletos.add(r.fixture_id);
   });
-  const novos = fixtures.filter((f) => !existentesCompletos.has(parseInt(f.apiId, 10)));
+  // Limite por execução: função agendada da Netlify tem ~30s. Processa os mais recentes
+  // primeiro; o que sobrar é pego nas próximas execuções (roda a cada 2h).
+  const MAX_NOVOS_POR_EXECUCAO = 15;
+  const pendentes = fixtures
+    .filter((f) => !existentesCompletos.has(parseInt(f.apiId, 10)))
+    .sort((a, b) => `${b.matchDate}${b.matchTime || ''}`.localeCompare(`${a.matchDate}${a.matchTime || ''}`));
+  const novos = pendentes.slice(0, MAX_NOVOS_POR_EXECUCAO);
+  if (pendentes.length > novos.length) console.log(`Ainda restam ${pendentes.length - novos.length} jogo(s) pra próximas execuções.`);
   console.log('Jogos novos a salvar:', novos.length, '— dos quais reprocessando (dados incompletos):', novos.filter((f) => existentesIncompletos.has(parseInt(f.apiId, 10))).length);
 
   if (novos.length === 0) {
